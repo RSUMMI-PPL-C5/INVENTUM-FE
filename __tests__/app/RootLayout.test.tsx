@@ -1,38 +1,45 @@
-import { render } from '@testing-library/react';
-import RootLayout from '@/app/layout';
+import { render, screen } from "@testing-library/react";
+import RootLayout from "@/app/layout"; // Sesuaikan path jika berbeda
+import React from "react";
 
-describe('RootLayout', () => {
-  it('renders children correctly', () => {
-    const { getByText } = render(
-      <RootLayout>
-        <div>Test Child</div>
-      </RootLayout>
-    );
-    expect(getByText('Test Child')).toBeInTheDocument();
+// Mock metadata object
+jest.mock("next/font/google", () => ({
+  Geist: jest.fn(() => ({ variable: "--mock-geist-sans" })),
+  Geist_Mono: jest.fn(() => ({ variable: "--mock-geist-mono" })),
+}));
+
+describe("RootLayout", () => {
+  it("renders without crashing", () => {
+    render(<RootLayout><div>Test</div></RootLayout>);
   });
 
-  it('sets the correct lang attribute on the html element', () => {
+  it("renders children correctly", () => {
     render(
       <RootLayout>
-        <div>Test Child</div>
+        <div data-testid="child-element">Test Child</div>
       </RootLayout>
     );
-  
-    // Periksa elemen <html> yang di-render di document
-    const htmlElement = document.documentElement;
-    expect(htmlElement).toBeInTheDocument(); // Pastikan elemen html ada
-    expect(htmlElement.getAttribute('lang')).toBe('en'); // Pastikan lang adalah 'en'
+    expect(screen.getByTestId("child-element")).toBeInTheDocument();
   });
 
-//   it('applies the correct classes to the body element', () => {
-//     render(
-//       <RootLayout>
-//         <div>Test Child</div>
-//       </RootLayout>
-//     );
-//     // Check for the classes we set in the "className" property
-//     expect(document.body).toHaveClass('antialiased');
-//     expect(document.body).toHaveClass('geist-sans');
-//     expect(document.body).toHaveClass('geist-mono');
-//   });
+  it("applies the correct font classes", () => {
+    const { container } = render(
+      <RootLayout>
+        <div>Test</div>
+      </RootLayout>
+    );
+    expect(document.body).toHaveClass(
+      "--mock-geist-sans --mock-geist-mono antialiased"
+    );
+  });
+
+  it("sets the correct HTML language attribute", () => {
+    const { baseElement } = render(<RootLayout><div>Test</div></RootLayout>);
+    expect(document.documentElement).toHaveAttribute("lang", "en");
+  });
+
+  it("matches snapshot", () => {
+    const { asFragment } = render(<RootLayout><div>Snapshot Test</div></RootLayout>);
+    expect(asFragment()).toMatchSnapshot();
+  });
 });
