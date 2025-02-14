@@ -1,0 +1,40 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  ci:
+    name: Build, Test, Lint, and SonarCloud Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '21'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build
+        run: npm run build
+
+      - name: Run Tests
+        run: npm test -- --coverage
+
+      - name: Run Linter
+        run: npm run lint
+
+      - name: Run SonarQube analysis
+        run: |
+          npx sonarqube-scanner \
+            -Dsonar.projectKey=InventoryManagement-BE \
+            -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
+            -Dsonar.token=${{ secrets.SONAR_TOKEN }} \
+            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info

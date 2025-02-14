@@ -1,0 +1,68 @@
+name: CD Pipeline
+
+on:
+  push:
+    branches:
+      - main 
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        run: |
+          echo "${{ secrets.DOCKER_HUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
+
+      - name: Build and push Docker image
+        run: |
+          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/my-app-fe-fe:latest .
+          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/my-app-fe-fe:latest
+
+      - name: Deploy to Portainer
+        run: |
+          # Authenticate to Portainer and get the JWT token
+          TOKEN=$(curl -s -X POST "${{ secrets.PORTAINER_URL }}/auth" \
+            -H "Content-Type: application/json" \
+            --data '{"username": "${{ secrets.PORTAINER_USERNAME }}", "password": "${{ secrets.PORTAINER_PASSWORD }}"}' | jq -r .jwt)
+
+          # Get the endpoint ID dynamically
+          ENDPOINT_ID=$(curl -s -X GET "${{ secrets.PORTAINER_URL }}/endpoints" \
+            -H "Authorization: Bearer $TOKEN" | jq -r '.[0].Id')
+
+          # Get stack ID dynamically
+          STACK_ID=$(curl -s -X GET "${{ secrets.PORTAINER_URL }}/stacks?endpointId=$ENDPOINT_ID" \
+            -H "Authorization: Bearer $TOKEN" | jq -r '.[] | select(.Name=="${{ secrets.STACK_NAME }}") | .Id')
+
+          # Redeploy the stack (this pulls the latest image)
+          curl -s -X POST "${{ secrets.PORTAINER_URL }}/stacks/$STACK_ID/git/redeploy?endpointId=$ENDPOINT_ID" \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Content-Type: application/json" \
+            --data '{"prune": true}'
+
+      - name: Pull Prometheus and Grafana images
+        run: |
+          docker pull prom/prometheus:latest
+          docker pull grafana/grafana:latest
+
+      - name: Deploy Prometheus and Grafana
+        run: |
+          docker run -d --name prometheus -p 9090:9090 prom/prometheus:latest
+          docker run -d --name grafana -p 3000:3000 grafana/grafana:latest
+
+      - name: Configure Prometheus
+        run: |
+          echo "global:
+            scrape_interval: 15s
+          scrape_configs:
+            - job_name: 'prometheus'
+              static_configs:
+                - targets: ['localhost:9090']
+            - job_name: 'my-app'
+              static_configs:
+                - targets: ['my-app-fe-fe:80']" > prometheus.yml
+          docker cp prometheus.yml prometheus:/etc/prometheus/prometheus.yml
+          docker restart prometheus
