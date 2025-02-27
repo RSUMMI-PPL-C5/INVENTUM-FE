@@ -1,9 +1,9 @@
+import UserCreatePage from '@/app/dashboard/user/create/page';
 import { render, screen } from '@testing-library/react';
-import UserCreate from '@/modules/user/user-create';
 
 describe('UserCreatePage', () => {
   it('', () => {
-    render(<UserCreate></UserCreate>);
+    render(<UserCreatePage/>);
     const pageName = screen.getByText('UserCreate');
     expect(pageName).toBeInTheDocument();
   });

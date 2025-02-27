@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "jest --coverage"
+    "test": "jest",
+    "test:unit": "jest --testMatch '**/*.test.tsx'",
+    "test:integration": "jest --testMatch '**/*.integration.test.tsx'"
   },
   "dependencies": {
     "next": "15.1.7",
