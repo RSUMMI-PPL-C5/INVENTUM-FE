@@ -2,6 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import LoginModule from '@/app/page';
 import { useRouter } from 'next/navigation';
 
+// Mock next/navigation
 jest.mock('next/navigation', () => ({
   useRouter: jest.fn(),
 }));
@@ -19,6 +20,7 @@ describe('LoginModule', () => {
     jest.clearAllMocks();
   });
 
+  // Positive Cases
   it('renders the login page correctly', () => {
     render(<LoginModule />);
 
@@ -69,7 +71,62 @@ describe('LoginModule', () => {
     fireEvent.click(loginButton);
 
     await waitFor(() => {
-        expect(mockPush).toHaveBeenCalledWith('/dashboard/medical-equipment');
+      expect(mockPush).toHaveBeenCalledWith('/dashboard/medical-equipment');
     });
+  });
+
+  // Negative Cases
+  it('does not navigate if username is empty', async () => {
+    render(<LoginModule />);
+
+    const passwordInput = screen.getByPlaceholderText('******');
+    const loginButton = screen.getByRole('button', { name: /masuk/i });
+
+    fireEvent.change(passwordInput, { target: { value: 'testpassword' } });
+    fireEvent.click(loginButton);
+
+    await waitFor(() => {
+      expect(mockPush).not.toHaveBeenCalled();
+    });
+  });
+
+  it('does not navigate if password is empty', async () => {
+    render(<LoginModule />);
+
+    const usernameInput = screen.getByPlaceholderText('azmy.arya.rizaldi');
+    const loginButton = screen.getByRole('button', { name: /masuk/i });
+
+    fireEvent.change(usernameInput, { target: { value: 'testuser' } });
+    fireEvent.click(loginButton);
+
+    await waitFor(() => {
+      expect(mockPush).not.toHaveBeenCalled();
+    });
+  });
+
+  it('does not navigate if both username and password are empty', async () => {
+    render(<LoginModule />);
+
+    const loginButton = screen.getByRole('button', { name: /masuk/i });
+
+    fireEvent.click(loginButton);
+
+    await waitFor(() => {
+      expect(mockPush).not.toHaveBeenCalled();
+    });
+  });
+
+  it('does not toggle password visibility if toggle button is not clicked', () => {
+    render(<LoginModule />);
+
+    const passwordInput = screen.getByPlaceholderText('******');
+    expect(passwordInput).toHaveAttribute('type', 'password');
+  });
+
+  it('does not render invalid elements', () => {
+    render(<LoginModule />);
+
+    const invalidElement = screen.queryByText('Invalid Element');
+    expect(invalidElement).not.toBeInTheDocument();
   });
 });
