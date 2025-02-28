@@ -16,8 +16,11 @@ const customJestConfig = {
   testEnvironment: 'jest-environment-jsdom',
   collectCoverage: true, 
   coverageReporters: [ 'lcov', 'text', 'html', 'json'], 
-  collectCoverageFrom: ['src/**/*.{ts,tsx}', '!src/**/*.d.ts'], 
-  coveragePathIgnorePatterns: ['/node_modules/', '/.next/', '/coverage/'], 
+  collectCoverageFrom: [
+    'src/**/*.{ts,tsx}', // General coverage for all TypeScript/TSX files
+    '!src/**/*.d.ts', // Exclude type definitions
+    '!src/components/ui/**/*.{ts,tsx}', // Exclude shadcn components since its third party commponents
+  ],  coveragePathIgnorePatterns: ['/node_modules/', '/.next/', '/coverage/'], 
   reporters: [
     'default',
     ['jest-junit', { outputDirectory: './coverage', outputName: 'jest-test-results.xml' }]
