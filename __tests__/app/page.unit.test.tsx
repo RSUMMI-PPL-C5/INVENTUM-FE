@@ -76,6 +76,26 @@ describe('LoginModule', () => {
   });
 
   // Negative Cases
+  it('displays error messages if username is empty', async () => {
+    render(<LoginModule />);
+
+    const loginButton = screen.getByRole('button', { name: /masuk/i });
+    fireEvent.click(loginButton);
+
+    const usernameError = await screen.findByText('Username is required');
+    expect(usernameError).toBeInTheDocument();
+  });
+
+  it('displays error messages if password is empty', async () => {
+    render(<LoginModule />);
+
+    const loginButton = screen.getByRole('button', { name: /masuk/i });
+    fireEvent.click(loginButton);
+
+    const passwordError = await screen.findByText('Password is required');
+    expect(passwordError).toBeInTheDocument();
+  });
+
   it('does not navigate if username is empty', async () => {
     render(<LoginModule />);
 
@@ -102,31 +122,5 @@ describe('LoginModule', () => {
     await waitFor(() => {
       expect(mockPush).not.toHaveBeenCalled();
     });
-  });
-
-  it('does not navigate if both username and password are empty', async () => {
-    render(<LoginModule />);
-
-    const loginButton = screen.getByRole('button', { name: /masuk/i });
-
-    fireEvent.click(loginButton);
-
-    await waitFor(() => {
-      expect(mockPush).not.toHaveBeenCalled();
-    });
-  });
-
-  it('does not toggle password visibility if toggle button is not clicked', () => {
-    render(<LoginModule />);
-
-    const passwordInput = screen.getByPlaceholderText('******');
-    expect(passwordInput).toHaveAttribute('type', 'password');
-  });
-
-  it('does not render invalid elements', () => {
-    render(<LoginModule />);
-
-    const invalidElement = screen.queryByText('Invalid Element');
-    expect(invalidElement).not.toBeInTheDocument();
   });
 });
