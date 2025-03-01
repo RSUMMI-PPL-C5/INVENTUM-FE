@@ -62,31 +62,25 @@ const UserCreate = ({
     return newErrors;
   };
 
-  // Updated to reset the form instead of going back
+  const resetForm = () => {
+    setFormData({
+      username: "",
+      email: "",
+      department: "",
+      entryDate: "",
+    });
+    setErrors({});
+  };
+
   const handleCancel = () => {
-    // Check if form is empty to decide whether to reset directly or ask for confirmation
     const isFormEmpty = 
       formData.username === "" && 
       formData.email === "" && 
       formData.department === "" && 
       formData.entryDate === "";
     
-    if (isFormEmpty) {
-      // If form is already empty, do nothing
-      return;
-    } else {
-      // If form has data, ask for confirmation
-      if (window.confirm("Are you sure you want to cancel? All entered data will be lost.")) {
-        // Reset form to initial state
-        setFormData({
-          username: "",
-          email: "",
-          department: "",
-          entryDate: "",
-        });
-        // Clear any validation errors
-        setErrors({});
-      }
+    if (!isFormEmpty && window.confirm("Are you sure you want to cancel? All entered data will be lost.")) {
+      resetForm();
     }
   };
 
