@@ -19,7 +19,7 @@ interface FormErrors {
 
 // Make createUserApi an injectable prop with a default implementation
 const UserCreate = ({ 
-  createUserApi = async (data: FormData) => {
+  createUserApi = async (_data: FormData) => { // eslint-disable-line @typescript-eslint/no-unused-vars
     // Default implementation using setTimeout
     await new Promise(resolve => setTimeout(resolve, 1000));
     return true;
