@@ -1,5 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import React from 'react';
+import UserFilterModal from '@/components/general/userfiltermodal';
 
 describe('UserFilterModal', () => {
   const mockFilters = {
