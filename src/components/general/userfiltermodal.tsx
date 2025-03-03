@@ -38,19 +38,20 @@ const UserFilterModal: React.FC<ModalProps> = ({ isOpen, filters, onConfirm, onC
 
   const handleDateChange = (type: "createdOnStart" | "createdOnEnd" | "modifiedOnStart" | "modifiedOnEnd", date: Date | null) => {
     setLocalFilters((prev) => {
-      let updatedFilters = { ...prev };
+      const updatedFilters = { ...prev };
   
       if (date) {
         const adjustedDate = new Date(date);
         adjustedDate.setHours(12, 0, 0, 0);
         updatedFilters[type] = adjustedDate;
-      }
-  
-      if (type === "createdOnStart" && prev.createdOnEnd && date && date > prev.createdOnEnd) {
-        updatedFilters.createdOnEnd = date;
-      }
-      if (type === "modifiedOnStart" && prev.modifiedOnEnd && date && date > prev.modifiedOnEnd) {
-        updatedFilters.modifiedOnEnd = date;
+        if (type === "createdOnStart" && prev.createdOnEnd && date && date > prev.createdOnEnd) {
+          updatedFilters.createdOnEnd = date;
+        }
+        if (type === "modifiedOnStart" && prev.modifiedOnEnd && date && date > prev.modifiedOnEnd) {
+          updatedFilters.modifiedOnEnd = date;
+        }
+      } else {
+        updatedFilters[type] = null;
       }
   
       return updatedFilters;
