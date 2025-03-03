@@ -3,14 +3,14 @@
 import { useState, ChangeEvent, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
-interface FormData {
+interface FormData { // Define the form data structure
   username: string;
   email: string;
   department: string;
   entryDate: string;
 }
 
-interface FormErrors {
+interface FormErrors { // Define the form errors structure
   username?: string;
   email?: string;
   department?: string;
@@ -25,7 +25,7 @@ const UserCreate = ({
     return true;
   }
 }) => {
-  const router = useRouter();
+  const router = useRouter(); // Get the router object
   const [loading, setLoading] = useState<boolean>(false);
   const [formData, setFormData] = useState<FormData>({
     username: "",
@@ -40,7 +40,7 @@ const UserCreate = ({
     setFormData({ ...formData, [name]: value });
   };
 
-  const validateForm = (): FormErrors => {
+  const validateForm = (): FormErrors => { // Validate the form data
     const newErrors: FormErrors = {};
     
     if (!formData.username.trim()) newErrors.username = "Username is required";
