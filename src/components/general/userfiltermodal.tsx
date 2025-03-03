@@ -34,12 +34,27 @@ const UserFilterModal: React.FC<ModalProps> = ({ isOpen, filters, onConfirm, onC
           : [...currentValues, value],
       };
     });
-    console.log(localFilters);
   };
 
   const handleDateChange = (type: "createdOnStart" | "createdOnEnd" | "modifiedOnStart" | "modifiedOnEnd", date: Date | null) => {
-    setLocalFilters((prev) => ({ ...prev, [type]: date }));
-    console.log(localFilters);
+    setLocalFilters((prev) => {
+      let updatedFilters = { ...prev };
+  
+      if (date) {
+        const adjustedDate = new Date(date);
+        adjustedDate.setHours(12, 0, 0, 0);
+        updatedFilters[type] = adjustedDate;
+      }
+  
+      if (type === "createdOnStart" && prev.createdOnEnd && date && date > prev.createdOnEnd) {
+        updatedFilters.createdOnEnd = date;
+      }
+      if (type === "modifiedOnStart" && prev.modifiedOnEnd && date && date > prev.modifiedOnEnd) {
+        updatedFilters.modifiedOnEnd = date;
+      }
+  
+      return updatedFilters;
+    });
   };
 
   if (!isOpen) return null;
@@ -50,6 +65,7 @@ const UserFilterModal: React.FC<ModalProps> = ({ isOpen, filters, onConfirm, onC
         <div className="modal-header mb-4 rounded-lg">
           <h2 className="text-2xl font-semibold">Filter</h2>
         </div>
+
         <div className="modal-content grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="grid grid-cols-2 sm:block sm:border-r border-gray-300">
             {/* Role Filter */}
@@ -62,7 +78,7 @@ const UserFilterModal: React.FC<ModalProps> = ({ isOpen, filters, onConfirm, onC
                     className="mr-2"
                     checked={localFilters.role.includes(role)}
                     onChange={() => handleCheckboxChange("role", role)}
-                    />
+                  />
                   {role}
                 </label>
               ))}
@@ -78,7 +94,7 @@ const UserFilterModal: React.FC<ModalProps> = ({ isOpen, filters, onConfirm, onC
                     className="mr-2"
                     checked={localFilters.division.includes(div)}
                     onChange={() => handleCheckboxChange("division", div)}
-                    />
+                  />
                   {div}
                 </label>
               ))}
@@ -87,13 +103,14 @@ const UserFilterModal: React.FC<ModalProps> = ({ isOpen, filters, onConfirm, onC
 
           <div>
             {/* CreatedOn Date Pickers */}
-            <div className="mb-4">
+            <div className="mb-6 sm:mb-4">
               <h3 className="font-semibold mb-2">Tanggal dibuat</h3>
               <div className="grid grid-cols-1 gap-y-1">
                 <DatePicker
                   selected={localFilters.createdOnStart}
                   onChange={(date) => handleDateChange("createdOnStart", date)}
                   className="border p-2 w-full rounded"
+                  maxDate={new Date()}
                   dateFormat="yyyy-MM-dd"
                   isClearable
                   placeholderText="Tanggal Mulai"
@@ -102,21 +119,24 @@ const UserFilterModal: React.FC<ModalProps> = ({ isOpen, filters, onConfirm, onC
                   selected={localFilters.createdOnEnd}
                   onChange={(date) => handleDateChange("createdOnEnd", date)}
                   className="border p-2 w-full rounded"
+                  minDate={localFilters.createdOnStart || undefined}
+                  maxDate={new Date()}
                   dateFormat="yyyy-MM-dd"
                   isClearable
                   placeholderText="Tanggal Akhir"
                 />
               </div>
             </div>
-            
+
             {/* modifiedOn Date Pickers */}
-            <div className="mb-4">
+            <div className="mb-6 sm:mb-4">
               <h3 className="font-semibold mb-2">Terakhir diubah</h3>
               <div className="grid grid-cols-1 gap-y-1">
                 <DatePicker
                   selected={localFilters.modifiedOnStart}
                   onChange={(date) => handleDateChange("modifiedOnStart", date)}
                   className="border p-2 w-full rounded"
+                  maxDate={new Date()}
                   dateFormat="yyyy-MM-dd"
                   isClearable
                   placeholderText="Tanggal Mulai"
@@ -125,6 +145,8 @@ const UserFilterModal: React.FC<ModalProps> = ({ isOpen, filters, onConfirm, onC
                   selected={localFilters.modifiedOnEnd}
                   onChange={(date) => handleDateChange("modifiedOnEnd", date)}
                   className="border p-2 w-full rounded"
+                  minDate={localFilters.modifiedOnStart || undefined}
+                  maxDate={new Date()}
                   dateFormat="yyyy-MM-dd"
                   isClearable
                   placeholderText="Tanggal Akhir"
