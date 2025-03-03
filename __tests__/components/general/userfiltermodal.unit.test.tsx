@@ -102,6 +102,21 @@ describe("UserFilterModal", () => {
     expect(adminCheckbox).not.toBeChecked();
   });
 
+  it("should set date as null if date picker is cleared", () => {
+    renderModal()
+    const createdOnStart = screen.getAllByPlaceholderText("Tanggal Mulai")[0];
+    fireEvent.click(createdOnStart);
+    
+    const createdOnStartDate = screen.getAllByText(yesterday.getDate().toString())[0];
+    fireEvent.click(createdOnStartDate);
+
+    const clearButton = createdOnStart.parentElement?.querySelector('button[aria-label="Close"]');
+    expect(clearButton).toBeInTheDocument();
+
+    if (clearButton) fireEvent.click(clearButton);
+    expect(createdOnStart).toHaveValue("");
+  });
+
   it("allows selecting a date range", () => {
     renderModal()
     const createdOnStart = screen.getAllByPlaceholderText("Tanggal Mulai")[0];
