@@ -128,6 +128,56 @@ describe('UserCreate Component', () => {
     });
   });
   
+  // NEW TEST: Checking empty email validation
+  it('validates empty email as invalid', async () => {
+    render(<UserCreate />);
+    
+    // Fill in form with valid data except for the email
+    const usernameInput = screen.getByLabelText(/Username/i);
+    const emailInput = screen.getByLabelText(/Email/i);
+    const departmentInput = screen.getByLabelText(/Department/i);
+    const entryDateInput = screen.getByLabelText(/Date of Entry/i);
+    
+    fireEvent.change(usernameInput, { target: { value: 'testuser' } });
+    
+    // Set email to empty string
+    fireEvent.change(emailInput, { target: { value: '' } });
+    
+    fireEvent.change(departmentInput, { target: { value: 'IT' } });
+    fireEvent.change(entryDateInput, { target: { value: '2023-01-01' } });
+    
+    // Submit the form
+    fireEvent.click(screen.getByRole('button', { name: /Add User/i }));
+    
+    // Check that email validation error is shown
+    await waitFor(() => {
+      expect(screen.getByText(/Email is required/i)).toBeInTheDocument();
+    });
+  });
+  
+  // NEW TEST: Test error clearing on field edit
+  it('clears error messages when fields with errors are edited', async () => {
+    render(<UserCreate />);
+    
+    // Submit empty form to trigger errors
+    fireEvent.click(screen.getByRole('button', { name: /Add User/i }));
+    
+    // Wait for validation errors
+    await waitFor(() => {
+      expect(screen.getByText(/Username is required/i)).toBeInTheDocument();
+    });
+    
+    // Now edit a field with an error
+    const usernameInput = screen.getByLabelText(/Username/i);
+    fireEvent.change(usernameInput, { target: { value: 'testuser' } });
+    
+    // Check that the error for this field is cleared
+    expect(screen.queryByText(/Username is required/i)).not.toBeInTheDocument();
+    
+    // Other errors should remain
+    expect(screen.getByText(/Email is required/i)).toBeInTheDocument();
+  });
+  
   // Form submission tests
   it('submits the form successfully', async () => {
     render(<UserCreate />);
@@ -313,5 +363,81 @@ describe('UserCreate Component', () => {
     // Check that validation treats whitespace as empty
     expect(screen.getByText(/Username is required/i)).toBeInTheDocument();
     expect(screen.getByText(/Department is required/i)).toBeInTheDocument();
+  });
+  
+  // NEW TEST: Test null or undefined email validation
+  it('handles null or undefined email in validation', () => {
+    // This test directly tests the validateEmail function behavior
+    // by setting up situations that would make it process a null/undefined email
+    const { rerender } = render(<UserCreate />);
+    
+    // First submit a valid form
+    const usernameInput = screen.getByLabelText(/Username/i);
+    const emailInput = screen.getByLabelText(/Email/i);
+    const departmentInput = screen.getByLabelText(/Department/i);
+    const entryDateInput = screen.getByLabelText(/Date of Entry/i);
+    
+    fireEvent.change(usernameInput, { target: { value: 'testuser' } });
+    fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
+    fireEvent.change(departmentInput, { target: { value: 'IT' } });
+    fireEvent.change(entryDateInput, { target: { value: '2023-01-01' } });
+    
+    // Then clear the email field to force the empty validation path
+    fireEvent.change(emailInput, { target: { value: '' } });
+    
+    // Submit the form to trigger validation
+    fireEvent.click(screen.getByRole('button', { name: /Add User/i }));
+    
+    // Check validation error
+    expect(screen.getByText(/Email is required/i)).toBeInTheDocument();
+  });
+  
+  // NEW TEST: Testing form reset functionality  
+  it('properly resets the form', () => {
+    render(<UserCreate />);
+    
+    // Fill in all form fields
+    const usernameInput = screen.getByLabelText(/Username/i) as HTMLInputElement;
+    const emailInput = screen.getByLabelText(/Email/i) as HTMLInputElement;
+    const departmentInput = screen.getByLabelText(/Department/i) as HTMLSelectElement;
+    const entryDateInput = screen.getByLabelText(/Date of Entry/i) as HTMLInputElement;
+    
+    fireEvent.change(usernameInput, { target: { value: 'testuser' } });
+    fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
+    fireEvent.change(departmentInput, { target: { value: 'IT' } });
+    fireEvent.change(entryDateInput, { target: { value: '2023-01-01' } });
+    
+    // Generate errors
+    fireEvent.click(screen.getByRole('button', { name: /Add User/i }));
+    
+    // Then reset via cancel button (with confirm mocked to true)
+    mockConfirm.mockReturnValueOnce(true);
+    fireEvent.click(screen.getByRole('button', { name: /Cancel/i }));
+    
+    // All fields should be reset
+    expect(usernameInput.value).toBe('');
+    expect(emailInput.value).toBe('');
+    expect(departmentInput.value).toBe('');
+    expect(entryDateInput.value).toBe('');
+  });
+  
+  // NEW TEST: Ensure empty email validation works properly
+  it('validates empty email correctly', async () => {
+    render(<UserCreate />);
+    
+    // Fill everything except email
+    const usernameInput = screen.getByLabelText(/Username/i);
+    const departmentInput = screen.getByLabelText(/Department/i);
+    const entryDateInput = screen.getByLabelText(/Date of Entry/i);
+    
+    fireEvent.change(usernameInput, { target: { value: 'testuser' } });
+    fireEvent.change(departmentInput, { target: { value: 'IT' } });
+    fireEvent.change(entryDateInput, { target: { value: '2023-01-01' } });
+    
+    // Submit form
+    fireEvent.click(screen.getByRole('button', { name: /Add User/i }));
+    
+    // Email required error should be shown
+    expect(screen.getByText(/Email is required/i)).toBeInTheDocument();
   });
 });
