@@ -91,4 +91,19 @@ describe("UserEdit Component", () => {
 
     expect(screen.getByLabelText("Role")).toHaveValue("");
   });
+
+  test("does not submit the form when required fields are missing", async () => {
+    render(<UserEdit />);
+
+    // Clear required fields
+    fireEvent.change(screen.getByLabelText("Nama Lengkap"), { target: { value: '' } });
+    fireEvent.change(screen.getByLabelText("Password"), { target: { value: '' } });
+    fireEvent.change(screen.getByLabelText("No. WA"), { target: { value: '' } });
+
+    await act(async () => {
+      fireEvent.submit(screen.getByRole("button", { name: /simpan/i }));
+    });
+
+    expect(mockPush).not.toHaveBeenCalled();
+  });
 });
