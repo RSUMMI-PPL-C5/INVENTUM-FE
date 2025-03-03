@@ -3,7 +3,7 @@ name: Continuous Integration
 on:
   push:
     branches:
-      - main
+      - PBI-12-adduser 
 
 jobs:
   ci:
