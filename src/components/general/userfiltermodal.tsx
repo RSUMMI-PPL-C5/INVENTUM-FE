@@ -26,7 +26,7 @@ const UserFilterModal: React.FC<ModalProps> = ({ isOpen, filters, onConfirm, onC
 
   const handleCheckboxChange = (type: "role" | "division", value: string) => {
     setLocalFilters((prev) => {
-      const currentValues = prev[type] as string[];
+      const currentValues = prev[type];
       return {
         ...prev,
         [type]: currentValues.includes(value)
@@ -44,10 +44,10 @@ const UserFilterModal: React.FC<ModalProps> = ({ isOpen, filters, onConfirm, onC
         const adjustedDate = new Date(date);
         adjustedDate.setHours(12, 0, 0, 0);
         updatedFilters[type] = adjustedDate;
-        if (type === "createdOnStart" && prev.createdOnEnd && date && date > prev.createdOnEnd) {
+        if (type === "createdOnStart" && prev.createdOnEnd && date > prev.createdOnEnd) {
           updatedFilters.createdOnEnd = date;
         }
-        if (type === "modifiedOnStart" && prev.modifiedOnEnd && date && date > prev.modifiedOnEnd) {
+        if (type === "modifiedOnStart" && prev.modifiedOnEnd && date > prev.modifiedOnEnd) {
           updatedFilters.modifiedOnEnd = date;
         }
       } else {
