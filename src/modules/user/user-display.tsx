@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { FaEdit, FaTrash, FaFilter, FaTimes } from 'react-icons/fa';
 import { Button } from '@/components/ui/button';
-import Link from 'next/link';
 
 // Definisikan tipe user dengan ID
 type User = {
@@ -40,11 +39,6 @@ export default function UsersPage() {
   const [showModal, setShowModal] = useState(false);
   const router = useRouter();
 
-  // Fungsi untuk menangani klik pada baris tabel
-  const handleRowClick = (user: User) => {
-    setSelectedUser(user);
-    setShowModal(true);
-  };
 
   // Fungsi untuk menutup modal
   const closeModal = () => {
