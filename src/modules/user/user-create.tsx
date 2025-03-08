@@ -92,7 +92,7 @@ const UserCreate = ({
           // Try to parse as JSON
           const errorData = JSON.parse(errorText);
           throw new Error(errorData.message || 'Failed to create user');
-        } catch (e) {
+        } catch {
           // If parsing fails, use the raw text
           throw new Error(`Failed to create user: ${errorText}`);
         }
