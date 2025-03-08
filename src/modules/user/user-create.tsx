@@ -43,12 +43,68 @@ const DIVISIONS = [
   { value: "5", label: "Operations Division" }
 ];
 
-// Make createUserApi an injectable prop with a default implementation
+// Updated createUserApi implementation with better error handling
 const UserCreate = ({ 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  createUserApi = async (_: FormData) => { 
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    return true;
+  createUserApi = async (formData: FormData) => { 
+    try {
+      console.log('Sending request to backend:', {
+        url: 'http://localhost:8000/user/',
+        method: 'POST',
+        body: {
+          username: formData.username,
+          email: formData.email,
+          password: "password123",
+          role: formData.role,
+          fullname: formData.fullname,
+          nokar: formData.nokar,
+          divisiId: parseInt(formData.divisiId),
+          waNumber: formData.waNumber,
+          createdBy: formData.createdBy
+        }
+      });
+
+      const response = await fetch('http://localhost:8000/user/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Include cookies if your API uses sessions
+        body: JSON.stringify({
+          username: formData.username,
+          email: formData.email,
+          password: "password123", // Default password
+          role: formData.role,
+          fullname: formData.fullname,
+          nokar: formData.nokar,
+          divisiId: 1, // Default division ID
+          waNumber: formData.waNumber,
+          createdBy: formData.createdBy
+        }),
+      });
+      
+      console.log('Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Response error text:', errorText);
+        
+        try {
+          // Try to parse as JSON
+          const errorData = JSON.parse(errorText);
+          throw new Error(errorData.message || 'Failed to create user');
+        } catch (e) {
+          // If parsing fails, use the raw text
+          throw new Error(`Failed to create user: ${errorText}`);
+        }
+      }
+      
+      const data = await response.json();
+      console.log('Response data:', data);
+      return data;
+    } catch (error) {
+      console.error('Fetch error:', error);
+      throw error;
+    }
   }
 }) => {
   const router = useRouter();
