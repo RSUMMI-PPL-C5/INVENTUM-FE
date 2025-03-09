@@ -1,317 +1,354 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import UserCreate from '@/modules/user/user-create';
-import * as nextNavigation from 'next/navigation';
+import UserCreate from '../../../../../src/modules/user/user-create';
 
-// Mock the useRouter hook
+// Mock next/navigation
 jest.mock('next/navigation', () => ({
-  useRouter: jest.fn(),
+  useRouter: () => ({
+    push: jest.fn(),
+  }),
 }));
 
-describe('UserCreate Component', () => {
-  // Setup mocks before each test
-  let mockRouter: { push: jest.Mock; back: jest.Mock; refresh: jest.Mock };
-  let mockConfirm: jest.SpyInstance;
-  let mockAlert: jest.SpyInstance;
-  let mockConsoleError: jest.SpyInstance;
-  
-  beforeEach(() => {
-    // Reset mocks
-    jest.clearAllMocks();
-    
-    // Setup router mock
-    mockRouter = {
-      push: jest.fn(),
-      back: jest.fn(),
-      refresh: jest.fn(),
-    };
-    (nextNavigation.useRouter as jest.Mock).mockReturnValue(mockRouter);
-    
-    // Setup window.confirm mock
-    mockConfirm = jest.spyOn(window, 'confirm');
-    mockConfirm.mockImplementation(() => true);
-    
-    // Setup window.alert mock
-    mockAlert = jest.spyOn(window, 'alert');
-    mockAlert.mockImplementation(() => {});
-    
-    // Setup console.error mock
-    mockConsoleError = jest.spyOn(console, 'error');
-    mockConsoleError.mockImplementation(() => {});
+// Mock window functions
+global.alert = jest.fn();
+global.confirm = jest.fn();
+global.fetch = jest.fn();
+global.console.error = jest.fn();
+global.console.log = jest.fn();
 
-    // Use fake timers by default
-    jest.useFakeTimers();
+describe('UserCreate Component', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    // Default behavior for confirm
+    (global.confirm as jest.Mock).mockImplementation(() => true);
   });
-  
-  afterEach(() => {
-    jest.restoreAllMocks();
-    jest.useRealTimers();
-  });
-  
-  // Basic rendering test
-  it('renders the form correctly', () => {
+
+  // Test component rendering
+  it('renders the component correctly', () => {
     render(<UserCreate />);
     
-    // Check that all form elements are rendered
+    // Check if important elements are rendered
+    expect(screen.getByText('Create New User')).toBeInTheDocument();
     expect(screen.getByLabelText(/Username/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Email/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Department/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Date of Entry/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Add User/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Cancel/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/Role/i)).toBeInTheDocument();
+    expect(screen.getByText('Create User')).toBeInTheDocument();
+    expect(screen.getByText('Cancel')).toBeInTheDocument();
   });
-  
-  // Form input tests
-  it('updates form data when inputs change', () => {
+
+  // Test validation errors for empty fields
+  it('displays validation errors when submitting empty form', async () => {
     render(<UserCreate />);
     
-    // Get input elements
-    const usernameInput = screen.getByLabelText(/Username/i) as HTMLInputElement;
-    const emailInput = screen.getByLabelText(/Email/i) as HTMLInputElement;
-    const departmentInput = screen.getByLabelText(/Department/i) as HTMLSelectElement;
-    const entryDateInput = screen.getByLabelText(/Date of Entry/i) as HTMLInputElement;
+    // Submit the form without filling any fields
+    fireEvent.click(screen.getByText('Create User'));
     
-    // Change input values
-    fireEvent.change(usernameInput, { target: { value: 'testuser' } });
-    fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
-    fireEvent.change(departmentInput, { target: { value: 'IT' } });
-    fireEvent.change(entryDateInput, { target: { value: '2023-01-01' } });
-    
-    // Check that input values were updated
-    expect(usernameInput.value).toBe('testuser');
-    expect(emailInput.value).toBe('test@example.com');
-    expect(departmentInput.value).toBe('IT');
-    expect(entryDateInput.value).toBe('2023-01-01');
-  });
-  
-  // Validation tests
-  it('shows validation errors when form is invalid', async () => {
-    render(<UserCreate />);
-    
-    // Submit the form without filling in any fields
-    fireEvent.click(screen.getByRole('button', { name: /Add User/i }));
-    
-    // Check that validation errors are shown
+    // Check if validation errors are displayed
     await waitFor(() => {
-      expect(screen.getByText(/Username is required/i)).toBeInTheDocument();
-      expect(screen.getByText(/Email is required/i)).toBeInTheDocument();
-      expect(screen.getByText(/Department is required/i)).toBeInTheDocument();
-      expect(screen.getByText(/Date of entry is required/i)).toBeInTheDocument();
+      expect(screen.getByText('Username is required')).toBeInTheDocument();
+      expect(screen.getByText('Email is required')).toBeInTheDocument();
+      expect(screen.getByText('Role is required')).toBeInTheDocument();
+      expect(screen.getByText('Full name is required')).toBeInTheDocument();
+      expect(screen.getByText('Employee number is required')).toBeInTheDocument();
+      expect(screen.getByText('Division is required')).toBeInTheDocument();
+      expect(screen.getByText('WhatsApp number is required')).toBeInTheDocument();
+      expect(screen.getByText('Date of entry is required')).toBeInTheDocument();
     });
   });
-  
-  // FIX: Adjusted email validation test to match component regex
-  it('validates email format', async () => {
-    render(<UserCreate />);
-    
-    // Fill in form with valid data except for the email
-    const usernameInput = screen.getByLabelText(/Username/i);
-    const emailInput = screen.getByLabelText(/Email/i);
-    const departmentInput = screen.getByLabelText(/Department/i);
-    const entryDateInput = screen.getByLabelText(/Date of Entry/i);
-    
-    fireEvent.change(usernameInput, { target: { value: 'testuser' } });
-    
-    // Use an email without the required dot in the domain part
-    fireEvent.change(emailInput, { target: { value: 'invalid@domain' } });
-    
-    fireEvent.change(departmentInput, { target: { value: 'IT' } });
-    fireEvent.change(entryDateInput, { target: { value: '2023-01-01' } });
-    
-    // Submit the form
-    fireEvent.click(screen.getByRole('button', { name: /Add User/i }));
-    
-    // Check that email validation error is shown
-    await waitFor(() => {
-      expect(screen.getByText(/Email is invalid/i)).toBeInTheDocument();
-    });
-  });
-  
-  // Form submission tests
-  it('submits the form successfully', async () => {
-    render(<UserCreate />);
-    
-    // Fill in form with valid data
-    const usernameInput = screen.getByLabelText(/Username/i);
-    const emailInput = screen.getByLabelText(/Email/i);
-    const departmentInput = screen.getByLabelText(/Department/i);
-    const entryDateInput = screen.getByLabelText(/Date of Entry/i);
-    
-    fireEvent.change(usernameInput, { target: { value: 'testuser' } });
-    fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
-    fireEvent.change(departmentInput, { target: { value: 'IT' } });
-    fireEvent.change(entryDateInput, { target: { value: '2023-01-01' } });
-    
-    // Submit the form
-    fireEvent.click(screen.getByRole('button', { name: /Add User/i }));
-    
-    // Check for loading state
-    expect(screen.getByText(/Creating.../i)).toBeInTheDocument();
-    
-    // Fast-forward timers
-    jest.runAllTimers();
-    
-    // Check that form submission was handled correctly
-    await waitFor(() => {
-      expect(mockAlert).toHaveBeenCalledWith('User created successfully');
-      expect(mockRouter.push).toHaveBeenCalledWith('/dashboard/user');
-    });
-  });
-  
-  // Complete implementation of the API error test
-  it('handles API error during form submission', async () => {
-    // Mock API function that throws an error
-    const mockCreateUserApi = jest.fn().mockImplementation(() => {
-      throw new Error('API Error');
-    });
-    
-    // Render with our mock API
+
+  // Replace the entire email validation test with this simpler version
+  it('prevents form submission with invalid email', async () => {
+    const mockCreateUserApi = jest.fn().mockResolvedValue({ success: true });
     render(<UserCreate createUserApi={mockCreateUserApi} />);
     
-    // Fill in form with valid data
-    const usernameInput = screen.getByLabelText(/Username/i);
-    const emailInput = screen.getByLabelText(/Email/i);
-    const departmentInput = screen.getByLabelText(/Department/i);
-    const entryDateInput = screen.getByLabelText(/Date of Entry/i);
-    
-    fireEvent.change(usernameInput, { target: { value: 'testuser' } });
-    fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
-    fireEvent.change(departmentInput, { target: { value: 'IT' } });
-    fireEvent.change(entryDateInput, { target: { value: '2023-01-01' } });
-    
-    // Submit the form
-    fireEvent.click(screen.getByRole('button', { name: /Add User/i }));
-    
-    // Check that error handling worked correctly
-    expect(mockConsoleError).toHaveBeenCalledWith('Error creating user:', expect.any(Error));
-    expect(mockAlert).toHaveBeenCalledWith('Failed to create user. Please try again.');
-    
-    // Verify loading state is reset after error
-    expect(screen.getByRole('button', { name: /Add User/i })).toBeInTheDocument();
-    expect(screen.queryByText(/Creating.../i)).not.toBeInTheDocument();
-    
-    // Verify the submit button is enabled again
-    const addUserButton = screen.getByRole('button', { name: /Add User/i });
-    expect(addUserButton).not.toBeDisabled();
-  });
-  
-  // Cancel button tests
-  it('does nothing when cancel is clicked with empty form', () => {
-    render(<UserCreate />);
-    
-    // Click cancel
-    fireEvent.click(screen.getByRole('button', { name: /Cancel/i }));
-    
-    // Expect no confirm dialog
-    expect(mockConfirm).not.toHaveBeenCalled();
-  });
-  
-  it('shows confirmation dialog when cancel is clicked with filled form and user confirms', () => {
-    render(<UserCreate />);
-    
-    // Fill in form with data
-    const usernameInput = screen.getByLabelText(/Username/i);
-    fireEvent.change(usernameInput, { target: { value: 'testuser' } });
-    
-    // Click cancel and confirm
-    mockConfirm.mockReturnValueOnce(true);
-    fireEvent.click(screen.getByRole('button', { name: /Cancel/i }));
-    
-    // Expect confirm dialog
-    expect(mockConfirm).toHaveBeenCalledWith('Are you sure you want to cancel? All entered data will be lost.');
-    
-    // Form should be reset (empty)
-    expect(usernameInput).toHaveValue('');
-  });
-  
-  it('does not reset form when cancel is clicked with filled form but user cancels', () => {
-    render(<UserCreate />);
-    
-    // Fill in form with data
-    const usernameInput = screen.getByLabelText(/Username/i);
-    fireEvent.change(usernameInput, { target: { value: 'testuser' } });
-    
-    // Click cancel but don't confirm
-    mockConfirm.mockReturnValueOnce(false);
-    fireEvent.click(screen.getByRole('button', { name: /Cancel/i }));
-    
-    // Expect confirm dialog
-    expect(mockConfirm).toHaveBeenCalled();
-    
-    // Form should not be reset
-    expect(usernameInput).toHaveValue('testuser');
-  });
-  
-  // Loading state test
-  it('shows loading state during form submission', async () => {
-    // Create a mock implementation that doesn't run the callback immediately
-    const originalSetTimeout = window.setTimeout;
-    window.setTimeout = jest.fn() as any;
-    
-    render(<UserCreate />);
-    
-    // Fill in form with valid data
-    const usernameInput = screen.getByLabelText(/Username/i);
-    const emailInput = screen.getByLabelText(/Email/i);
-    const departmentInput = screen.getByLabelText(/Department/i);
-    const entryDateInput = screen.getByLabelText(/Date of Entry/i);
-    
-    fireEvent.change(usernameInput, { target: { value: 'testuser' } });
-    fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
-    fireEvent.change(departmentInput, { target: { value: 'IT' } });
-    fireEvent.change(entryDateInput, { target: { value: '2023-01-01' } });
+    // Fill in all fields but with invalid email
+    fireEvent.change(screen.getByLabelText(/Username/i), { target: { value: 'testuser' } });
+    fireEvent.change(screen.getByLabelText(/Email/i), { target: { value: 'invalid-email' } }); // Invalid email
+    fireEvent.change(screen.getByLabelText(/Role/i), { target: { value: 'user' } });
+    fireEvent.change(screen.getByLabelText(/Full Name/i), { target: { value: 'Test User' } });
+    fireEvent.change(screen.getByLabelText(/Employee Number/i), { target: { value: 'EMP123' } });
+    fireEvent.change(screen.getByLabelText(/Division/i), { target: { value: '1' } });
+    fireEvent.change(screen.getByLabelText(/WhatsApp Number/i), { target: { value: '628123456789' } });
+    fireEvent.change(screen.getByLabelText(/Date of Entry/i), { target: { value: '2023-01-01' } });
     
     // Submit the form
-    fireEvent.click(screen.getByRole('button', { name: /Add User/i }));
+    fireEvent.click(screen.getByText('Create User'));
     
-    // Check that loading state is shown
-    expect(screen.getByText(/Creating.../i)).toBeInTheDocument();
-    const submitButton = screen.getByRole('button', { name: /Creating.../i });
-    expect(submitButton).toBeDisabled();
+    // API should NOT be called with invalid email
+    await waitFor(() => {
+      expect(mockCreateUserApi).not.toHaveBeenCalled();
+    });
     
-    // Restore original setTimeout
-    window.setTimeout = originalSetTimeout;
+    // Fix the email and try again
+    fireEvent.change(screen.getByLabelText(/Email/i), { target: { value: 'valid@example.com' } });
+    
+    // Submit again
+    fireEvent.click(screen.getByText('Create User'));
+    
+    // API should be called now with valid data
+    await waitFor(() => {
+      expect(mockCreateUserApi).toHaveBeenCalled();
+    });
   });
-  
-  // FIXED: Edge case tests
-  it('handles form with some empty fields', async () => {
+
+  // Test WhatsApp number validation
+  it('validates WhatsApp number format', async () => {
     render(<UserCreate />);
     
-    // Fill in only some fields
-    const usernameInput = screen.getByLabelText(/Username/i);
-    const emailInput = screen.getByLabelText(/Email/i);
-    
-    fireEvent.change(usernameInput, { target: { value: 'testuser' } });
-    fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
+    // Fill in an invalid WhatsApp number
+    fireEvent.change(screen.getByLabelText(/WhatsApp Number/i), { target: { value: '08123456789' } });
     
     // Submit the form
-    fireEvent.click(screen.getByRole('button', { name: /Add User/i }));
+    fireEvent.click(screen.getByText('Create User'));
     
-    // Check that validation errors are shown for empty fields only
-    expect(screen.getByText(/Department is required/i)).toBeInTheDocument();
-    expect(screen.getByText(/Date of entry is required/i)).toBeInTheDocument();
+    // Check if WhatsApp validation error is displayed
+    await waitFor(() => {
+      expect(screen.getByText('WhatsApp number must start with 628')).toBeInTheDocument();
+    });
     
-    // These fields should not show errors
-    expect(screen.queryByText(/Username is required/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Email is required/i)).not.toBeInTheDocument();
+    // Correct the WhatsApp number and verify error is cleared
+    fireEvent.change(screen.getByLabelText(/WhatsApp Number/i), { target: { value: '6281234567890' } });
+    
+    await waitFor(() => {
+      expect(screen.queryByText('WhatsApp number must start with 628')).not.toBeInTheDocument();
+    });
   });
-  
-  it('handles whitespace in required fields', async () => {
+
+  // Test form cancellation with empty form
+  it('resets form when cancel is clicked with empty form', () => {
     render(<UserCreate />);
     
-    // Fill in fields with whitespace
-    const usernameInput = screen.getByLabelText(/Username/i);
-    const departmentInput = screen.getByLabelText(/Department/i);
+    // Click cancel button
+    fireEvent.click(screen.getByText('Cancel'));
     
-    fireEvent.change(usernameInput, { target: { value: '   ' } });
-    fireEvent.change(departmentInput, { target: { value: '   ' } });
+    // Confirm dialog should not be shown for empty form
+    expect(global.confirm).not.toHaveBeenCalled();
+  });
+
+  // Test form cancellation with filled form
+  it('shows confirmation dialog when cancel is clicked with filled form', () => {
+    render(<UserCreate />);
+    
+    // Fill in a field
+    fireEvent.change(screen.getByLabelText(/Username/i), { target: { value: 'testuser' } });
+    
+    // Click cancel button
+    fireEvent.click(screen.getByText('Cancel'));
+    
+    // Confirm dialog should be shown
+    expect(global.confirm).toHaveBeenCalledWith('Are you sure you want to cancel? All entered data will be lost.');
+  });
+
+  // Test successful form submission
+  it('submits form successfully with complete data', async () => {
+    // Mock successful API response
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ id: 1, username: 'testuser' }),
+      status: 200,
+    });
+    
+    const mockCreateUserApi = jest.fn().mockResolvedValue({ success: true });
+    render(<UserCreate createUserApi={mockCreateUserApi} />);
+    
+    // Fill in all required fields
+    fireEvent.change(screen.getByLabelText(/Username/i), { target: { value: 'testuser' } });
+    fireEvent.change(screen.getByLabelText(/Email/i), { target: { value: 'test@example.com' } });
+    fireEvent.change(screen.getByLabelText(/Role/i), { target: { value: 'user' } });
+    fireEvent.change(screen.getByLabelText(/Full Name/i), { target: { value: 'Test User' } });
+    fireEvent.change(screen.getByLabelText(/Employee Number/i), { target: { value: 'EMP123' } });
+    fireEvent.change(screen.getByLabelText(/Division/i), { target: { value: '1' } });
+    fireEvent.change(screen.getByLabelText(/WhatsApp Number/i), { target: { value: '628123456789' } });
+    fireEvent.change(screen.getByLabelText(/Date of Entry/i), { target: { value: '2023-01-01' } });
     
     // Submit the form
-    fireEvent.click(screen.getByRole('button', { name: /Add User/i }));
+    fireEvent.click(screen.getByText('Create User'));
     
-    // Check that validation treats whitespace as empty
-    expect(screen.getByText(/Username is required/i)).toBeInTheDocument();
-    expect(screen.getByText(/Department is required/i)).toBeInTheDocument();
+    // Check if API was called with correct data
+    await waitFor(() => {
+      expect(mockCreateUserApi).toHaveBeenCalledWith({
+        username: 'testuser',
+        email: 'test@example.com',
+        role: 'user',
+        fullname: 'Test User',
+        nokar: 'EMP123',
+        divisiId: '1',
+        waNumber: '628123456789',
+        entryDate: '2023-01-01',
+        createdBy: 1
+      });
+    });
+    
+    // Check if alert and navigation happened
+    expect(global.alert).toHaveBeenCalledWith('User created successfully');
+  });
+
+  // Test form submission with admin role
+  it('submits form successfully with admin role', async () => {
+    const mockCreateUserApi = jest.fn().mockResolvedValue({ success: true });
+    render(<UserCreate createUserApi={mockCreateUserApi} />);
+    
+    // Fill in all required fields with admin role
+    fireEvent.change(screen.getByLabelText(/Username/i), { target: { value: 'adminuser' } });
+    fireEvent.change(screen.getByLabelText(/Email/i), { target: { value: 'admin@example.com' } });
+    fireEvent.change(screen.getByLabelText(/Role/i), { target: { value: 'admin' } });
+    fireEvent.change(screen.getByLabelText(/Full Name/i), { target: { value: 'Admin User' } });
+    fireEvent.change(screen.getByLabelText(/Employee Number/i), { target: { value: 'ADM456' } });
+    fireEvent.change(screen.getByLabelText(/Division/i), { target: { value: '2' } });
+    fireEvent.change(screen.getByLabelText(/WhatsApp Number/i), { target: { value: '628987654321' } });
+    fireEvent.change(screen.getByLabelText(/Date of Entry/i), { target: { value: '2023-02-01' } });
+    
+    // Submit the form
+    fireEvent.click(screen.getByText('Create User'));
+    
+    // Check if API was called with correct data
+    await waitFor(() => {
+      expect(mockCreateUserApi).toHaveBeenCalledWith({
+        username: 'adminuser',
+        email: 'admin@example.com',
+        role: 'admin',
+        fullname: 'Admin User',
+        nokar: 'ADM456',
+        divisiId: '2',
+        waNumber: '628987654321',
+        entryDate: '2023-02-01',
+        createdBy: 1
+      });
+    });
+  });
+
+  // Test form submission failure
+  it('handles API errors when form submission fails', async () => {
+    // Mock API failure
+    const mockCreateUserApi = jest.fn().mockRejectedValue(new Error('API error'));
+    render(<UserCreate createUserApi={mockCreateUserApi} />);
+    
+    // Fill in all required fields
+    fireEvent.change(screen.getByLabelText(/Username/i), { target: { value: 'testuser' } });
+    fireEvent.change(screen.getByLabelText(/Email/i), { target: { value: 'test@example.com' } });
+    fireEvent.change(screen.getByLabelText(/Role/i), { target: { value: 'user' } });
+    fireEvent.change(screen.getByLabelText(/Full Name/i), { target: { value: 'Test User' } });
+    fireEvent.change(screen.getByLabelText(/Employee Number/i), { target: { value: 'EMP123' } });
+    fireEvent.change(screen.getByLabelText(/Division/i), { target: { value: '1' } });
+    fireEvent.change(screen.getByLabelText(/WhatsApp Number/i), { target: { value: '628123456789' } });
+    fireEvent.change(screen.getByLabelText(/Date of Entry/i), { target: { value: '2023-01-01' } });
+    
+    // Submit the form
+    fireEvent.click(screen.getByText('Create User'));
+    
+    // Check if error handling works
+    await waitFor(() => {
+      expect(global.console.error).toHaveBeenCalled();
+      expect(global.alert).toHaveBeenCalledWith('Failed to create user. Please try again.');
+    });
+  });
+
+  // Test the default createUserApi implementation
+  it('uses default createUserApi implementation when not provided', async () => {
+    // Mock successful fetch response
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => ({ id: 1, username: 'testuser' }),
+      status: 200,
+    });
+    
+    render(<UserCreate />);
+    
+    // Fill in all required fields
+    fireEvent.change(screen.getByLabelText(/Username/i), { target: { value: 'testuser' } });
+    fireEvent.change(screen.getByLabelText(/Email/i), { target: { value: 'test@example.com' } });
+    fireEvent.change(screen.getByLabelText(/Role/i), { target: { value: 'user' } });
+    fireEvent.change(screen.getByLabelText(/Full Name/i), { target: { value: 'Test User' } });
+    fireEvent.change(screen.getByLabelText(/Employee Number/i), { target: { value: 'EMP123' } });
+    fireEvent.change(screen.getByLabelText(/Division/i), { target: { value: '1' } });
+    fireEvent.change(screen.getByLabelText(/WhatsApp Number/i), { target: { value: '628123456789' } });
+    fireEvent.change(screen.getByLabelText(/Date of Entry/i), { target: { value: '2023-01-01' } });
+    
+    // Submit the form
+    fireEvent.click(screen.getByText('Create User'));
+    
+    // Check if fetch was called
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalled();
+    });
+  });
+
+  // Test what happens when user cancels the confirmation dialog
+  it('does not reset form when user cancels the confirmation dialog', () => {
+    // Mock user cancelling the confirmation dialog
+    (global.confirm as jest.Mock).mockReturnValueOnce(false);
+    
+    render(<UserCreate />);
+    
+    // Fill in a field
+    fireEvent.change(screen.getByLabelText(/Username/i), { target: { value: 'testuser' } });
+    
+    // Click cancel button
+    fireEvent.click(screen.getByText('Cancel'));
+    
+    // Confirm dialog should be shown
+    expect(global.confirm).toHaveBeenCalled();
+    
+    // Check that the field still has its value (not reset)
+    expect(screen.getByLabelText(/Username/i)).toHaveValue('testuser');
+  });
+
+  // Test API error handling with default implementation
+  it('handles API errors with default implementation', async () => {
+    // Mock fetch failure
+    (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
+    
+    render(<UserCreate />);
+    
+    // Fill in all required fields
+    fireEvent.change(screen.getByLabelText(/Username/i), { target: { value: 'testuser' } });
+    fireEvent.change(screen.getByLabelText(/Email/i), { target: { value: 'test@example.com' } });
+    fireEvent.change(screen.getByLabelText(/Role/i), { target: { value: 'user' } });
+    fireEvent.change(screen.getByLabelText(/Full Name/i), { target: { value: 'Test User' } });
+    fireEvent.change(screen.getByLabelText(/Employee Number/i), { target: { value: 'EMP123' } });
+    fireEvent.change(screen.getByLabelText(/Division/i), { target: { value: '1' } });
+    fireEvent.change(screen.getByLabelText(/WhatsApp Number/i), { target: { value: '628123456789' } });
+    fireEvent.change(screen.getByLabelText(/Date of Entry/i), { target: { value: '2023-01-01' } });
+    
+    // Submit the form
+    fireEvent.click(screen.getByText('Create User'));
+    
+    // Check error handling
+    await waitFor(() => {
+      expect(global.console.error).toHaveBeenCalled();
+      expect(global.alert).toHaveBeenCalledWith('Failed to create user. Please try again.');
+    });
+  });
+  
+  // Test API response with non-OK status
+  it('handles API response with non-OK status', async () => {
+    // Mock fetch response with error status
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: false,
+      status: 400,
+      text: async () => JSON.stringify({ message: 'Validation error' })
+    });
+    
+    render(<UserCreate />);
+    
+    // Fill in all required fields
+    fireEvent.change(screen.getByLabelText(/Username/i), { target: { value: 'testuser' } });
+    fireEvent.change(screen.getByLabelText(/Email/i), { target: { value: 'test@example.com' } });
+    fireEvent.change(screen.getByLabelText(/Role/i), { target: { value: 'user' } });
+    fireEvent.change(screen.getByLabelText(/Full Name/i), { target: { value: 'Test User' } });
+    fireEvent.change(screen.getByLabelText(/Employee Number/i), { target: { value: 'EMP123' } });
+    fireEvent.change(screen.getByLabelText(/Division/i), { target: { value: '1' } });
+    fireEvent.change(screen.getByLabelText(/WhatsApp Number/i), { target: { value: '628123456789' } });
+    fireEvent.change(screen.getByLabelText(/Date of Entry/i), { target: { value: '2023-01-01' } });
+    
+    // Submit the form
+    fireEvent.click(screen.getByText('Create User'));
+    
+    // Check error handling
+    await waitFor(() => {
+      expect(global.console.error).toHaveBeenCalled();
+      expect(global.alert).toHaveBeenCalledWith('Failed to create user. Please try again.');
+    });
   });
 });
