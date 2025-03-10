@@ -1,7 +1,6 @@
 "use client";
 
-import { Fragment } from "react";
-import { JSX, useState } from "react";
+import { JSX, Fragment, useState } from "react";
 import {
 	TwoUsers,
 	Heart2,
@@ -69,13 +68,17 @@ export default function SideBar() {
 
 	return (
 		<div
-			data-testid="sidebar"
-			className={`h-full flex flex-col justify-between pl-4 pr-3 py-2 transition-all duration-200 ${
-				isHovered ? "w-72" : "w-[5.25rem]"
-			}`}
-			onMouseEnter={() => setIsHovered(true)}
-			onMouseLeave={() => setIsHovered(false)}
-		>
+            data-testid="sidebar"
+            role="navigation"
+            tabIndex={0}
+            className={`h-full flex flex-col justify-between pl-4 pr-3 py-2 transition-all duration-200 ${
+                isHovered ? "w-72" : "w-[5.25rem]"
+            }`}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+            onFocus={() => setIsHovered(true)}
+            onBlur={() => setIsHovered(false)}
+        >
 			<div className="flex flex-col gap-6">
 				<span className="text-header-h6 font-poppins text-primary-solid pl-2">
 					{isHovered ? "INVENTUM" : "IN"}

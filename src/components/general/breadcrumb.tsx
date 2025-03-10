@@ -41,7 +41,7 @@ const Breadcrumb = () => {
                 </ol>
                 <Notification set="curved" stroke="bold" primaryColor="black" size='large' filled />
             </div>
-            <hr role='separator' className="w-full min-w-[3.5rem] border-1 border-[#C2C2C2]" />
+            <hr className="w-full min-w-[3.5rem] border-1 border-[#C2C2C2]" />
 		</nav>
 	);
 };
