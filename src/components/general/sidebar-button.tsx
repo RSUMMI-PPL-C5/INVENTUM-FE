@@ -1,5 +1,4 @@
 import React from "react";
-import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 interface SideBarButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {

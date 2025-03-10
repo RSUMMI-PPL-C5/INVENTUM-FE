@@ -88,7 +88,7 @@ export default function SideBar() {
 								isHovered={isHovered}
                                 isActive={pathname === item.route}
 								onClick={() => {
-									pathname !== item.route && router.push(item.route);
+									if (pathname !== item.route) router.push(item.route);
 								}}
 							>
 								{item.label}

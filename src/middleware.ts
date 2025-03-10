@@ -24,7 +24,7 @@ export async function middleware(request: NextRequest) {
     }
 
     return NextResponse.next()
-  } catch (error) {
+  } catch (_) {
     return NextResponse.redirect(new URL('/?error=server_error', request.url))
   }
 }
