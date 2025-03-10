@@ -44,15 +44,16 @@ export default function UserDetails() {
         
         const userData = await response.json();
         
-        // Transform untuk memudahkan akses data divisi
+        // Periksa apakah divisi ada sebelum mengakses propertinya
+        // dan gunakan optional chaining untuk menghindari error
         const user: User = {
           ...userData,
-          divisiName: userData.divisi?.name || 'Tidak ada divisi'
+          divisiName: userData?.divisi?.name || 'Tidak ada divisi'
         };
         
         setUser(user);
       } catch (err) {
-        console.error('Error fetching user:', err);
+        // Hapus console.error dan hanya set state error
         setError(err instanceof Error ? err.message : 'Terjadi kesalahan');
       } finally {
         setLoading(false);
@@ -85,9 +86,8 @@ export default function UserDetails() {
       }
 
       router.push('/dashboard/user');
-    } catch (err) {
+    } catch {
       alert('Gagal menghapus pengguna');
-      console.error(err);
     }
   };
 

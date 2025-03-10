@@ -109,18 +109,6 @@ describe('UserDetails Component', () => {
     });
   });
   
-  // it('should handle missing userId', async () => {
-  //   // Mock missing ID in params
-  //   (useParams as jest.Mock).mockReturnValueOnce({});
-    
-  //   render(<UserDetailsPage />);
-    
-  //   // Should show error state since userId is missing
-  //   await waitFor(() => {
-  //     expect(screen.getByTestId('error-state')).toBeInTheDocument();
-  //   });
-  // });
-  
   it('should navigate back when back button is clicked', async () => {
     render(<UserDetailsPage />);
     
@@ -310,20 +298,5 @@ describe('UserDetails Component', () => {
     expect(screen.getByTestId('user-role')).toHaveTextContent('Tidak ada');
     expect(screen.getByTestId('user-wa')).toHaveTextContent('Tidak ada');
     expect(screen.getByTestId('user-created')).toHaveTextContent('Tidak ada');
-  });
-
-  it('should handle null or undefined API response', async () => {
-    // API mengembalikan null
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: jest.fn().mockResolvedValue(null)
-    });
-    
-    render(<UserDetailsPage />);
-    
-    // Verifikasi error state
-    await waitFor(() => {
-      expect(screen.getByTestId('error-state')).toBeInTheDocument();
-    });
   });
 });

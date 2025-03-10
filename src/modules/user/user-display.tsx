@@ -77,8 +77,8 @@ export default function UsersPage() {
     if (!dateString) return '-';
     try {
       return format(new Date(dateString), 'dd MMM yyyy');
-    } catch (error) {
-      console.error('Error formatting date:', error);
+    } catch (_error) {
+      console.error('Error formatting date:', _error);
       return dateString;
     }
   };
