@@ -2,65 +2,58 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { FaEdit, FaArrowLeft, FaPhone, FaEnvelope, FaMapMarkerAlt, FaCalendarAlt } from 'react-icons/fa';
+import { FaEdit, FaArrowLeft, FaTrash } from 'react-icons/fa';
 import { Button } from '@/components/ui/button';
 
-// Definisikan tipe user dengan ID
+// Tipe User berdasarkan schema Prisma
 type User = {
-  id: number;
+  id: string;
   email: string;
-  name: string;
-  department: string;
-  date: string;
-  phone?: string;
-  address?: string;
-  position?: string;
-  projects?: string[];
-}
-
-// Data dummy (nantinya akan diganti dengan data dari API)
-const usersData: User[] = [
-  { id: 1, email: 'azmy@gmail.com', name: 'Azmy Arya Rizaldi', department: 'Executive Director', date: '12 Feb 2025', 
-    phone: '+62 812 3456 7890', address: 'Jl. Diponegoro No. 123, Jakarta', position: 'Senior Manager', 
-    projects: ['Project Alpha', 'Project Beta'] },
-  { id: 2, email: 'john@gmail.com', name: 'John Doe', department: 'Marketing', date: '15 Mar 2025',
-    phone: '+62 812 3456 7891', address: 'Jl. Sudirman No. 456, Jakarta', position: 'Team Lead',
-    projects: ['Project Gamma'] },
-  { id: 3, email: 'jane@gmail.com', name: 'Jane Smith', department: 'Engineering', date: '20 Apr 2025',
-    phone: '+62 812 3456 7892', address: 'Jl. Thamrin No. 789, Jakarta', position: 'Developer',
-    projects: ['Project Delta', 'Project Epsilon', 'Project Zeta'] },
-  { id: 4, email: 'mike@gmail.com', name: 'Mike Johnson', department: 'Design', date: '05 May 2025',
-    phone: '+62 812 3456 7893', address: 'Jl. Gatot Subroto No. 101, Jakarta', position: 'UI/UX Designer',
-    projects: ['Project Eta'] },
-];
+  username: string;
+  role: string | null;
+  fullname: string | null;
+  nokar: string;
+  divisiId: number | null;
+  divisiName?: string;
+  waNumber: string | null;
+  createdOn: string | null;
+  modifiedOn: string;
+};
 
 export default function UserDetails() {
   const router = useRouter();
   const params = useParams();
-  const userId = parseInt(params.id as string);
+  const userId = params.id as string;
   
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Simulasi fetching data dari API
-    const fetchUser = () => {
+    const fetchUser = async () => {
+      if (!userId) return;
+      
       setLoading(true);
       
       try {
-        // Cari user berdasarkan ID dari data dummy
-        // Nanti bisa diganti dengan fetch API
-        const foundUser = usersData.find(u => u.id === userId);
+        const response = await fetch(`http://localhost:8000/user/${userId}`);
         
-        if (foundUser) {
-          setUser(foundUser);
-        } else {
-          setError('User tidak ditemukan');
+        if (!response.ok) {
+          throw new Error('User tidak ditemukan');
         }
+        
+        const userData = await response.json();
+        
+        // Transform untuk memudahkan akses data divisi
+        const user: User = {
+          ...userData,
+          divisiName: userData.divisi?.name || 'Tidak ada divisi'
+        };
+        
+        setUser(user);
       } catch (err) {
-        setError('Terjadi kesalahan saat mengambil data user');
-        console.error(err);
+        console.error('Error fetching user:', err);
+        setError(err instanceof Error ? err.message : 'Terjadi kesalahan');
       } finally {
         setLoading(false);
       }
@@ -70,119 +63,115 @@ export default function UserDetails() {
   }, [userId]);
 
   const handleGoBack = () => {
-    router.back();
+    router.push('/dashboard/user');
   };
 
+  const handleEdit = () => {
+    router.push(`/dashboard/user/edit/${userId}`);
+  };
+
+  const handleDelete = async () => {
+    if (!confirm('Apakah Anda yakin ingin menghapus pengguna ini?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:8000/user/${userId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Gagal menghapus pengguna');
+      }
+
+      router.push('/dashboard/user');
+    } catch (err) {
+      alert('Gagal menghapus pengguna');
+      console.error(err);
+    }
+  };
+
+  // Loading state
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
+    return <div className="p-6 text-center" data-testid="loading-state">Loading user details...</div>;
   }
 
+  // Error state
   if (error || !user) {
     return (
-      <div className="p-6">
+      <div className="p-6" data-testid="error-state">
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
           <p>{error || 'User tidak ditemukan'}</p>
-          <Button onClick={handleGoBack} className="mt-4">
-            <FaArrowLeft className="mr-2" /> Kembali
-          </Button>
         </div>
+        <Button onClick={handleGoBack} className="mt-4" data-testid="back-button">
+          <FaArrowLeft className="mr-2" /> Kembali
+        </Button>
       </div>
     );
   }
 
+  // Success state with user details
   return (
-    <div className="p-6">
+    <div className="p-6" data-testid="user-detail">
       {/* Back button */}
-      <Button variant="outline" onClick={handleGoBack} className="mb-6">
+      <Button variant="outline" onClick={handleGoBack} className="mb-6" data-testid="back-button">
         <FaArrowLeft className="mr-2" /> Kembali
       </Button>
       
-      {/* User profile header */}
-      <div className="bg-blue-900 text-white p-8 rounded-t-lg">
-        <div className="flex flex-col md:flex-row items-center gap-8">
-          <div className="w-40 h-40 bg-gray-300 rounded-full"></div>
+      {/* Simple layout with basic user info */}
+      <div className="bg-white shadow-md rounded-lg p-6">
+        <h1 className="text-2xl font-bold mb-6" data-testid="user-name">{user.fullname || user.username}</h1>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <h1 className="text-3xl font-bold">{user.name}</h1>
-            <p className="text-xl text-blue-200 mt-1">{user.position || 'N/A'}</p>
-            <p className="text-blue-200 mt-1">{user.department}</p>
-            <Button className="mt-4">
-              <FaEdit className="mr-2" /> Edit Profile
-            </Button>
-          </div>
-        </div>
-      </div>
-      
-      {/* User details */}
-      <div className="bg-white shadow-md rounded-b-lg p-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="space-y-6">
-            <h2 className="text-xl font-semibold border-b pb-2">Informasi Kontak</h2>
-            
-            <div className="flex items-center">
-              <FaEnvelope className="text-gray-500 mr-3" />
-              <div>
-                <h3 className="text-sm text-gray-500 font-medium">Email</h3>
-                <p>{user.email}</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center">
-              <FaPhone className="text-gray-500 mr-3" />
-              <div>
-                <h3 className="text-sm text-gray-500 font-medium">Telepon</h3>
-                <p>{user.phone || 'Tidak tersedia'}</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center">
-              <FaMapMarkerAlt className="text-gray-500 mr-3" />
-              <div>
-                <h3 className="text-sm text-gray-500 font-medium">Alamat</h3>
-                <p>{user.address || 'Tidak tersedia'}</p>
-              </div>
-            </div>
+            <h2 className="text-sm font-medium text-gray-500">Email</h2>
+            <p data-testid="user-email">{user.email}</p>
           </div>
           
-          <div className="space-y-6">
-            <h2 className="text-xl font-semibold border-b pb-2">Informasi Pekerjaan</h2>
-            
-            <div>
-              <h3 className="text-sm text-gray-500 font-medium">Departemen</h3>
-              <p>{user.department}</p>
-            </div>
-            
-            <div>
-              <h3 className="text-sm text-gray-500 font-medium">Posisi</h3>
-              <p>{user.position || 'Tidak tersedia'}</p>
-            </div>
-            
-            <div className="flex items-center">
-              <FaCalendarAlt className="text-gray-500 mr-3" />
-              <div>
-                <h3 className="text-sm text-gray-500 font-medium">Tanggal Masuk</h3>
-                <p>{user.date}</p>
-              </div>
-            </div>
+          <div>
+            <h2 className="text-sm font-medium text-gray-500">Username</h2>
+            <p data-testid="user-username">{user.username}</p>
+          </div>
+          
+          <div>
+            <h2 className="text-sm font-medium text-gray-500">Role</h2>
+            <p data-testid="user-role">{user.role || 'Tidak ada'}</p>
+          </div>
+          
+          <div>
+            <h2 className="text-sm font-medium text-gray-500">No. Kartu</h2>
+            <p data-testid="user-nokar">{user.nokar}</p>
+          </div>
+          
+          <div>
+            <h2 className="text-sm font-medium text-gray-500">Divisi</h2>
+            <p data-testid="user-divisi">{user.divisiName}</p>
+          </div>
+          
+          <div>
+            <h2 className="text-sm font-medium text-gray-500">WhatsApp</h2>
+            <p data-testid="user-wa">{user.waNumber || 'Tidak ada'}</p>
+          </div>
+          
+          <div>
+            <h2 className="text-sm font-medium text-gray-500">Dibuat Pada</h2>
+            <p data-testid="user-created">{user.createdOn || 'Tidak ada'}</p>
+          </div>
+          
+          <div>
+            <h2 className="text-sm font-medium text-gray-500">Dimodifikasi Pada</h2>
+            <p data-testid="user-modified">{user.modifiedOn}</p>
           </div>
         </div>
         
-        {/* Projects section */}
-        {user.projects && user.projects.length > 0 && (
-          <div className="mt-8">
-            <h2 className="text-xl font-semibold border-b pb-2 mb-4">Proyek</h2>
-            <div className="flex flex-wrap gap-3">
-              {user.projects.map((project, index) => (
-                <span key={index} className="bg-blue-100 text-blue-800 px-4 py-2 rounded-full">
-                  {project}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
+        <div className="mt-8 flex space-x-4">
+          <Button onClick={handleEdit} data-testid="edit-button">
+            <FaEdit className="mr-2" /> Edit
+          </Button>
+          <Button variant="destructive" onClick={handleDelete} data-testid="delete-button">
+            <FaTrash className="mr-2" /> Hapus
+          </Button>
+        </div>
       </div>
     </div>
   );
