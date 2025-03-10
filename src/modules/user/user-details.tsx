@@ -20,6 +20,7 @@ type User = {
   modifiedOn: string;
 };
 
+
 export default function UserDetails() {
   const router = useRouter();
   const params = useParams();
