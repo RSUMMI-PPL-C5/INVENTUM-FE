@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { FaEdit, FaTrash, FaFilter, FaTimes } from 'react-icons/fa';
 import { Button } from '@/components/ui/button';
+import UserFilterModal, { Filters } from '@/components/general/userfiltermodal';
 
 // Definisikan tipe user dengan ID
 type User = {
@@ -37,6 +38,15 @@ export default function UsersPage() {
   const [search, setSearch] = useState('');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [filters, setFilters] = useState<Filters>({
+    role: [],
+    division: [],
+    createdOnStart: null,
+    createdOnEnd: null,
+    modifiedOnStart: null,
+    modifiedOnEnd: null,
+  });
   const router = useRouter();
 
 
@@ -72,7 +82,7 @@ export default function UsersPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <Button>
+        <Button onClick={() => setShowFilterModal(true)}>
           <FaFilter /> Filter
         </Button>
       </div>
@@ -137,6 +147,19 @@ export default function UsersPage() {
         <span>...</span>
         <Button variant="outline">Next &gt;</Button>
       </div>
+
+      {/* Filter Modal */}
+      {showFilterModal && (
+        <UserFilterModal
+          isOpen={showFilterModal}
+          filters={filters}
+          onConfirm={(newFilters) => {
+            setFilters(newFilters);
+            setShowFilterModal(false);
+          }}
+          onCancel={() => setShowFilterModal(false)}
+        />
+      )}
 
       {/* Modal for user details */}
       {showModal && selectedUser && (
