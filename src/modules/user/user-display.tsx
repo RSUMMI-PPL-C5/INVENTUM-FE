@@ -24,6 +24,43 @@ type User = {
   };
 }
 
+const divisionMapping: Record<string, number> = {
+  "Divisi A": 1,
+  "Divisi B": 2,
+  "Divisi C": 3,
+};
+
+export const buildQueryParams = (filters: Filters): string => {
+  const params = new URLSearchParams();
+
+  filters.role.forEach(role => {
+    params.append("role", role);
+  });
+
+  filters.division.forEach(div => {
+    const id = divisionMapping[div];
+    if (id) {
+      params.append("divisiId", id.toString());
+    }
+  });
+
+  if (filters.createdOnStart) {
+    params.append("createdOnStart", format(filters.createdOnStart, "yyyy-MM-dd"));
+  }
+  if (filters.createdOnEnd) {
+    params.append("createdOnEnd", format(filters.createdOnEnd, "yyyy-MM-dd"));
+  }
+
+  if (filters.modifiedOnStart) {
+    params.append("modifiedOnStart", format(filters.modifiedOnStart, "yyyy-MM-dd"));
+  }
+  if (filters.modifiedOnEnd) {
+    params.append("modifiedOnEnd", format(filters.modifiedOnEnd, "yyyy-MM-dd"));
+  }
+
+  return params.toString();
+};
+
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [search, setSearch] = useState('');
@@ -45,7 +82,9 @@ export default function UsersPage() {
     const fetchUsers = async () => {
       try {
         setLoading(true);
-        const response = await fetch('http://localhost:8000/user');
+        const queryParams = buildQueryParams(filters);
+        const url = `http://localhost:8000/user${queryParams ? `?${queryParams}` : ''}`;
+        const response = await fetch(url);
         
         if (!response.ok) {
           throw new Error('Failed to fetch users');
@@ -62,7 +101,7 @@ export default function UsersPage() {
     };
 
     fetchUsers();
-  }, []);
+  }, [filters]);
 
   // Filter users based on search
   const filteredUsers = users.filter(user => {
