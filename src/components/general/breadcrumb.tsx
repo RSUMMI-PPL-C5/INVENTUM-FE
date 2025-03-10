@@ -7,11 +7,6 @@ import { usePathname } from "next/navigation";
 const Breadcrumb = () => {
 	const pathname = usePathname();
 
-    if (!pathname) {
-        console.error('Pathname is not available');
-        return;
-    }
-
 	const segments = pathname.split("/").filter((segment) => segment !== "").slice(1);
 
 	const breadcrumbItems = segments.map((segment, index) => {
