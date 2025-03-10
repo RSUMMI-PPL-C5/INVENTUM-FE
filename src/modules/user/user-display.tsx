@@ -189,8 +189,8 @@ export default function UsersPage() {
                 <div className="mt-8">
                   <h4 className="font-medium text-gray-500 mb-2">Proyek</h4>
                   <div className="flex flex-wrap gap-2">
-                    {selectedUser.projects.map((project, index) => (
-                      <span key={index} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+                    {selectedUser.projects.map((project) => (
+                      <span key={`${selectedUser.id}-${project}`} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
                         {project}
                       </span>
                     ))}

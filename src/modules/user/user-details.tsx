@@ -85,7 +85,7 @@ export default function UserDetails() {
     return (
       <div className="p-6">
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          <p>{error || 'User tidak ditemukan'}</p>
+          <p>{error ?? 'User tidak ditemukan'}</p>
           <Button onClick={handleGoBack} className="mt-4">
             <FaArrowLeft className="mr-2" /> Kembali
           </Button>
@@ -107,7 +107,7 @@ export default function UserDetails() {
           <div className="w-40 h-40 bg-gray-300 rounded-full"></div>
           <div>
             <h1 className="text-3xl font-bold">{user.name}</h1>
-            <p className="text-xl text-blue-200 mt-1">{user.position || 'N/A'}</p>
+            <p className="text-xl text-blue-200 mt-1">{user.position ?? 'N/A'}</p>
             <p className="text-blue-200 mt-1">{user.department}</p>
             <Button className="mt-4">
               <FaEdit className="mr-2" /> Edit Profile
@@ -134,7 +134,7 @@ export default function UserDetails() {
               <FaPhone className="text-gray-500 mr-3" />
               <div>
                 <h3 className="text-sm text-gray-500 font-medium">Telepon</h3>
-                <p>{user.phone || 'Tidak tersedia'}</p>
+                <p>{user.phone ?? 'Tidak tersedia'}</p>
               </div>
             </div>
             
@@ -142,7 +142,7 @@ export default function UserDetails() {
               <FaMapMarkerAlt className="text-gray-500 mr-3" />
               <div>
                 <h3 className="text-sm text-gray-500 font-medium">Alamat</h3>
-                <p>{user.address || 'Tidak tersedia'}</p>
+                <p>{user.address ?? 'Tidak tersedia'}</p>
               </div>
             </div>
           </div>
@@ -157,7 +157,7 @@ export default function UserDetails() {
             
             <div>
               <h3 className="text-sm text-gray-500 font-medium">Posisi</h3>
-              <p>{user.position || 'Tidak tersedia'}</p>
+              <p>{user.position ?? 'Tidak tersedia'}</p>
             </div>
             
             <div className="flex items-center">
@@ -175,8 +175,8 @@ export default function UserDetails() {
           <div className="mt-8">
             <h2 className="text-xl font-semibold border-b pb-2 mb-4">Proyek</h2>
             <div className="flex flex-wrap gap-3">
-              {user.projects.map((project, index) => (
-                <span key={index} className="bg-blue-100 text-blue-800 px-4 py-2 rounded-full">
+              {user.projects.map((project) => (
+                <span key={project} className="bg-blue-100 text-blue-800 px-4 py-2 rounded-full">
                   {project}
                 </span>
               ))}
