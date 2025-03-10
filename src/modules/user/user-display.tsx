@@ -1,43 +1,32 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { FaEdit, FaTrash, FaFilter, FaTimes } from 'react-icons/fa';
+import { FaEdit, FaTrash, FaFilter } from 'react-icons/fa';
 import { Button } from '@/components/ui/button';
+import { format } from 'date-fns';
 import UserFilterModal, { Filters } from '@/components/general/userfiltermodal';
 
-// Definisikan tipe user dengan ID
+// Tipe User berdasarkan schema Prisma
 type User = {
-  id: number; // Tambah id untuk routing
+  id: string;
   email: string;
-  name: string;
-  department: string;
-  date: string;
-  phone?: string;
-  address?: string;
-  position?: string;
-  projects?: string[];
+  username: string;
+  role: string | null;
+  fullname: string | null;
+  nokar: string;
+  divisiId: number | null;
+  waNumber: string | null;
+  createdOn: string | null;
+  modifiedOn: string;
+  divisi?: {
+    name: string;
+  };
 }
 
-const users: User[] = [
-  { id: 1, email: 'azmy@gmail.com', name: 'Azmy Arya Rizaldi', department: 'Executive Director', date: '12 Feb 2025', 
-    phone: '+62 812 3456 7890', address: 'Jl. Diponegoro No. 123, Jakarta', position: 'Senior Manager', 
-    projects: ['Project Alpha', 'Project Beta'] },
-  { id: 2, email: 'john@gmail.com', name: 'John Doe', department: 'Marketing', date: '15 Mar 2025',
-    phone: '+62 812 3456 7891', address: 'Jl. Sudirman No. 456, Jakarta', position: 'Team Lead',
-    projects: ['Project Gamma'] },
-  { id: 3, email: 'jane@gmail.com', name: 'Jane Smith', department: 'Engineering', date: '20 Apr 2025',
-    phone: '+62 812 3456 7892', address: 'Jl. Thamrin No. 789, Jakarta', position: 'Developer',
-    projects: ['Project Delta', 'Project Epsilon', 'Project Zeta'] },
-  { id: 4, email: 'mike@gmail.com', name: 'Mike Johnson', department: 'Design', date: '05 May 2025',
-    phone: '+62 812 3456 7893', address: 'Jl. Gatot Subroto No. 101, Jakarta', position: 'UI/UX Designer',
-    projects: ['Project Eta'] },
-];
-
 export default function UsersPage() {
+  const [users, setUsers] = useState<User[]>([]);
   const [search, setSearch] = useState('');
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [showModal, setShowModal] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [filters, setFilters] = useState<Filters>({
     role: [],
@@ -47,18 +36,61 @@ export default function UsersPage() {
     modifiedOnStart: null,
     modifiedOnEnd: null,
   });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
+  // Fetch users data from backend
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('http://localhost:8000/user');
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch users');
+        }
+        
+        const data = await response.json();
+        setUsers(data);
+      } catch (err) {
+        console.error('Error fetching users:', err);
+        setError(err instanceof Error ? err.message : 'Unknown error');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // Fungsi untuk menutup modal
-  const closeModal = () => {
-    setShowModal(false);
-    setSelectedUser(null);
+    fetchUsers();
+  }, []);
+
+  // Filter users based on search
+  const filteredUsers = users.filter(user => {
+    if (!search) return true;
+    
+    const searchLower = search.toLowerCase();
+    return (
+      user.email.toLowerCase().includes(searchLower) ||
+      (user.username && user.username.toLowerCase().includes(searchLower)) ||
+      (user.fullname && user.fullname.toLowerCase().includes(searchLower)) ||
+      (user.role && user.role.toLowerCase().includes(searchLower))
+    );
+  });
+
+  // Navigate to user detail page
+  const navigateToUserDetail = (userId: string) => {
+    router.push(`/dashboard/user/${userId}`);
   };
 
-  // Fungsi untuk navigasi ke halaman detail
-  const navigateToUserDetail = (userId: number) => {
-    router.push(`/dashboard/user/${userId}`);
+  // Format date function
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return '-';
+    try {
+      return format(new Date(dateString), 'dd MMM yyyy');
+    } catch (_error) {
+      console.error('Error formatting date:', _error);
+      return dateString;
+    }
   };
 
   return (
@@ -68,8 +100,10 @@ export default function UsersPage() {
         <div className="w-40 h-40 bg-gray-300"></div>
         <div>
           <h1 className="text-2xl font-bold">Pengguna</h1>
-          <p>Lorem Ipsum is simply dummy text of the printing industry.</p>
-          <Button className="mt-4">+ Tambah Pengguna</Button>
+          <p>Kelola semua akun pengguna dalam sistem</p>
+          <Button className="mt-4" onClick={() => router.push('/dashboard/user/create')}>
+            + Tambah Pengguna
+          </Button>
         </div>
       </div>
       
@@ -81,72 +115,90 @@ export default function UsersPage() {
           className="border p-2 rounded w-full"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
+          data-testid="search-input"
         />
         <Button onClick={() => setShowFilterModal(true)}>
           <FaFilter /> Filter
         </Button>
       </div>
       
-      {/* Users Table */}
-      <div className="mt-6 border rounded-lg overflow-hidden">
-        <table className="w-full text-left">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="p-4">Email</th>
-              <th>Nama</th>
-              <th>Departemen</th>
-              <th>Tanggal Masuk</th>
-              <th>Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((user) => (
-              <tr 
-                key={user.id} 
-                className="border-t hover:bg-gray-50 cursor-pointer"
-                onClick={() => navigateToUserDetail(user.id)}
-              >
-                <td className="p-4">{user.email}</td>
-                <td>{user.name}</td>
-                <td>{user.department}</td>
-                <td>{user.date}</td>
-                <td onClick={(e) => e.stopPropagation()} className="flex gap-2">
-                  <Button 
-                    size="icon" 
-                    variant="outline" 
-                    onClick={(e) => {
-                      e.stopPropagation(); // Mencegah event bubbling
-                      navigateToUserDetail(user.id);
-                    }}
-                  >
-                    <FaEdit />
-                  </Button>
-                  <Button 
-                    size="icon" 
-                    variant="destructive"
-                    onClick={(e) => {
-                      e.stopPropagation(); // Mencegah event bubbling
-                      console.log('Delete user:', user.name);
-                    }}
-                  >
-                    <FaTrash />
-                  </Button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {/* Loading and Error States */}
+      {loading && (
+        <div className="text-center p-8">Loading users...</div>
+      )}
+
+      {error && (
+        <div className="text-red-500 p-8 text-center">
+          Error: {error}
+        </div>
+      )}
       
-      {/* Pagination */}
-      <div className="mt-6 flex justify-center items-center gap-2">
-        <Button variant="outline">&lt; Previous</Button>
-        <Button variant="outline">1</Button>
-        <Button variant="outline">2</Button>
-        <Button variant="outline">3</Button>
-        <span>...</span>
-        <Button variant="outline">Next &gt;</Button>
-      </div>
+      {/* Users Table */}
+      {!loading && !error && (
+        <div className="mt-6 border rounded-lg overflow-hidden">
+          <table className="w-full text-left" data-testid="users-table">
+            <thead className="bg-gray-100">
+              <tr>
+                <th className="p-4">Email</th>
+                <th>Nama</th>
+                <th>Divisi</th>
+                <th>Tanggal Pembuatan</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredUsers.length > 0 ? (
+                filteredUsers.map((user) => (
+                  <tr 
+                    key={user.id} 
+                    className="border-t hover:bg-gray-50 cursor-pointer"
+                    onClick={() => navigateToUserDetail(user.id)}
+                    data-testid={`user-row-${user.id}`}
+                  >
+                    <td className="p-4">{user.email}</td>
+                    <td>{user.fullname || user.username}</td>
+                    <td>{user.divisi?.name || `-`}</td>
+                    <td>{formatDate(user.createdOn)}</td>
+                    <td onClick={(e) => e.stopPropagation()} className="flex gap-2">
+                      <Button 
+                        size="icon" 
+                        variant="outline" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigateToUserDetail(user.id);
+                        }}
+                        data-testid={`edit-button-${user.id}`}
+                      >
+                        <FaEdit />
+                      </Button>
+                      <Button 
+                        size="icon" 
+                        variant="destructive"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (confirm('Are you sure you want to delete this user?')) {
+                            // Delete user logic will be here
+                            console.log('Delete user:', user.id);
+                          }
+                        }}
+                        data-testid={`delete-button-${user.id}`}
+                      >
+                        <FaTrash />
+                      </Button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={5} className="text-center p-4">
+                    {search ? "No users match your search" : "No users found"}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Filter Modal */}
       {showFilterModal && (
@@ -159,74 +211,6 @@ export default function UsersPage() {
           }}
           onCancel={() => setShowFilterModal(false)}
         />
-      )}
-
-      {/* Modal for user details */}
-      {showModal && selectedUser && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-            <div className="flex justify-between items-center border-b p-4">
-              <h2 className="text-xl font-bold">Detail Pengguna</h2>
-              <Button variant="ghost" size="icon" onClick={closeModal}>
-                <FaTimes />
-              </Button>
-            </div>
-            <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <div className="w-40 h-40 bg-gray-300 mx-auto rounded-full mb-4"></div>
-                  <h3 className="text-xl font-bold text-center">{selectedUser.name}</h3>
-                  <p className="text-center text-gray-500">{selectedUser.department}</p>
-                  <p className="text-center text-gray-500">{selectedUser.position}</p>
-                </div>
-                
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="font-medium text-gray-500">Email</h4>
-                    <p>{selectedUser.email}</p>
-                  </div>
-                  
-                  <div>
-                    <h4 className="font-medium text-gray-500">Telepon</h4>
-                    <p>{selectedUser.phone || 'Tidak tersedia'}</p>
-                  </div>
-                  
-                  <div>
-                    <h4 className="font-medium text-gray-500">Alamat</h4>
-                    <p>{selectedUser.address || 'Tidak tersedia'}</p>
-                  </div>
-                  
-                  <div>
-                    <h4 className="font-medium text-gray-500">Tanggal Masuk</h4>
-                    <p>{selectedUser.date}</p>
-                  </div>
-                </div>
-              </div>
-
-              {selectedUser.projects && selectedUser.projects.length > 0 && (
-                <div className="mt-8">
-                  <h4 className="font-medium text-gray-500 mb-2">Proyek</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedUser.projects.map((project, index) => (
-                      <span key={index} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
-                        {project}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="mt-8 flex justify-end space-x-2">
-                <Button variant="outline" onClick={closeModal}>
-                  Tutup
-                </Button>
-                <Button onClick={() => navigateToUserDetail(selectedUser.id)}>
-                  <FaEdit className="mr-2" /> Edit
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
       )}
     </div>
   );
