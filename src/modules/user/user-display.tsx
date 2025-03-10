@@ -39,7 +39,6 @@ export default function UsersPage() {
   const [showModal, setShowModal] = useState(false);
   const router = useRouter();
 
-
   // Fungsi untuk menutup modal
   const closeModal = () => {
     setShowModal(false);
@@ -49,6 +48,11 @@ export default function UsersPage() {
   // Fungsi untuk navigasi ke halaman detail
   const navigateToUserDetail = (userId: number) => {
     router.push(`/dashboard/user/${userId}`);
+  };
+
+  // Fungsi untuk navigasi ke halaman update pengguna
+  const navigateToUserEdit = (userId: number) => {
+    router.push(`/dashboard/user/${userId}/edit`);
   };
 
   return (
@@ -100,13 +104,14 @@ export default function UsersPage() {
                 <td>{user.name}</td>
                 <td>{user.department}</td>
                 <td>{user.date}</td>
-                <td onClick={(e) => e.stopPropagation()} className="flex gap-2">
+                <td className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                   <Button 
                     size="icon" 
                     variant="outline" 
+                    aria-label="Edit"
                     onClick={(e) => {
                       e.stopPropagation(); // Mencegah event bubbling
-                      navigateToUserDetail(user.id);
+                      navigateToUserEdit(user.id);
                     }}
                   >
                     <FaEdit />
@@ -144,7 +149,7 @@ export default function UsersPage() {
           <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
             <div className="flex justify-between items-center border-b p-4">
               <h2 className="text-xl font-bold">Detail Pengguna</h2>
-              <Button variant="ghost" size="icon" onClick={closeModal}>
+              <Button variant="ghost" size="icon" onClick={closeModal} aria-label="Close Modal">
                 <FaTimes />
               </Button>
             </div>
@@ -165,12 +170,12 @@ export default function UsersPage() {
                   
                   <div>
                     <h4 className="font-medium text-gray-500">Telepon</h4>
-                    <p>{selectedUser.phone || 'Tidak tersedia'}</p>
+                    <p>{selectedUser.phone ?? 'Tidak tersedia'}</p>
                   </div>
                   
                   <div>
                     <h4 className="font-medium text-gray-500">Alamat</h4>
-                    <p>{selectedUser.address || 'Tidak tersedia'}</p>
+                    <p>{selectedUser.address ?? 'Tidak tersedia'}</p>
                   </div>
                   
                   <div>
