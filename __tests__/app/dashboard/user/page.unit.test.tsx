@@ -87,11 +87,19 @@ describe('UsersPage Component', () => {
 
   it('should render pagination buttons', () => {
     render(<UsersPage />);
-    
+
     // Check for pagination elements with more flexible approach
     expect(screen.getByRole('button', { name: /previous/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /next/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '1' })).toBeInTheDocument();
   });
-  
+
+  it('should navigate to user edit page on edit button click', () => {
+    render(<UsersPage />);
+
+    const editButtons = screen.getAllByRole("button", { name: "Edit" });
+    fireEvent.click(editButtons[0]);
+
+    expect(mockPush).toHaveBeenCalledWith("/dashboard/user/1/edit");
+  });
 });

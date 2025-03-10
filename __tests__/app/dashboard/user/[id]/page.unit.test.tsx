@@ -1,6 +1,18 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import UserDetailsPage from '@/app/dashboard/user/[id]/page';
 import { useRouter, useParams } from 'next/navigation';
+import UserEditPage from '@/app/dashboard/user/[id]/edit/page';
+
+// Mock the UserEdit component
+jest.mock("@/modules/user/user-edit", () => jest.fn(() => <div>UserEdit Component</div>));
+
+describe("UserEditPage Component", () => {
+  test("renders the UserEdit component", () => {
+    render(<UserEditPage />);
+
+    expect(screen.getByText("UserEdit Component")).toBeInTheDocument();
+  });
+});
 
 // Mock modules
 jest.mock('next/navigation', () => ({
