@@ -368,4 +368,64 @@ describe('UserDisplayPage Component', () => {
       expect(adminCheckboxInput).toBeChecked();
     });
   });
+
+describe('buildQueryParams', () => {
+  it('should generate query parameters correctly with all filters', () => {
+    const filters = {
+      role: ['Admin', 'User'],
+      division: ['Divisi A', 'Divisi B'],
+      createdOnStart: new Date('2024-01-01'),
+      createdOnEnd: new Date('2024-01-31'),
+      modifiedOnStart: new Date('2024-02-01'),
+      modifiedOnEnd: new Date('2024-02-28'),
+    };
+
+    const query = makeURLQuery(filters);
+
+    expect(query).toContain('role=Admin');
+    expect(query).toContain('role=User');
+    expect(query).toContain('divisiId=1');
+    expect(query).toContain('divisiId=2');
+    expect(query).toContain('createdOnStart=2024-01-01');
+    expect(query).toContain('createdOnEnd=2024-01-31');
+    expect(query).toContain('modifiedOnStart=2024-02-01');
+    expect(query).toContain('modifiedOnEnd=2024-02-28');
+  });
+
+  it('should include only provided filters and handle missing dates correctly', () => {
+    const filters = {
+      role: ['Admin'],
+      division: [],
+      createdOnStart: new Date('2024-03-01'),
+      createdOnEnd: null,
+      modifiedOnStart: null,
+      modifiedOnEnd: new Date('2024-04-01'),
+    };
+
+    const query = makeURLQuery(filters);
+
+    expect(query).toContain('role=Admin');
+    expect(query).not.toContain('divisiId=');
+    expect(query).toContain('createdOnStart=2024-03-01');
+    expect(query).not.toContain('createdOnEnd=');
+    expect(query).not.toContain('modifiedOnStart=');
+    expect(query).toContain('modifiedOnEnd=2024-04-01');
+  });
+
+  it('should return an empty string if no filters are provided', () => {
+    const filters = {
+      role: [],
+      division: [],
+      createdOnStart: null,
+      createdOnEnd: null,
+      modifiedOnStart: null,
+      modifiedOnEnd: null,
+    };
+
+    const query = makeURLQuery(filters);
+
+    expect(query).toBe('');
+  });
+});
+
 });
