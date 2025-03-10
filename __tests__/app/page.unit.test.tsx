@@ -1,13 +1,18 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import LoginModule from "@/app/page";
 import { toast } from "sonner";
+import { useSearchParams } from "next/navigation";
 
 jest.mock("next/navigation", () => ({
-	useRouter: jest.fn(),
-}));
-
+    useRouter: jest.fn(() => ({
+      push: jest.fn(),
+    })),
+    useSearchParams: jest.fn(() => ({
+      get: jest.fn().mockReturnValue(null),
+    })),
+  }));
 jest.mock("sonner", () => ({
-    toast: { error: jest.fn() },
+    toast: { error: jest.fn(), warning: jest.fn()},
 }));
 
 describe("LoginModule - Unit Tests", () => {
@@ -79,6 +84,30 @@ describe("LoginModule - Unit Tests", () => {
           expect(toast.error).not.toHaveBeenCalled();
         });
     });
+
+    it("should show a warning toast when error is 'unauthorized'", async () => {
+        (useSearchParams as jest.Mock).mockReturnValue({
+          get: jest.fn(() => "unauthorized"),
+        });
+    
+        render(<LoginModule />);
+    
+        await waitFor(() => {
+          expect(toast.warning).toHaveBeenCalledWith("You need to login first");
+        });
+      });
+    
+      it("should show an error toast when error is 'server_error'", async () => {
+        (useSearchParams as jest.Mock).mockReturnValue({
+          get: jest.fn(() => "server_error"),
+        });
+    
+        render(<LoginModule />);
+    
+        await waitFor(() => {
+          expect(toast.error).toHaveBeenCalledWith("Something went wrong. Please try again.");
+        });
+      });
 
 	// Negative Cases
 	it("displays error messages if username is empty", async () => {
@@ -200,4 +229,16 @@ describe("LoginModule - Unit Tests", () => {
         });
     });
     
+    it("should not trigger a toast when error is null", async () => {
+        (useSearchParams as jest.Mock).mockReturnValue({
+          get: jest.fn(() => null),
+        });
+    
+        render(<LoginModule />);
+    
+        await waitFor(() => {
+          expect(toast.warning).not.toHaveBeenCalled();
+          expect(toast.error).not.toHaveBeenCalled();
+        });
+      });
 });

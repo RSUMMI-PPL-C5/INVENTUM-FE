@@ -4,17 +4,19 @@ import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 import { toast } from "sonner";
 
-// Mock next/navigation
 jest.mock("next/navigation", () => ({
-	useRouter: jest.fn(),
-}));
+    useRouter: jest.fn(() => ({
+      push: jest.fn(),
+    })),
+    useSearchParams: jest.fn(() => ({
+      get: jest.fn().mockReturnValue(null),
+    })),
+  }));
 
-// Mock js-cookie
 jest.mock("js-cookie", () => ({
 	set: jest.fn(),
 }));
 
-// Mock sonner
 jest.mock("sonner", () => ({
 	toast: {
 		error: jest.fn(),
