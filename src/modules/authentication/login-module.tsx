@@ -16,12 +16,15 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import Cookies from 'js-cookie';
 
 export default function LoginModule() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const error = searchParams.get("error");
+
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false)
 
@@ -56,7 +59,6 @@ export default function LoginModule() {
       }
 
       const data = await response.json();
-      console.log(data);
 
       if (data.token) {
         Cookies.set('token', data.token, { expires: 7 });
@@ -69,6 +71,18 @@ export default function LoginModule() {
         setIsLoading(false)
     }
   };
+
+  useEffect(() => {
+    if (error) {
+      setTimeout(() => {
+        if (error === "unauthorized") {
+          toast.warning("You need to login first");
+        } else if (error === "server_error") {
+          toast.error("Something went wrong. Please try again.");
+        }
+      }, 100);
+    }
+  }, [error]);
 
   return (
     <div className="h-screen flex items-center justify-center">
