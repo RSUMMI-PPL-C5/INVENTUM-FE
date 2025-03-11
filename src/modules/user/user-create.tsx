@@ -205,10 +205,11 @@ const UserCreate = ({
       formData.waNumber === "" && 
       formData.entryDate === "";
     
-      if ((!isFormEmpty && window.confirm("Are you sure you want to cancel? All entered data will be lost.")) || isFormEmpty) {
-        resetForm();
-      }
-  };
+if (!isFormEmpty && window.confirm("Are you sure you want to cancel? All entered data will be lost.")) {
+      resetForm();
+    } else if (isFormEmpty) {
+      resetForm();
+    }
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -254,7 +255,8 @@ const UserCreate = ({
                 {/* Username field */}
                 <div className="relative">
                   <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="username">
-                    Username<span className="text-red-500 ml-1">*</span>
+                    Username
+                    <span className="text-red-500 ml-1">*</span>
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
@@ -289,7 +291,8 @@ const UserCreate = ({
                 {/* Email field */}
                 <div className="relative">
                   <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="email">
-                    Email<span className="text-red-500 ml-1">*</span>
+                    Email
+                    <span className="text-red-500 ml-1">*</span>
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
@@ -325,7 +328,8 @@ const UserCreate = ({
                 {/* Full Name field */}
                 <div className="relative">
                   <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="fullname">
-                    Full Name<span className="text-red-500 ml-1">*</span>
+                    Full Name
+                    <span className="text-red-500 ml-1">*</span>
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
@@ -360,7 +364,8 @@ const UserCreate = ({
                 {/* Employee Number field */}
                 <div className="relative">
                   <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="nokar">
-                    Employee Number<span className="text-red-500 ml-1">*</span>
+                    Employee Number
+                    <span className="text-red-500 ml-1">*</span>
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
@@ -395,7 +400,8 @@ const UserCreate = ({
                 {/* WhatsApp Number field */}
                 <div className="relative">
                   <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="waNumber">
-                    WhatsApp Number<span className="text-red-500 ml-1">*</span>
+                    WhatsApp Number
+                    <span className="text-red-500 ml-1">*</span>
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
@@ -430,7 +436,8 @@ const UserCreate = ({
                 {/* Role field */}
                 <div className="relative">
                   <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="role">
-                    Role<span className="text-red-500 ml-1">*</span>
+                    Role
+                    <span className="text-red-500 ml-1">*</span>
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
@@ -474,7 +481,8 @@ const UserCreate = ({
                 {/* Division field */}
                 <div className="relative">
                   <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="divisiId">
-                    Division<span className="text-red-500 ml-1">*</span>
+                    Division
+                    <span className="text-red-500 ml-1">*</span>
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
@@ -518,7 +526,8 @@ const UserCreate = ({
                 {/* Entry Date field */}
                 <div className="relative">
                   <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="entryDate">
-                    Date of Entry<span className="text-red-500 ml-1">*</span>
+                    Date of Entry
+                    <span className="text-red-500 ml-1">*</span>
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
