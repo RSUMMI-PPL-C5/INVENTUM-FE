@@ -73,7 +73,7 @@ const UserFilterModal: React.FC<ModalProps> = ({ isOpen, filters, onConfirm, onC
             {/* Role Filter */}
             <div className="mb-4">
               <h3 className="font-semibold mb-1">Role</h3>
-              {["User", "Asesor", "Admin"].map((role) => (
+              {roleOptions.map((role) => (
                 <label key={role} className="block">
                   <input
                     type="checkbox"
@@ -89,7 +89,7 @@ const UserFilterModal: React.FC<ModalProps> = ({ isOpen, filters, onConfirm, onC
             {/* Division Filter */}
             <div className="mb-4">
               <h3 className="font-semibold mb-1">Divisi</h3>
-              {["Divisi A", "Divisi B", "Divisi C"].map((div) => (
+              {divisionOptions.map((div) => (
                 <label key={div} className="block">
                   <input
                     type="checkbox"
