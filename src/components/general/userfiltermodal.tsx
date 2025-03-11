@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import { Button } from "../ui/button";
-import { MdCheckBox, MdOutlineCheckBoxOutlineBlank } from "react-icons/md";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
@@ -73,55 +72,35 @@ const UserFilterModal: React.FC<ModalProps> = ({ isOpen, filters, onConfirm, onC
           <div className="grid grid-cols-2 sm:block sm:border-r border-gray-300">
             {/* Role Filter */}
             <div className="mb-4">
-                    <h3 className="font-semibold mb-1">Role</h3>
-                    {roleOptions.map((role) => (
-                      <label
-                        key={role}
-                        className="flex items-center cursor-pointer"
-                        htmlFor={`role-${role}`}
-                      >
-                        <input
-                          id={`role-${role}`}
-                          type="checkbox"
-                          className="hidden"
-                          checked={localFilters.role.includes(role)}
-                          onChange={() => handleCheckboxChange("role", role)}
-                        />
-                        {localFilters.role.includes(role) ? (
-                          <MdCheckBox size={20} className=" mr-2" />
-                        ) : (
-                          <MdOutlineCheckBoxOutlineBlank size={20} className="mr-2" />
-                        )}
-                        <span>{role}</span>
-                      </label>
-                    ))}
-                  </div>
+              <h3 className="font-semibold mb-1">Role</h3>
+              {["User", "Asesor", "Admin"].map((role) => (
+                <label key={role} className="block">
+                  <input
+                    type="checkbox"
+                    className="accent-black mr-2"
+                    checked={localFilters.role.includes(role)}
+                    onChange={() => handleCheckboxChange("role", role)}
+                  />
+                  {role}
+                </label>
+              ))}
+            </div>
 
-                  {/* Division Filter */}
-                  <div className="mb-4">
-                    <h3 className="font-semibold mb-1">Divisi</h3>
-                    {divisionOptions.map((div) => (
-                      <label
-                        key={div}
-                        className="flex items-center cursor-pointer"
-                        htmlFor={`division-${div}`}
-                      >
-                        <input
-                          id={`division-${div}`}
-                          type="checkbox"
-                          className="hidden"
-                          checked={localFilters.division.includes(div)}
-                          onChange={() => handleCheckboxChange("division", div)}
-                        />
-                        {localFilters.division.includes(div) ? (
-                          <MdCheckBox size={20} className="mr-2" />
-                        ) : (
-                          <MdOutlineCheckBoxOutlineBlank size={20} className="mr-2" />
-                        )}
-                        <span>{div}</span>
-                      </label>
-                    ))}
-                  </div>
+            {/* Division Filter */}
+            <div className="mb-4">
+              <h3 className="font-semibold mb-1">Divisi</h3>
+              {["Divisi A", "Divisi B", "Divisi C"].map((div) => (
+                <label key={div} className="block">
+                  <input
+                    type="checkbox"
+                    className="accent-black mr-2"
+                    checked={localFilters.division.includes(div)}
+                    onChange={() => handleCheckboxChange("division", div)}
+                  />
+                  {div}
+                </label>
+              ))}
+            </div>
           </div>
 
           <div>
