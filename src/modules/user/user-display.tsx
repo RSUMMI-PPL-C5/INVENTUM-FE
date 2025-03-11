@@ -21,7 +21,7 @@ type User = {
   divisi?: {
     name: string;
   };
-}
+};
 
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -30,17 +30,13 @@ export default function UsersPage() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  // Fetch users data from backend
+  // Fetch users data from backend with search query
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         setLoading(true);
-        const response = await fetch('http://localhost:8000/user');
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch users');
-        }
-        
+        const response = await fetch(`http://localhost:8000/user?search=${search}`);
+
         const data = await response.json();
         setUsers(data);
       } catch (err) {
@@ -52,20 +48,7 @@ export default function UsersPage() {
     };
 
     fetchUsers();
-  }, []);
-
-  // Filter users based on search
-  const filteredUsers = users.filter(user => {
-    if (!search) return true;
-    
-    const searchLower = search.toLowerCase();
-    return (
-      user.email.toLowerCase().includes(searchLower) ||
-      (user.username && user.username.toLowerCase().includes(searchLower)) ||
-      (user.fullname && user.fullname.toLowerCase().includes(searchLower)) ||
-      (user.role && user.role.toLowerCase().includes(searchLower))
-    );
-  });
+  }, [search]);
 
   // Navigate to user detail page
   const navigateToUserDetail = (userId: string) => {
@@ -96,7 +79,7 @@ export default function UsersPage() {
           </Button>
         </div>
       </div>
-      
+
       {/* Search & Filter */}
       <div className="flex items-center gap-4 mt-6">
         <input
@@ -111,20 +94,21 @@ export default function UsersPage() {
           <FaFilter /> Filter
         </Button>
       </div>
-      
-      {/* Loading and Error States */}
+
+      {/* Loading State */}
       {loading && (
         <div className="text-center p-8">Loading users...</div>
       )}
-      
+
+      {/* Error State */}
       {error && (
         <div className="text-red-500 p-8 text-center">
           Error: {error}
         </div>
       )}
-      
+
       {/* Users Table */}
-      {!loading && !error && (
+      {!loading && (
         <div className="mt-6 border rounded-lg overflow-hidden">
           <table className="w-full text-left" data-testid="users-table">
             <thead className="bg-gray-100">
@@ -137,10 +121,10 @@ export default function UsersPage() {
               </tr>
             </thead>
             <tbody>
-              {filteredUsers.length > 0 ? (
-                filteredUsers.map((user) => (
-                  <tr 
-                    key={user.id} 
+              {users.length > 0 ? (
+                users.map((user) => (
+                  <tr
+                    key={user.id}
                     className="border-t hover:bg-gray-50 cursor-pointer"
                     onClick={() => navigateToUserDetail(user.id)}
                     data-testid={`user-row-${user.id}`}
@@ -150,9 +134,9 @@ export default function UsersPage() {
                     <td>{user.divisi?.name || `-`}</td>
                     <td>{formatDate(user.createdOn)}</td>
                     <td onClick={(e) => e.stopPropagation()} className="flex gap-2">
-                      <Button 
-                        size="icon" 
-                        variant="outline" 
+                      <Button
+                        size="icon"
+                        variant="outline"
                         onClick={(e) => {
                           e.stopPropagation();
                           navigateToUserDetail(user.id);
@@ -161,8 +145,8 @@ export default function UsersPage() {
                       >
                         <FaEdit />
                       </Button>
-                      <Button 
-                        size="icon" 
+                      <Button
+                        size="icon"
                         variant="destructive"
                         onClick={(e) => {
                           e.stopPropagation();
