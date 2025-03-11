@@ -2,6 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { useRouter } from 'next/navigation';
 import UserDisplayPage from '@/app/dashboard/user/page';
+import { buildQueryParams } from '@/modules/user/user-display';
 
 // Mock useRouter
 jest.mock('next/navigation', () => ({
@@ -24,7 +25,7 @@ afterAll(() => {
   console.error = originalConsoleError;
 });
 
-describe('UsersPage Component', () => {
+describe('UserDisplayPage Component', () => {
   const mockPush = jest.fn();
 
   // Mock users data
@@ -297,4 +298,134 @@ describe('UsersPage Component', () => {
     // Check that invalid date is displayed as-is
     expect(screen.getByText('invalid-date')).toBeInTheDocument();
   });
+
+    
+  describe('Filter Modal Integration', () => {
+    it('should open filter modal when filter button is clicked', () => {
+      render(<UserDisplayPage />);
+      
+      const filterButton = screen.getByRole('button', { name: /filter/i });
+      fireEvent.click(filterButton);
+      
+      expect(screen.getAllByText('Filter')[1]).toBeInTheDocument();
+      expect(screen.getByText('Role')).toBeInTheDocument();
+      expect(screen.getByText('Divisi')).toBeInTheDocument();
+      expect(screen.getByText('Tanggal dibuat')).toBeInTheDocument();
+      expect(screen.getByText('Terakhir diubah')).toBeInTheDocument();
+    });
+  
+    it('should close filter modal when cancel button is clicked', () => {
+      render(<UserDisplayPage />);
+      
+      const filterButton = screen.getByRole('button', { name: /filter/i });
+      fireEvent.click(filterButton);
+      
+      const cancelButton = screen.getByRole('button', { name: /batal/i });
+      fireEvent.click(cancelButton);
+      
+      expect(screen.queryAllByText('Filter')).toHaveLength(1);
+    });
+  
+    it('should close filter modal when OK is clicked', () => {
+      render(<UserDisplayPage />);
+      
+      fireEvent.click(screen.getByRole('button', { name: /filter/i }));
+      
+      const okButton = screen.getByRole('button', { name: /ok/i });
+      fireEvent.click(okButton);
+      
+      expect(screen.queryAllByText('Filter')).toHaveLength(1);
+    });
+  
+    it('should display filter options correctly', () => {
+      render(<UserDisplayPage />);
+      fireEvent.click(screen.getByRole('button', { name: /filter/i }));
+  
+      ['User', 'Asesor', 'Admin'].forEach(role => {
+        expect(screen.getByText(role)).toBeInTheDocument();
+      });
+  
+      ['Divisi A', 'Divisi B', 'Divisi C'].forEach(div => {
+        expect(screen.getByText(div)).toBeInTheDocument();
+      });
+
+      expect(screen.getAllByPlaceholderText(/tanggal mulai/i)).toHaveLength(2);
+      expect(screen.getAllByPlaceholderText(/tanggal akhir/i)).toHaveLength(2);
+    });
+  
+    it('should persist filter selections when reapplying', async () => {
+      render(<UserDisplayPage />);
+      
+      fireEvent.click(screen.getByRole('button', { name: /filter/i }));
+      
+      const adminCheckbox = screen.getByLabelText('Admin');
+      fireEvent.click(adminCheckbox);
+      
+      fireEvent.click(screen.getByRole('button', { name: /ok/i }));
+      
+      fireEvent.click(screen.getByRole('button', { name: /filter/i }));
+      
+      const adminCheckboxInput = screen.getByLabelText('Admin') as HTMLInputElement;
+      expect(adminCheckboxInput).toBeChecked();
+    });
+  });
+
+describe('buildQueryParams', () => {
+  it('should generate query parameters correctly with all filters', () => {
+    const filters = {
+      role: ['Admin', 'User'],
+      division: ['Divisi A', 'Divisi B'],
+      createdOnStart: new Date('2024-01-01'),
+      createdOnEnd: new Date('2024-01-31'),
+      modifiedOnStart: new Date('2024-02-01'),
+      modifiedOnEnd: new Date('2024-02-28'),
+    };
+
+    const query = buildQueryParams(filters);
+
+    expect(query).toContain('role=Admin');
+    expect(query).toContain('role=User');
+    expect(query).toContain('divisiId=1');
+    expect(query).toContain('divisiId=2');
+    expect(query).toContain('createdOnStart=2024-01-01');
+    expect(query).toContain('createdOnEnd=2024-01-31');
+    expect(query).toContain('modifiedOnStart=2024-02-01');
+    expect(query).toContain('modifiedOnEnd=2024-02-28');
+  });
+
+  it('should include only provided filters and handle missing dates correctly', () => {
+    const filters = {
+      role: ['Admin'],
+      division: [],
+      createdOnStart: new Date('2024-03-01'),
+      createdOnEnd: null,
+      modifiedOnStart: null,
+      modifiedOnEnd: new Date('2024-04-01'),
+    };
+
+    const query = buildQueryParams(filters);
+
+    expect(query).toContain('role=Admin');
+    expect(query).not.toContain('divisiId=');
+    expect(query).toContain('createdOnStart=2024-03-01');
+    expect(query).not.toContain('createdOnEnd=');
+    expect(query).not.toContain('modifiedOnStart=');
+    expect(query).toContain('modifiedOnEnd=2024-04-01');
+  });
+
+  it('should return an empty string if no filters are provided', () => {
+    const filters = {
+      role: [],
+      division: [],
+      createdOnStart: null,
+      createdOnEnd: null,
+      modifiedOnStart: null,
+      modifiedOnEnd: null,
+    };
+
+    const query = buildQueryParams(filters);
+
+    expect(query).toBe('');
+  });
+});
 });

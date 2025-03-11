@@ -4,7 +4,8 @@ on:
   push:
     branches:
       - main 
-      - PBI-12-Display_user
+      - staging 
+
 jobs:
   deploy:
     runs-on: ubuntu-latest

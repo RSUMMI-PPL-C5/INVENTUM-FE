@@ -15,12 +15,18 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { toast } from 'sonner';
+import Cookies from 'js-cookie';
 
 export default function LoginModule() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const error = searchParams.get("error");
+
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false)
 
   const formSchema = z.object({
     username: z.string().min(1, { message: "Username is required" }),
@@ -35,11 +41,48 @@ export default function LoginModule() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    try {
+      setIsLoading(true)
 
-    console.log(values);
-    router.push('/dashboard/medical-equipment');
-  }
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(values),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'An error occurred during login');
+      }
+
+      const data = await response.json();
+
+      if (data.token) {
+        Cookies.set('token', data.token, { expires: 7 });
+      }
+
+      router.push('/dashboard/medical-equipment');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'An error occurred during login');
+    } finally {
+        setIsLoading(false)
+    }
+  };
+
+  useEffect(() => {
+    if (error) {
+      setTimeout(() => {
+        if (error === "unauthorized") {
+          toast.warning("You need to login first");
+        } else if (error === "server_error") {
+          toast.error("Something went wrong. Please try again.");
+        }
+      }, 100);
+    }
+  }, [error]);
 
   return (
     <div className="h-screen flex items-center justify-center">
@@ -107,7 +150,7 @@ export default function LoginModule() {
                   )}
                 />
               </div>
-              <Button type="submit" className="w-full">
+              <Button type="submit" className="w-full" isLoading={isLoading}>
                 Masuk
               </Button>
             </form>

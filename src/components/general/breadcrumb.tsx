@@ -7,11 +7,6 @@ import { usePathname } from "next/navigation";
 const Breadcrumb = () => {
 	const pathname = usePathname();
 
-    if (!pathname) {
-        console.error('Pathname is not available');
-        return;
-    }
-
 	const segments = pathname.split("/").filter((segment) => segment !== "").slice(1);
 
 	const breadcrumbItems = segments.map((segment, index) => {
@@ -46,7 +41,7 @@ const Breadcrumb = () => {
                 </ol>
                 <Notification set="curved" stroke="bold" primaryColor="black" size='large' filled />
             </div>
-            <hr role='separator' className="w-full min-w-[3.5rem] border-1 border-[#C2C2C2]" />
+            <hr className="w-full min-w-[3.5rem] border-1 border-[#C2C2C2]" />
 		</nav>
 	);
 };

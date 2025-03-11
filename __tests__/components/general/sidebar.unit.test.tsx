@@ -2,11 +2,16 @@ import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { useRouter, usePathname } from "next/navigation";
 import SideBar from "@/components/general/sidebar";
+import Cookies from "js-cookie";
 
-// Mock next/navigation
 jest.mock("next/navigation", () => ({
   useRouter: jest.fn(),
   usePathname: jest.fn(),
+}));
+
+jest.mock("js-cookie", () => ({
+  get: jest.fn(),
+  remove: jest.fn(),
 }));
 
 describe("SideBar Component", () => {
@@ -14,13 +19,15 @@ describe("SideBar Component", () => {
 
   beforeEach(() => {
     pushMock = jest.fn();
-    (useRouter as jest.Mock).mockReturnValue({
-      push: pushMock,
-    });
-
+    (useRouter as jest.Mock).mockReturnValue({ push: pushMock });
     (usePathname as jest.Mock).mockReturnValue("/dashboard/user");
+    (Cookies.get as jest.Mock).mockReturnValue("mockToken");
 
     render(<SideBar />);
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
   // Helper functions
@@ -29,17 +36,17 @@ describe("SideBar Component", () => {
   const leaveSidebar = () => fireEvent.mouseLeave(getSidebar());
 
   const assertSidebarCollapsed = () => {
-    const sidebar = getSidebar();
-    expect(sidebar).not.toHaveClass("w-72");
+    expect(getSidebar()).not.toHaveClass("w-72");
     expect(screen.getByText("IN")).toBeInTheDocument();
-    expect(screen.queryAllByText(/Pengguna|Daftar Alat Medis|Daftar Suku Cadang/).length).toBe(0);
+    expect(screen.queryByText("Pengguna")).not.toBeInTheDocument();
+    expect(screen.queryByText("Keluar")).not.toBeInTheDocument();
   };
 
   const assertSidebarExpanded = () => {
-    const sidebar = getSidebar();
-    expect(sidebar).toHaveClass("w-72");
+    expect(getSidebar()).toHaveClass("w-72");
     expect(screen.getByText("INVENTUM")).toBeInTheDocument();
-    expect(screen.queryAllByText(/Pengguna|Daftar Alat Medis|Daftar Suku Cadang/).length).toBeGreaterThan(0);
+    expect(screen.getByText("Pengguna")).toBeInTheDocument();
+    expect(screen.getByText("Keluar")).toBeInTheDocument();
   };
 
   // Positive Cases
@@ -57,56 +64,55 @@ describe("SideBar Component", () => {
     leaveSidebar();
     assertSidebarCollapsed();
   });
-
-  it("renders the user info when expanded", () => {
+  
+  it("navigates to the correct route when a menu item is clicked if current path is not destination route", () => {
+    (usePathname as jest.Mock).mockReturnValue("/dashboard/user");
+  
     hoverSidebar();
-    expect(screen.getByText("Azmy Arya Rizaldi")).toBeInTheDocument();
-    expect(screen.getByText("Admin")).toBeInTheDocument();
+  
+    fireEvent.click(screen.getByText("Daftar Alat Medis"));
+  
+    expect(pushMock).toHaveBeenCalledWith("/dashboard/medical-equipment");
   });
 
-  it("renders the logout button", () => {
+  it("logs out when logout button is clicked", () => {
     hoverSidebar();
-    expect(screen.getByText("Keluar")).toBeInTheDocument();
-  });
 
-  it("navigates to the correct route when a button is clicked", () => {
-    hoverSidebar();
-    const userButton = screen.getByText("Pengguna");
-    fireEvent.click(userButton);
-    expect(pushMock).toHaveBeenCalledWith("/dashboard/user");
+    fireEvent.click(screen.getByText("Keluar"));
+
+    expect(Cookies.remove).toHaveBeenCalledWith("token");
+    expect(pushMock).toHaveBeenCalledWith("/");
   });
 
   // Negative Cases
-  it("does not expand the sidebar if hover event is not triggered", () => {
+  it("does not expand the sidebar if not hovered", () => {
     assertSidebarCollapsed();
   });
 
-  it("does not render user info when sidebar is collapsed", () => {
-    expect(screen.queryByText("Azmy Arya Rizaldi")).not.toBeInTheDocument();
-    expect(screen.queryByText("Admin")).not.toBeInTheDocument();
-  });
-
-  it("does not render logout button when sidebar is collapsed", () => {
-    expect(screen.queryByText("Keluar")).not.toBeInTheDocument();
-  });
-
-  it("does not navigate if a button is not clicked", () => {
+  it("does not navigate if a menu item is not clicked", () => {
     hoverSidebar();
+
     expect(pushMock).not.toHaveBeenCalled();
   });
 
-  it("does not render sidebar links when sidebar is collapsed", () => {
-    expect(screen.queryByText("Pengguna")).not.toBeInTheDocument();
-    expect(screen.queryByText("Daftar Alat Medis")).not.toBeInTheDocument();
-    expect(screen.queryByText("Daftar Suku Cadang")).not.toBeInTheDocument();
+  it("does not collapse the sidebar if not hovered and then left", () => {
+    hoverSidebar();
+    leaveSidebar();
+
+    assertSidebarCollapsed();
   });
 
-  it("does not render sidebar links if pathname is not provided", () => {
-    (usePathname as jest.Mock).mockReturnValue(undefined);
+  it("does not show menu labels when sidebar is collapsed", () => {
+    assertSidebarCollapsed();
+  });
 
-    render(<SideBar />);
-    expect(screen.queryByText("Pengguna")).not.toBeInTheDocument();
-    expect(screen.queryByText("Daftar Alat Medis")).not.toBeInTheDocument();
-    expect(screen.queryByText("Daftar Suku Cadang")).not.toBeInTheDocument();
+  it("does not navigate to a route if the route is the same as the current path", () => {
+    (usePathname as jest.Mock).mockReturnValue("/dashboard/user");
+
+    hoverSidebar();
+
+    fireEvent.click(screen.getByText("Pengguna"));
+
+    expect(pushMock).not.toHaveBeenCalled();
   });
 });

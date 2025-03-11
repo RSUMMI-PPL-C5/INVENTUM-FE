@@ -102,7 +102,10 @@ export default function UserDetails() {
     return (
       <div className="p-6" data-testid="error-state">
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          <p>{error || 'User tidak ditemukan'}</p>
+          <p>{error ?? 'User tidak ditemukan'}</p>
+          <Button onClick={handleGoBack} className="mt-4">
+            <FaArrowLeft className="mr-2" /> Kembali
+          </Button>
         </div>
         <Button onClick={handleGoBack} className="mt-4" data-testid="back-button">
           <FaArrowLeft className="mr-2" /> Kembali
@@ -173,6 +176,7 @@ export default function UserDetails() {
             <FaTrash className="mr-2" /> Hapus
           </Button>
         </div>
+
       </div>
     </div>
   );

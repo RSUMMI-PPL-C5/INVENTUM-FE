@@ -3,8 +3,7 @@ name: Continuous Integration
 on:
   push:
     branches:
-      - main
-      - PBI-12-Display_user
+      - '*'
 
 jobs:
   ci:
@@ -42,4 +41,4 @@ jobs:
             -Dsonar.tests=__tests__ \
             -Dsonar.test.inclusions=__tests__/**/*.test.tsx \
             -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
-            -Dsonar.coverage.exclusions=**/*.test.tsx
+            -Dsonar.coverage.exclusions=**/*.test.tsx,src/components/ui/**

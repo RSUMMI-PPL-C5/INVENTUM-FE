@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { FaEdit, FaTrash, FaFilter } from 'react-icons/fa';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
+import UserFilterModal, { Filters } from '@/components/general/userfiltermodal';
 
 // Tipe User berdasarkan schema Prisma
 type User = {
@@ -23,9 +24,55 @@ type User = {
   };
 };
 
+const divisionMapping: Record<string, number> = {
+  "Divisi A": 1,
+  "Divisi B": 2,
+  "Divisi C": 3,
+};
+
+export const buildQueryParams = (filters: Filters): string => {
+  const params = new URLSearchParams();
+
+  filters.role.forEach(role => {
+    params.append("role", role);
+  });
+
+  filters.division.forEach(div => {
+    const id = divisionMapping[div];
+    if (id) {
+      params.append("divisiId", id.toString());
+    }
+  });
+
+  if (filters.createdOnStart) {
+    params.append("createdOnStart", format(filters.createdOnStart, "yyyy-MM-dd"));
+  }
+  if (filters.createdOnEnd) {
+    params.append("createdOnEnd", format(filters.createdOnEnd, "yyyy-MM-dd"));
+  }
+
+  if (filters.modifiedOnStart) {
+    params.append("modifiedOnStart", format(filters.modifiedOnStart, "yyyy-MM-dd"));
+  }
+  if (filters.modifiedOnEnd) {
+    params.append("modifiedOnEnd", format(filters.modifiedOnEnd, "yyyy-MM-dd"));
+  }
+
+  return params.toString();
+};
+
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [search, setSearch] = useState('');
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [filters, setFilters] = useState<Filters>({
+    role: [],
+    division: [],
+    createdOnStart: null,
+    createdOnEnd: null,
+    modifiedOnStart: null,
+    modifiedOnEnd: null,
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -35,7 +82,19 @@ export default function UsersPage() {
     const fetchUsers = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`http://localhost:8000/user?search=${search}`);
+        const queryParams = buildQueryParams(filters);
+        let url = `http://localhost:8000/user`;
+
+        if (queryParams || search) {
+          const searchParam = search ? `search=${search}` : '';
+          url += `?${[queryParams, searchParam].filter(Boolean).join('&')}`;
+        }
+
+        const response = await fetch(url);
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch users');
+        }
 
         const data = await response.json();
         setUsers(data);
@@ -48,8 +107,25 @@ export default function UsersPage() {
     };
 
     fetchUsers();
-  }, [search]);
+  }, [search, filters]);
 
+  // Filter users based on search
+  const filteredUsers = users.filter(user => {
+    if (!search) return true;
+    
+    const searchLower = search.toLowerCase();
+    return (
+      user.email.toLowerCase().includes(searchLower) ||
+      (user.username && user.username.toLowerCase().includes(searchLower)) ||
+      (user.fullname && user.fullname.toLowerCase().includes(searchLower)) ||
+      (user.role && user.role.toLowerCase().includes(searchLower))
+    );
+  });
+  // Fungsi untuk menutup modal
+  const closeModal = () => {
+    setShowModal(false);
+    setSelectedUser(null);
+  };
   // Navigate to user detail page
   const navigateToUserDetail = (userId: string) => {
     router.push(`/dashboard/user/${userId}`);
@@ -64,6 +140,9 @@ export default function UsersPage() {
       console.error('Error formatting date:', _error);
       return dateString;
     }
+  // Fungsi untuk navigasi ke halaman update pengguna
+  const navigateToUserEdit = (userId: number) => {
+    router.push(`/dashboard/user/${userId}/edit`);
   };
 
   return (
@@ -90,7 +169,7 @@ export default function UsersPage() {
           onChange={(e) => setSearch(e.target.value)}
           data-testid="search-input"
         />
-        <Button>
+        <Button onClick={() => setShowFilterModal(true)}>
           <FaFilter /> Filter
         </Button>
       </div>
@@ -99,8 +178,7 @@ export default function UsersPage() {
       {loading && (
         <div className="text-center p-8">Loading users...</div>
       )}
-
-      {/* Error State */}
+      
       {error && (
         <div className="text-red-500 p-8 text-center">
           Error: {error}
@@ -172,6 +250,19 @@ export default function UsersPage() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {/* Filter Modal */}
+      {showFilterModal && (
+        <UserFilterModal
+          isOpen={showFilterModal}
+          filters={filters}
+          onConfirm={(newFilters) => {
+            setFilters(newFilters);
+            setShowFilterModal(false);
+          }}
+          onCancel={() => setShowFilterModal(false)}
+        />
       )}
     </div>
   );
