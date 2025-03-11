@@ -1,46 +1,44 @@
-"use client"
-
+import React from "react";
 import { cn } from "@/lib/utils";
-import { usePathname, useRouter } from "next/navigation";
-import { JSX } from "react";
 
-interface SideBarButtonProps {
+interface SideBarButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+    icon: React.ReactNode;
     color?: string;
-    label: string;
-    icon: JSX.Element;
-    route: string;
+    isActive?: boolean;
     isHovered: boolean;
+    onClick: () => void;
 }
 
-export default function SideBarButton({ label, color, icon, route, isHovered }: SideBarButtonProps) {
-    const router = useRouter();
-    const pathname = usePathname();
-    const isActive = pathname === route
-
-    if (!router) {
-        console.error('router is not available');
-        return;
-    }
-
-    if (!pathname) {
-        console.error('Pathname is not available');
-        return;
-    }
+const SideBarButton: React.FC<SideBarButtonProps> = ({
+    color,
+    icon,
+    isActive,
+    isHovered,
+    onClick,
+    ...props
+}) => {
 
     return (
         <button
-            className={cn("px-4 py-3 w-full flex items-center gap-3 rounded-lg hover:bg-primary-solid/5", isActive && 'bg-primary-solid/10')}
-            onClick={() => router.push(route)}
+            {...props}
+            className={cn(
+                "px-4 py-3 w-full flex items-center gap-3 rounded-lg hover:bg-primary-solid/5",
+                isActive && "bg-primary-solid/10",
+                props.className
+            )}
+            onClick={onClick}
         >
             <span>{icon}</span>
-            {isHovered &&
+            {isHovered && (
                 <span
-                    className='text-s-regular transition-all duration-150'
+                    className="text-s-regular transition-all duration-150"
                     style={{ color }}
                 >
-                    {label}
+                    {props.children}
                 </span>
-            }
+            )}
         </button>
     );
-}
+};
+
+export default SideBarButton;

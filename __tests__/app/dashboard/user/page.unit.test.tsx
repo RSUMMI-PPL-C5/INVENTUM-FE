@@ -428,5 +428,4 @@ describe('buildQueryParams', () => {
     expect(query).toBe('');
   });
 });
-
 });

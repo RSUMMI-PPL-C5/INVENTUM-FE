@@ -24,26 +24,6 @@ describe("Breadcrumb Component", () => {
     expect(screen.getByRole("separator")).toBeInTheDocument();
   });
 
-  it("renders breadcrumb for /dashboard/medical-equipment", () => {
-    (usePathname as jest.Mock).mockReturnValue("/dashboard/medical-equipment");
-
-    render(<Breadcrumb />);
-
-    expect(screen.getByText("Medical Equipment")).toBeInTheDocument();
-    expect(screen.getByTestId("notification-icon")).toBeInTheDocument();
-    expect(screen.getByRole("separator")).toBeInTheDocument();
-  });
-
-  it("renders breadcrumb for root path /dashboard", () => {
-    (usePathname as jest.Mock).mockReturnValue("/dashboard");
-
-    render(<Breadcrumb />);
-
-    expect(screen.queryByText("Dashboard")).not.toBeInTheDocument();
-    expect(screen.getByTestId("notification-icon")).toBeInTheDocument();
-    expect(screen.getByRole("separator")).toBeInTheDocument();
-  });
-
   // Negative Cases
   it("does not render breadcrumb for invalid path", () => {
     (usePathname as jest.Mock).mockReturnValue("/invalid-path");

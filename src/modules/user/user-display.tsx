@@ -115,6 +115,11 @@ export default function UsersPage() {
       (user.role && user.role.toLowerCase().includes(searchLower))
     );
   });
+  // Fungsi untuk menutup modal
+  const closeModal = () => {
+    setShowModal(false);
+    setSelectedUser(null);
+  };
 
   // Navigate to user detail page
   const navigateToUserDetail = (userId: string) => {
@@ -130,6 +135,9 @@ export default function UsersPage() {
       console.error('Error formatting date:', _error);
       return dateString;
     }
+  // Fungsi untuk navigasi ke halaman update pengguna
+  const navigateToUserEdit = (userId: number) => {
+    router.push(`/dashboard/user/${userId}/edit`);
   };
 
   return (
