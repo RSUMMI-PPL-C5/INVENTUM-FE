@@ -205,12 +205,11 @@ const UserCreate = ({
       formData.waNumber === "" && 
       formData.entryDate === "";
     
-    if (!isFormEmpty && window.confirm("Are you sure you want to cancel? All entered data will be lost.")) {
+if (!isFormEmpty && window.confirm("Are you sure you want to cancel? All entered data will be lost.")) {
       resetForm();
     } else if (isFormEmpty) {
       resetForm();
     }
-  };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
