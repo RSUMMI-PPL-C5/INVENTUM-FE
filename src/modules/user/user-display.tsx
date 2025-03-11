@@ -22,7 +22,7 @@ type User = {
   divisi?: {
     name: string;
   };
-}
+};
 
 const divisionMapping: Record<string, number> = {
   "Divisi A": 1,
@@ -77,19 +77,25 @@ export default function UsersPage() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  // Fetch users data from backend
+  // Fetch users data from backend with search query
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         setLoading(true);
         const queryParams = buildQueryParams(filters);
-        const url = `http://localhost:8000/user${queryParams ? `?${queryParams}` : ''}`;
+        let url = `http://localhost:8000/user`;
+
+        if (queryParams || search) {
+          const searchParam = search ? `search=${search}` : '';
+          url += `?${[queryParams, searchParam].filter(Boolean).join('&')}`;
+        }
+
         const response = await fetch(url);
-        
+
         if (!response.ok) {
           throw new Error('Failed to fetch users');
         }
-        
+
         const data = await response.json();
         setUsers(data);
       } catch (err) {
@@ -101,7 +107,7 @@ export default function UsersPage() {
     };
 
     fetchUsers();
-  }, [filters]);
+  }, [search, filters]);
 
   // Filter users based on search
   const filteredUsers = users.filter(user => {
@@ -120,7 +126,6 @@ export default function UsersPage() {
     setShowModal(false);
     setSelectedUser(null);
   };
-
   // Navigate to user detail page
   const navigateToUserDetail = (userId: string) => {
     router.push(`/dashboard/user/${userId}`);
@@ -153,7 +158,7 @@ export default function UsersPage() {
           </Button>
         </div>
       </div>
-      
+
       {/* Search & Filter */}
       <div className="flex items-center gap-4 mt-6">
         <input
@@ -168,20 +173,20 @@ export default function UsersPage() {
           <FaFilter /> Filter
         </Button>
       </div>
-      
-      {/* Loading and Error States */}
+
+      {/* Loading State */}
       {loading && (
         <div className="text-center p-8">Loading users...</div>
       )}
-
+      
       {error && (
         <div className="text-red-500 p-8 text-center">
           Error: {error}
         </div>
       )}
-      
+
       {/* Users Table */}
-      {!loading && !error && (
+      {!loading && (
         <div className="mt-6 border rounded-lg overflow-hidden">
           <table className="w-full text-left" data-testid="users-table">
             <thead className="bg-gray-100">
@@ -194,10 +199,10 @@ export default function UsersPage() {
               </tr>
             </thead>
             <tbody>
-              {filteredUsers.length > 0 ? (
-                filteredUsers.map((user) => (
-                  <tr 
-                    key={user.id} 
+              {users.length > 0 ? (
+                users.map((user) => (
+                  <tr
+                    key={user.id}
                     className="border-t hover:bg-gray-50 cursor-pointer"
                     onClick={() => navigateToUserDetail(user.id)}
                     data-testid={`user-row-${user.id}`}
@@ -207,9 +212,9 @@ export default function UsersPage() {
                     <td>{user.divisi?.name || `-`}</td>
                     <td>{formatDate(user.createdOn)}</td>
                     <td onClick={(e) => e.stopPropagation()} className="flex gap-2">
-                      <Button 
-                        size="icon" 
-                        variant="outline" 
+                      <Button
+                        size="icon"
+                        variant="outline"
                         onClick={(e) => {
                           e.stopPropagation();
                           navigateToUserDetail(user.id);
@@ -218,8 +223,8 @@ export default function UsersPage() {
                       >
                         <FaEdit />
                       </Button>
-                      <Button 
-                        size="icon" 
+                      <Button
+                        size="icon"
                         variant="destructive"
                         onClick={(e) => {
                           e.stopPropagation();
