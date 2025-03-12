@@ -1,6 +1,6 @@
 "use client"
 
-import { type JSX, Fragment, useState, useEffect, use } from "react"
+import { type JSX, Fragment, useState, useEffect } from "react"
 import { TwoUsers, Heart2, Category, Setting, Chart, Activity, User, Logout } from "react-iconly"
 import SideBarButton from "./sidebar-button"
 
@@ -52,12 +52,6 @@ const menuItems: MenuItem[] = [
     route: "/dashboard/report",
   },
 ]
-
-const roles = [
-    { id: "1", name: "User" },
-    { id: "2", name: "Asesor" },
-    { id: "3", name: "Admin" },
-  ]
 
 export default function SideBar() {
   const [isHovered, setIsHovered] = useState(false)
