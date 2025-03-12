@@ -1,6 +1,6 @@
 "use client"
 
-import { type JSX, Fragment, useState, useEffect } from "react"
+import { type JSX, Fragment, useState, useEffect, use } from "react"
 import { TwoUsers, Heart2, Category, Setting, Chart, Activity, User, Logout } from "react-iconly"
 import SideBarButton from "./sidebar-button"
 
@@ -93,6 +93,7 @@ export default function SideBar() {
         }
 
         const userData = await response.json()
+        console.log(userData)
         setUserData(userData)
       } catch (error) {
         console.error("Error fetching user data:", error)
@@ -147,7 +148,7 @@ export default function SideBar() {
           {isHovered && (
             <div className="flex flex-col w-fit truncate">
               <span className="text-s-semibold truncate">{loading ? "Loading..." : userData?.fullname || "User"}</span>
-              <span className="text-xs-medium">{loading ? "" : (userData ? roles.find(role => role.id === userData.role)?.name : null) || "Guest"}</span>
+              <span className="text-xs-medium">{loading ? "" : (userData ? userData.role : "Guest")}</span>
             </div>
           )}
         </div>

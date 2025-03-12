@@ -179,8 +179,8 @@ export default function UsersPage() {
 			<h1 className="text-header-h5 font-bold font-poppins">Pengguna</h1>
 
 			{/* Header Section */}
-			<div className="bg-primary-solid items-center p-2 flex h-[224px] gap-3 h-fit text-white rounded-lg overflow-hidden">
-				<div className="flex items-center justify-center w-[324px] h-full border border-primary-super-light rounded-lg">
+			<div className="bg-primary-solid items-center p-2 flex gap-3 h-fit text-white rounded-lg overflow-hidden">
+				<div className="flex items-center justify-center w-[264px] h-[224px] border border-primary-super-light rounded-lg">
 					illustration
 				</div>
 
