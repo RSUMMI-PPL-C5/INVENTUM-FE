@@ -24,7 +24,7 @@ const formSchema = z.object({
   divisi_id: z.string().min(1, { message: "Divisi wajib diisi" }),
   role: z.string().min(1, { message: "Role wajib diisi" }),
   wa_number: z
-    .number()
+    .string()
     .min(1, { message: "No. WA wajib diisi" })
     .nullable(),
   entryDate: z.date({
