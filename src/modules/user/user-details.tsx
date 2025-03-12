@@ -1,183 +1,226 @@
-'use client';
+"use client"
 
-import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { FaEdit, FaArrowLeft, FaTrash } from 'react-icons/fa';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect } from "react"
+import { useParams, useRouter } from "next/navigation"
+import { ArrowLeft, Edit, Trash2 } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
-// Tipe User berdasarkan schema Prisma
 type User = {
-  id: string;
-  email: string;
-  username: string;
-  role: string | null;
-  fullname: string | null;
-  nokar: string;
-  divisiId: number | null;
-  divisiName?: string;
-  waNumber: string | null;
-  createdOn: string | null;
-  modifiedOn: string;
-};
-
+  id: string
+  email: string
+  username: string
+  role: string | null
+  fullname: string | null
+  nokar: string
+  divisiId: number | null
+  divisiName?: string
+  waNumber: string | null
+  createdOn: string | null
+  modifiedOn: string
+}
 
 export default function UserDetails() {
-  const router = useRouter();
-  const params = useParams();
-  const userId = params.id as string;
-  
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const router = useRouter()
+  const params = useParams()
+  const userId = params.id as string
+
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchUser = async () => {
-      if (!userId) return;
-      
-      setLoading(true);
-      
+      if (!userId) return
+
+      setLoading(true)
+
       try {
-        const response = await fetch(`http://localhost:8000/user/${userId}`);
-        
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/${userId}`)
+
         if (!response.ok) {
-          throw new Error('User tidak ditemukan');
+          throw new Error("User tidak ditemukan")
         }
-        
-        const userData = await response.json();
-        
-        // Periksa apakah divisi ada sebelum mengakses propertinya
-        // dan gunakan optional chaining untuk menghindari error
+
+        const userData = await response.json()
+
         const user: User = {
           ...userData,
-          divisiName: userData?.divisi?.name || 'Tidak ada divisi'
-        };
-        
-        setUser(user);
-      } catch (err) {
-        // Hapus console.error dan hanya set state error
-        setError(err instanceof Error ? err.message : 'Terjadi kesalahan');
-      } finally {
-        setLoading(false);
-      }
-    };
+          divisiName: userData?.divisi?.name || "Tidak ada divisi",
+        }
 
-    fetchUser();
-  }, [userId]);
+        setUser(user)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Terjadi kesalahan")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchUser()
+  }, [userId])
 
   const handleGoBack = () => {
-    router.push('/dashboard/user');
-  };
+    router.push("/dashboard/user")
+  }
 
   const handleEdit = () => {
-    router.push(`/dashboard/user/edit/${userId}`);
-  };
+    router.push(`/dashboard/user/${userId}/edit`)
+  }
 
   const handleDelete = async () => {
-    if (!confirm('Apakah Anda yakin ingin menghapus pengguna ini?')) {
-      return;
+    if (!confirm("Apakah Anda yakin ingin menghapus pengguna ini?")) {
+      return
     }
 
     try {
-      const response = await fetch(`http://localhost:8000/user/${userId}`, {
-        method: 'DELETE',
-      });
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/${userId}`, {
+        method: "DELETE",
+      })
 
       if (!response.ok) {
-        throw new Error('Gagal menghapus pengguna');
+        throw new Error("Gagal menghapus pengguna")
       }
 
-      router.push('/dashboard/user');
+      router.push("/dashboard/user")
     } catch {
-      alert('Gagal menghapus pengguna');
+      alert("Gagal menghapus pengguna")
     }
-  };
+  }
+
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return "Tidak ada"
+    try {
+      const date = new Date(dateString)
+      return new Intl.DateTimeFormat("id-ID", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }).format(date)
+    } catch (error) {
+      console.error(error)
+    }
+  }
 
   // Loading state
   if (loading) {
-    return <div className="p-6 text-center" data-testid="loading-state">Loading user details...</div>;
+    return (
+      <div className="space-y-6" data-testid="loading-state">
+        <Button variant="outline" onClick={handleGoBack} className="mb-6">
+          <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
+        </Button>
+
+        <div className="border rounded-lg p-6 shadow-sm">
+          <div className="h-8 w-1/3 bg-muted animate-pulse rounded mb-6"></div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {Array.from({ length: 8 }).map((_, index) => (
+              <div key={index} className="space-y-2">
+                <div className="h-4 w-20 bg-muted animate-pulse rounded"></div>
+                <div className="h-5 w-40 bg-muted animate-pulse rounded"></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
   }
 
   // Error state
   if (error || !user) {
     return (
-      <div className="p-6" data-testid="error-state">
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          <p>{error ?? 'User tidak ditemukan'}</p>
-          <Button onClick={handleGoBack} className="mt-4">
-            <FaArrowLeft className="mr-2" /> Kembali
-          </Button>
-        </div>
-        <Button onClick={handleGoBack} className="mt-4" data-testid="back-button">
-          <FaArrowLeft className="mr-2" /> Kembali
+      <div className="p-6 space-y-4" data-testid="error-state">
+        <Button variant="outline" onClick={handleGoBack} data-testid="back-button">
+          <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
         </Button>
       </div>
-    );
+    )
   }
 
   // Success state with user details
   return (
-    <div className="p-6" data-testid="user-detail">
+    
+    <div className="space-y-6" data-testid="user-detail">
       {/* Back button */}
-      <Button variant="outline" onClick={handleGoBack} className="mb-6" data-testid="back-button">
-        <FaArrowLeft className="mr-2" /> Kembali
+      <Button variant="outline" onClick={handleGoBack} data-testid="back-button">
+        <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
       </Button>
-      
-      {/* Simple layout with basic user info */}
-      <div className="bg-white shadow-md rounded-lg p-6">
-        <h1 className="text-2xl font-bold mb-6" data-testid="user-name">{user.fullname || user.username}</h1>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <h2 className="text-sm font-medium text-gray-500">Email</h2>
-            <p data-testid="user-email">{user.email}</p>
+
+      {/* User details */}
+      <div className="border rounded-lg p-6 shadow-sm ">
+        <h1 className="text-header-h6 font-bold mb-6" data-testid="user-name">
+          {user.fullname || user.username}
+        </h1>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-1">
+            <h3 className="text-sm font-medium text-muted-foreground">Email</h3>
+            <p className="text-sm" data-testid="user-email">
+              {user.email}
+            </p>
           </div>
-          
-          <div>
-            <h2 className="text-sm font-medium text-gray-500">Username</h2>
-            <p data-testid="user-username">{user.username}</p>
+
+          <div className="space-y-1">
+            <h3 className="text-sm font-medium text-muted-foreground">Username</h3>
+            <p className="text-sm" data-testid="user-username">
+              {user.username}
+            </p>
           </div>
-          
-          <div>
-            <h2 className="text-sm font-medium text-gray-500">Role</h2>
-            <p data-testid="user-role">{user.role || 'Tidak ada'}</p>
+
+          <div className="space-y-1">
+            <h3 className="text-sm font-medium text-muted-foreground">Role</h3>
+            <p className="text-sm" data-testid="user-role">
+              {user.role || "Tidak ada"}
+            </p>
           </div>
-          
-          <div>
-            <h2 className="text-sm font-medium text-gray-500">No. Kartu</h2>
-            <p data-testid="user-nokar">{user.nokar}</p>
+
+          <div className="space-y-1">
+            <h3 className="text-sm font-medium text-muted-foreground">No. Kartu</h3>
+            <p className="text-sm" data-testid="user-nokar">
+              {user.nokar}
+            </p>
           </div>
-          
-          <div>
-            <h2 className="text-sm font-medium text-gray-500">Divisi</h2>
-            <p data-testid="user-divisi">{user.divisiName}</p>
+
+          <div className="space-y-1">
+            <h3 className="text-sm font-medium text-muted-foreground">Divisi</h3>
+            <p className="text-sm" data-testid="user-divisi">
+              {user.divisiName}
+            </p>
           </div>
-          
-          <div>
-            <h2 className="text-sm font-medium text-gray-500">WhatsApp</h2>
-            <p data-testid="user-wa">{user.waNumber || 'Tidak ada'}</p>
+
+          <div className="space-y-1">
+            <h3 className="text-sm font-medium text-muted-foreground">WhatsApp</h3>
+            <p className="text-sm" data-testid="user-wa">
+              {user.waNumber || "Tidak ada"}
+            </p>
           </div>
-          
-          <div>
-            <h2 className="text-sm font-medium text-gray-500">Dibuat Pada</h2>
-            <p data-testid="user-created">{user.createdOn || 'Tidak ada'}</p>
+
+          <div className="space-y-1">
+            <h3 className="text-sm font-medium text-muted-foreground">Dibuat Pada</h3>
+            <p className="text-sm" data-testid="user-created">
+              {formatDate(user.createdOn)}
+            </p>
           </div>
-          
-          <div>
-            <h2 className="text-sm font-medium text-gray-500">Dimodifikasi Pada</h2>
-            <p data-testid="user-modified">{user.modifiedOn}</p>
+
+          <div className="space-y-1">
+            <h3 className="text-sm font-medium text-muted-foreground">Dimodifikasi Pada</h3>
+            <p className="text-sm" data-testid="user-modified">
+              {formatDate(user.modifiedOn)}
+            </p>
           </div>
-        </div>
-        
-        <div className="mt-8 flex space-x-4">
-          <Button onClick={handleEdit} data-testid="edit-button">
-            <FaEdit className="mr-2" /> Edit
-          </Button>
-          <Button variant="destructive" onClick={handleDelete} data-testid="delete-button">
-            <FaTrash className="mr-2" /> Hapus
-          </Button>
         </div>
 
+        <div className="flex justify-end gap-4 pt-6 mt-6">
+          <Button onClick={handleEdit} data-testid="edit-button">
+            <Edit className="mr-2 h-4 w-4" /> Edit
+          </Button>
+          <Button variant="destructive" onClick={handleDelete} data-testid="delete-button">
+            <Trash2 className="mr-2 h-4 w-4" /> Hapus
+          </Button>
+        </div>
       </div>
     </div>
-  );
+  )
 }
+

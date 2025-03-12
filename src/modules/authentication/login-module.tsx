@@ -64,7 +64,7 @@ export default function LoginModule() {
         Cookies.set('token', data.token, { expires: 7 });
       }
 
-      router.push('/dashboard/medical-equipment');
+      router.push('/dashboard/user');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'An error occurred during login');
     } finally {
