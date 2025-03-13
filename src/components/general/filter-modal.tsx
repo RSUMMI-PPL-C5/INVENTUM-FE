@@ -35,7 +35,7 @@ type UserFilterModalProps = {
 }
 
 const roles = ["Admin", "User", "Manager"]
-const divisions = ["Divisi A", "Divisi B", "Divisi C"] // TODO Integrate Divisions
+const divisions = ["Divisi A", "Divisi B", "Divisi C"]
 
 export default function UserFilterModal({ isOpen, filters, onConfirm, onCancel }: UserFilterModalProps) {
   const [localFilters, setLocalFilters] = useState<Filters>({ ...filters })
@@ -71,6 +71,26 @@ export default function UserFilterModal({ isOpen, filters, onConfirm, onCancel }
       }
     })
   }
+
+  const handleDateChange = (type: "createdOnStart" | "createdOnEnd" | "modifiedOnStart" | "modifiedOnEnd", date: Date | undefined) => {
+    setLocalFilters((prev) => {
+      const updatedFilters = { ...prev };
+  
+      if (date) {
+        updatedFilters[type] = date;
+        if (type === "createdOnStart" && prev.createdOnEnd && date > prev.createdOnEnd) {
+          updatedFilters.createdOnEnd = date;
+        }
+        if (type === "modifiedOnStart" && prev.modifiedOnEnd && date > prev.modifiedOnEnd) {
+          updatedFilters.modifiedOnEnd = date;
+        }
+      } else {
+        updatedFilters[type] = null;
+      }
+  
+      return updatedFilters;
+    });
+  };
 
   const resetFilters = () => {
     setLocalFilters({
@@ -161,12 +181,8 @@ export default function UserFilterModal({ isOpen, filters, onConfirm, onCancel }
                             <Calendar
                             mode="single"
                             selected={localFilters.createdOnStart || undefined}
-                            onSelect={(date) =>
-                                setLocalFilters((prev) => ({
-                                ...prev,
-                                createdOnStart: date || null,
-                                }))
-                            }
+                            onSelect={(date) => handleDateChange("createdOnStart", date)}
+                            disabled={(date) => date > new Date()}
                             initialFocus
                             />
                         </PopoverContent>
@@ -196,11 +212,9 @@ export default function UserFilterModal({ isOpen, filters, onConfirm, onCancel }
                             <Calendar
                             mode="single"
                             selected={localFilters.createdOnEnd || undefined}
-                            onSelect={(date) =>
-                                setLocalFilters((prev) => ({
-                                ...prev,
-                                createdOnEnd: date || null,
-                                }))
+                            onSelect={(date) => handleDateChange("createdOnEnd", date)}
+                            disabled={(date) =>
+                                date > new Date() || (localFilters.createdOnStart ? date < localFilters.createdOnStart : false)
                             }
                             initialFocus
                             />
@@ -238,12 +252,8 @@ export default function UserFilterModal({ isOpen, filters, onConfirm, onCancel }
                             <Calendar
                             mode="single"
                             selected={localFilters.modifiedOnStart || undefined}
-                            onSelect={(date) =>
-                                setLocalFilters((prev) => ({
-                                ...prev,
-                                modifiedOnStart: date || null,
-                                }))
-                            }
+                            onSelect={(date) => handleDateChange("modifiedOnStart", date)}
+                            disabled={(date) => date > new Date()}
                             initialFocus
                             />
                         </PopoverContent>
@@ -273,11 +283,9 @@ export default function UserFilterModal({ isOpen, filters, onConfirm, onCancel }
                             <Calendar
                             mode="single"
                             selected={localFilters.modifiedOnEnd || undefined}
-                            onSelect={(date) =>
-                                setLocalFilters((prev) => ({
-                                ...prev,
-                                modifiedOnEnd: date || null,
-                                }))
+                            onSelect={(date) => handleDateChange("modifiedOnEnd", date)}
+                            disabled={(date) =>
+                                date > new Date() || (localFilters.modifiedOnStart ? date < localFilters.modifiedOnStart : false)
                             }
                             initialFocus
                             />
@@ -304,4 +312,3 @@ export default function UserFilterModal({ isOpen, filters, onConfirm, onCancel }
     </Dialog>
   )
 }
-
