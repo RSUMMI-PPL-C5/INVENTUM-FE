@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Edit, Trash2, Filter, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,7 @@ import {
 import UserFilterModal, {
 	type Filters,
 } from "@/components/general/filter-modal";
+import { toast } from "sonner";
 
 type User = {
 	id: string;
@@ -55,6 +56,7 @@ export default function UsersPage() {
 	const [loading, setLoading] = useState(true);
 	const router = useRouter();
 	const params = new URLSearchParams();
+    const searchParams = useSearchParams();
 
 	const fetchUsers = async () => {
 		try {
@@ -143,6 +145,7 @@ export default function UsersPage() {
 			}
 
 			fetchUsers();
+            toast.info('Pengguna berhasil dihapus')
 		} catch {
 			alert("Gagal menghapus pengguna");
 		}
@@ -151,6 +154,22 @@ export default function UsersPage() {
 	useEffect(() => {
 		fetchUsers();
 	}, [search, filters]);
+
+    const hasRun = useRef(false); 
+
+    useEffect(() => {
+        if (hasRun.current) return; 
+
+        const success = searchParams.get("success");
+
+        if (success === "create") {
+            setTimeout(() => toast.info("Pengguna berhasil dibuat"), 100);
+        }
+        if (success === "delete") {
+            setTimeout(() => toast.info("Pengguna berhasil dihapus"), 100);
+        }
+        hasRun.current = true; 
+    }, [searchParams]);
 
 	const formatDate = (dateString: string | null) => {
 		if (!dateString) return "-";

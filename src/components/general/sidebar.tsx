@@ -87,7 +87,6 @@ export default function SideBar() {
         }
 
         const userData = await response.json()
-        console.log(userData)
         setUserData(userData)
       } catch (error) {
         console.error("Error fetching user data:", error)

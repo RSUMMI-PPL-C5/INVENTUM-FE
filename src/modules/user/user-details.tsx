@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { ArrowLeft, Edit, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { toast } from "sonner"
 
 type User = {
   id: string
@@ -38,7 +39,8 @@ export default function UserDetails() {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/${userId}`)
 
         if (!response.ok) {
-          throw new Error("User tidak ditemukan")
+            toast.error("User tidak ditemukan")
+            throw new Error("User tidak ditemukan")
         }
 
         const userData = await response.json()
@@ -81,7 +83,7 @@ export default function UserDetails() {
         throw new Error("Gagal menghapus pengguna")
       }
 
-      router.push("/dashboard/user")
+      router.push("/dashboard/user?success=delete")
     } catch {
       alert("Gagal menghapus pengguna")
     }

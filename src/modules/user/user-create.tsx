@@ -104,7 +104,7 @@ export default function UserCreate() {
 
     try {
       await createUser(values)
-      router.push("/dashboard/user") // Redirect after successful creation
+      router.push("/dashboard/user?success=create")
     } catch (error) {
       console.error("Failed to create user:", error)
       setError("Gagal membuat pengguna. Silakan coba lagi.")
@@ -141,6 +141,19 @@ export default function UserCreate() {
                 <FormLabel>Nama Lengkap</FormLabel>
                 <FormControl>
                   <Input {...field} placeholder="Masukkan nama lengkap" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="wa_number"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>No. WA</FormLabel>
+                <FormControl>
+                  <Input {...field} value={field.value ?? ""} placeholder="Masukkan nomor WA" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -229,19 +242,6 @@ export default function UserCreate() {
                     ))}
                   </SelectContent>
                 </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="wa_number"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>No. WA</FormLabel>
-                <FormControl>
-                  <Input {...field} value={field.value ?? ""} placeholder="Masukkan nomor WA" />
-                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
