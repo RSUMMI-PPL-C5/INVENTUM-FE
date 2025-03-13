@@ -133,7 +133,7 @@ export default function LoginModule() {
                             type="button"
                             size="icon"
                             variant="ghost"
-                            className="absolute right-0 top-0 h-full"
+                            className="absolute right-0 top-0 h-full bg-transparent"
                             aria-label={showPassword ? "Hide password" : "Show password"}
                             onClick={() => setShowPassword((prev) => !prev)}
                           >
