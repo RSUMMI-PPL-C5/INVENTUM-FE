@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation"
 import { ArrowLeft, Edit, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
+import Cookies from "js-cookie";
 
 type User = {
   id: string
@@ -29,37 +30,44 @@ export default function UserDetails() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      if (!userId) return
-
-      setLoading(true)
-
-      try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/${userId}`)
-
-        if (!response.ok) {
-            toast.error("User tidak ditemukan")
-            throw new Error("User tidak ditemukan")
-        }
-
-        const userData = await response.json()
-
-        const user: User = {
-          ...userData,
-          divisiName: userData?.divisi?.name || "Tidak ada divisi",
-        }
-
-        setUser(user)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Terjadi kesalahan")
-      } finally {
-        setLoading(false)
+  const fetchUser = async () => {
+    if (!userId) return;
+  
+    setLoading(true);
+    
+    try {
+      const token = Cookies.get("token");
+  
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/${userId}`, {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : "",
+          "Content-Type": "application/json",
+        },
+      });
+  
+      if (!response.ok) {
+        toast.error("User tidak ditemukan");
+        throw new Error("User tidak ditemukan");
       }
+  
+      const userData = await response.json();
+  
+      const user = {
+        ...userData,
+        divisiName: userData?.divisi?.name || "Tidak ada divisi",
+      };
+  
+      setUser(user);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Terjadi kesalahan");
+    } finally {
+      setLoading(false);
     }
-
-    fetchUser()
-  }, [userId])
+  };
+  
+  useEffect(() => {
+    fetchUser();
+  }, [userId]);
 
   const handleGoBack = () => {
     router.push("/dashboard/user")
@@ -70,24 +78,30 @@ export default function UserDetails() {
   }
 
   const handleDelete = async () => {
-    if (!confirm("Apakah Anda yakin ingin menghapus pengguna ini?")) {
-      return
-    }
+	if (!confirm("Apakah Anda yakin ingin menghapus pengguna ini?")) {
+		return;
+	}
 
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/${userId}`, {
-        method: "DELETE",
-      })
+	try {
+		const token = Cookies.get("token");
 
-      if (!response.ok) {
-        throw new Error("Gagal menghapus pengguna")
-      }
+		const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/${userId}`, {
+			method: "DELETE",
+			headers: {
+				Authorization: token ? `Bearer ${token}` : "",
+				"Content-Type": "application/json",
+			},
+		});
 
-      router.push("/dashboard/user?success=delete")
-    } catch {
-      alert("Gagal menghapus pengguna")
-    }
-  }
+		if (!response.ok) {
+			throw new Error("Gagal menghapus pengguna");
+		}
+
+        router.push("/dashboard/user?success=delete")
+	} catch (error) {
+		toast.error("Gagal menghapus pengguna");
+	}
+};
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "Tidak ada"

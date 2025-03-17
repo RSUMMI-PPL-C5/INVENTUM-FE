@@ -18,6 +18,7 @@ import UserFilterModal, {
 	type Filters,
 } from "@/components/general/filter-modal";
 import { toast } from "sonner";
+import Cookies from "js-cookie";
 
 type User = {
 	id: string;
@@ -59,32 +60,38 @@ export default function UsersPage() {
     const searchParams = useSearchParams();
 
 	const fetchUsers = async () => {
-		try {
-			setLoading(true);
-			const queryParams = buildQueryParams(filters);
-			let url = `${process.env.NEXT_PUBLIC_API_URL}/user`;
-
-			if (queryParams || search) {
-				const searchParam = search ? `search=${search}` : "";
-				url += `?${[queryParams, searchParam]
-					.filter(Boolean)
-					.join("&")}`;
-			}
-
-			const response = await fetch(url);
-
-			if (!response.ok) {
-				throw new Error("Failed to fetch users");
-			}
-
-			const data = await response.json();
-			setUsers(data);
-		} catch (err) {
-			console.error("Error fetching users:", err);
-		} finally {
-			setLoading(false);
-		}
-	};
+        try {
+            setLoading(true);
+            const token = Cookies.get("token");
+            const queryParams = buildQueryParams(filters);
+            let url = `${process.env.NEXT_PUBLIC_API_URL}/user`;
+    
+            if (queryParams || search) {
+                const searchParam = search ? `search=${search}` : "";
+                url += `?${[queryParams, searchParam].filter(Boolean).join("&")}`;
+            }
+    
+            const response = await fetch(url, {
+                headers: {
+                    Authorization: token ? `Bearer ${token}` : "",
+                    "Content-Type": "application/json",
+                },
+            });
+    
+            if (!response.ok) {
+                const res = await response.json()
+                console.log(res)
+                throw new Error("Failed to fetch users");
+            }
+    
+            const data = await response.json();
+            setUsers(data);
+        } catch (err) {
+            console.error("Error fetching users:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
 	const buildQueryParams = (filters: Filters): string => {
 		filters.role.forEach((role) => {
@@ -128,28 +135,31 @@ export default function UsersPage() {
 	};
 
 	const handleDelete = async (userId: string) => {
-		if (!confirm("Apakah Anda yakin ingin menghapus pengguna ini?")) {
-			return;
-		}
-
-		try {
-			const response = await fetch(
-				`${process.env.NEXT_PUBLIC_API_URL}/user/${userId}`,
-				{
-					method: "DELETE",
-				}
-			);
-
-			if (!response.ok) {
-				throw new Error("Gagal menghapus pengguna");
-			}
-
-			fetchUsers();
-            toast.info('Pengguna berhasil dihapus')
-		} catch {
-			alert("Gagal menghapus pengguna");
-		}
-	};
+        if (!confirm("Apakah Anda yakin ingin menghapus pengguna ini?")) {
+            return;
+        }
+    
+        try {
+            const token = Cookies.get("token");
+    
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/${userId}`, {
+                method: "DELETE",
+                headers: {
+                    Authorization: token ? `Bearer ${token}` : "",
+                    "Content-Type": "application/json",
+                },
+            });
+    
+            if (!response.ok) {
+                throw new Error("Gagal menghapus pengguna");
+            }
+    
+            fetchUsers();
+            toast.info("Pengguna berhasil dihapus");
+        } catch (error) {
+            toast.error("Gagal menghapus pengguna");
+        }
+    };
 
 	useEffect(() => {
 		fetchUsers();

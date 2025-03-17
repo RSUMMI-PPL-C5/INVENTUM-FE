@@ -12,6 +12,7 @@ import { CalendarIcon } from "lucide-react"
 import { useRouter, useParams } from "next/navigation"
 import { format, isValid } from "date-fns"
 import { Hide, Show } from "react-iconly"
+import Cookies from "js-cookie";
 
 const formSchema = z.object({
   nokar: z.string().min(1, { message: "No. Kar wajib diisi" }),
@@ -51,57 +52,68 @@ export default function UserEdit() {
 
   useEffect(() => {
     async function fetchUser() {
-      try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/${userId}`)
-        if (!response.ok) {
-          throw new Error("Failed to fetch user data")
+        try {
+          const token = Cookies.get("token");
+      
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/${userId}`, {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : "",
+              "Content-Type": "application/json",
+            },
+          });
+      
+          if (!response.ok) {
+            throw new Error("Failed to fetch user data");
+          }
+      
+          const userData = await response.json();
+      
+          const entryDate = new Date(userData.createdOn);
+          const formattedDate = isValid(entryDate) ? format(entryDate, "yyyy-MM-dd") : "Invalid date";
+      
+          form.reset({
+            nokar: userData.nokar,
+            fullname: userData.fullname,
+            username: userData.username,
+            password: "",
+            divisi_id: userData.divisiId.toString(),
+            role: userData.role,
+            wa_number: userData.waNumber,
+            createdOn: formattedDate,
+          });
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+          setError("Failed to fetch user data");
+        } finally {
+          setLoading(false);
         }
-        const userData = await response.json()
-
-        // Periksa apakah entryDate adalah tanggal yang valid
-        const entryDate = new Date(userData.createdOn)
-        const formattedDate = isValid(entryDate) ? format(entryDate, "yyyy-MM-dd") : "Invalid date"
-
-        form.reset({
-          nokar: userData.nokar,
-          fullname: userData.fullname,
-          username: userData.username,
-          password: "",
-          divisi_id: userData.divisiId.toString(),
-          role: userData.role,
-          wa_number: userData.waNumber,
-          createdOn: formattedDate,
-        })
-      } catch (error) {
-        console.error("Error fetching user data:", error)
-        setError("Failed to fetch user data")
-      } finally {
-        setLoading(false)
       }
-    }
 
     fetchUser()
   }, [userId, form])
 
   async function updateUser(data: z.infer<typeof formSchema>) {
     try {
+      const token = Cookies.get("token");
+  
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/${userId}`, {
         method: "PUT",
         headers: {
+          Authorization: token ? `Bearer ${token}` : "",
           "Content-Type": "application/json",
         },
         body: JSON.stringify(data),
-      })
-
+      });
+  
       if (!response.ok) {
-        throw new Error("Failed to update user")
+        throw new Error("Failed to update user");
       }
-
-      const result = await response.json()
-      return result
+  
+      const result = await response.json();
+      return result;
     } catch (error) {
-      console.error("Error updating user:", error)
-      throw error
+      console.error("Error updating user:", error);
+      throw error;
     }
   }
 
