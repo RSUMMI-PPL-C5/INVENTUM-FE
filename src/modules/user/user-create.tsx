@@ -14,6 +14,7 @@ import { format } from "date-fns"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
+import Cookies from "js-cookie";
 
 const formSchema = z.object({
   nokar: z.string().min(1, { message: "No. Kar wajib diisi" }),
@@ -67,36 +68,39 @@ export default function UserCreate() {
 
   async function createUser(data: z.infer<typeof formSchema>) {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          username: data.username,
-          email: data.email,
-          password: data.password,
-          role: data.role,
-          fullname: data.fullname,
-          nokar: data.nokar,
-          divisiId: Number.parseInt(data.divisi_id),
-          waNumber: data.wa_number,
-          createdBy: 1, // Default value
-          createdOn: data.entryDate.toISOString(),
-        }),
-      })
+        const token = Cookies.get("token");
 
-      if (!response.ok) {
-        throw new Error("Failed to create user")
-      }
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: token ? `Bearer ${token}` : "",
+            },
+            body: JSON.stringify({
+                username: data.username,
+                email: data.email,
+                password: data.password,
+                role: data.role,
+                fullname: data.fullname,
+                nokar: data.nokar,
+                divisiId: Number.parseInt(data.divisi_id),
+                waNumber: data.wa_number,
+                createdBy: 1,
+                createdOn: data.entryDate.toISOString(),
+            }),
+        });
 
-      const result = await response.json()
-      return result
+        if (!response.ok) {
+            throw new Error("Failed to create user");
+        }
+
+        const result = await response.json();
+        return result;
     } catch (error) {
-      console.error("Error creating user:", error)
-      throw error
+        console.error("Error creating user:", error);
+        throw error;
     }
-  }
+}
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setLoading(true)

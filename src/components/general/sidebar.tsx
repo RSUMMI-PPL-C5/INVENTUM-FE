@@ -63,37 +63,43 @@ export default function SideBar() {
 
   useEffect(() => {
     const fetchUserData = async () => {
-      try {
-        const token = Cookies.get("token")
-
-        if (!token) {
-          console.error("No token found")
-          setLoading(false)
-          return
+        try {
+          const token = Cookies.get("token");
+      
+          if (!token) {
+            console.error("No token found");
+            setLoading(false);
+            return;
+          }
+      
+          const decodedToken = decodeToken(token);
+      
+          if (!decodedToken || !decodedToken.userId) {
+            console.error("Invalid token or userId not found in token");
+            setLoading(false);
+            return;
+          }
+      
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/${decodedToken.userId}`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          });
+      
+          if (!response.ok) {
+            throw new Error("Failed to fetch user data");
+          }
+      
+          const userData = await response.json();
+          setUserData(userData);
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+        } finally {
+          setLoading(false);
         }
-
-        const decodedToken = decodeToken(token)
-
-        if (!decodedToken || !decodedToken.userId) {
-          console.error("Invalid token or userId not found in token")
-          setLoading(false)
-          return
-        }
-
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/${decodedToken.userId}`)
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch user data")
-        }
-
-        const userData = await response.json()
-        setUserData(userData)
-      } catch (error) {
-        console.error("Error fetching user data:", error)
-      } finally {
-        setLoading(false)
-      }
-    }
+      };
 
     fetchUserData()
   }, [])
