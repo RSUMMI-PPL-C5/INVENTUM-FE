@@ -74,7 +74,7 @@ export default function SideBar() {
       
           const decodedToken = decodeToken(token);
       
-          if (!decodedToken || !decodedToken.userId) {
+          if (!decodedToken?.userId) {
             console.error("Invalid token or userId not found in token");
             setLoading(false);
             return;

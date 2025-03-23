@@ -1,354 +1,206 @@
-import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
-import UserCreate from '../../../../../src/modules/user/user-create';
+import { useRouter } from "next/navigation";
+import React from "react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import "@testing-library/jest-dom";
+import UserCreate from "../../../../../src/modules/user/user-create";
+import Cookies from "js-cookie";
 
 // Mock next/navigation
-jest.mock('next/navigation', () => ({
-  useRouter: () => ({
-    push: jest.fn(),
-  }),
+jest.mock("next/navigation", () => ({
+  useRouter: jest.fn(),
 }));
 
-// Mock window functions
+// Mock Cookies
+jest.mock("js-cookie", () => ({
+  get: jest.fn(),
+}));
+
+// Mock global functions
 global.alert = jest.fn();
 global.confirm = jest.fn();
 global.fetch = jest.fn();
 global.console.error = jest.fn();
 global.console.log = jest.fn();
 
-describe('UserCreate Component', () => {
+const mockFetchWithDelay = () => {
+  const mockFetchResponse = () => ({ ok: true, json: async () => ({ id: 1 }) });
+
+  (global.fetch as jest.Mock).mockImplementationOnce(() =>
+    new Promise((resolve) => setTimeout(() => resolve(mockFetchResponse()), 100))
+  );
+};
+
+// Helper function to fill in required fields
+const fillRequiredFields = () => {
+  fireEvent.change(screen.getByLabelText(/No. Karyawan/i), { target: { value: "12345" } });
+  fireEvent.change(screen.getByLabelText(/Nama Lengkap/i), { target: { value: "John Doe" } });
+  fireEvent.change(screen.getByLabelText(/Username/i), { target: { value: "johndoe" } });
+  fireEvent.change(screen.getByLabelText(/Email/i), { target: { value: "johndoe@example.com" } });
+  fireEvent.change(screen.getByLabelText(/Password/i), { target: { value: "password123" } });
+  fireEvent.click(screen.getByText("Pilih Divisi"));
+  fireEvent.click(screen.getByRole("option", { name: "IT Division" }));
+  fireEvent.click(screen.getByText("Pilih Role"));
+  fireEvent.click(screen.getByRole("option", { name: "Admin" }));
+  fireEvent.click(screen.getByText("Pilih tanggal"));
+  fireEvent.click(screen.getByText("15")); // Select a date from the calendar
+};
+
+// Helper function to mock fetch behavior
+const mockFetch = (response: any, ok = true) => {
+  (global.fetch as jest.Mock).mockResolvedValueOnce({
+    ok,
+    json: async () => response,
+  });
+};
+
+// Helper function to render the component and set up mocks
+const setupMocks = (mockPush: jest.Mock) => {
+  jest.clearAllMocks();
+  (useRouter as jest.Mock).mockReturnValue({ push: mockPush });
+  (global.confirm as jest.Mock).mockImplementation(() => true);
+  (Cookies.get as jest.Mock).mockReturnValue("mock-token");
+  jest.spyOn(global.Date, "now").mockImplementation(() => new Date("2025-03-14T17:00:00.000Z").getTime());
+};
+
+describe("UserCreate Component", () => {
+  const mockPush = jest.fn();
+
   beforeEach(() => {
-    jest.clearAllMocks();
-    // Default behavior for confirm
-    (global.confirm as jest.Mock).mockImplementation(() => true);
+    setupMocks(mockPush);
   });
 
-  // Test component rendering
-  it('renders the component correctly', () => {
+  it("renders the component correctly", () => {
     render(<UserCreate />);
-    
-    // Check if important elements are rendered
-    expect(screen.getByText('Create New User')).toBeInTheDocument();
+
+    expect(screen.getByText("Tambah Pengguna")).toBeInTheDocument();
+    expect(screen.getByLabelText(/No. Karyawan/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Nama Lengkap/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/No. WA/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Username/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Email/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Role/i)).toBeInTheDocument();
-    expect(screen.getByText('Create User')).toBeInTheDocument();
-    expect(screen.getByText('Cancel')).toBeInTheDocument();
+    expect(screen.getByLabelText(/Password/i)).toBeInTheDocument();
+    expect(screen.getByText("Divisi")).toBeInTheDocument();
+    expect(screen.getByText("Role")).toBeInTheDocument();
+    expect(screen.getByText("Tanggal Masuk")).toBeInTheDocument();
   });
 
-  // Test validation errors for empty fields
-  it('displays validation errors when submitting empty form', async () => {
+  it("calls createUser with correct data and handles success", async () => {
+    mockFetch({ id: 1, username: "testuser" });
+
     render(<UserCreate />);
-    
-    // Submit the form without filling any fields
-    fireEvent.click(screen.getByText('Create User'));
-    
-    // Check if validation errors are displayed
+    fillRequiredFields();
+
+    fireEvent.click(screen.getByText("Simpan"));
+
     await waitFor(() => {
-      expect(screen.getByText('Username is required')).toBeInTheDocument();
-      expect(screen.getByText('Email is required')).toBeInTheDocument();
-      expect(screen.getByText('Role is required')).toBeInTheDocument();
-      expect(screen.getByText('Full name is required')).toBeInTheDocument();
-      expect(screen.getByText('Employee number is required')).toBeInTheDocument();
-      expect(screen.getByText('Division is required')).toBeInTheDocument();
-      expect(screen.getByText('WhatsApp number is required')).toBeInTheDocument();
-      expect(screen.getByText('Date of entry is required')).toBeInTheDocument();
+      expect(global.fetch).toHaveBeenCalledWith(
+        `${process.env.NEXT_PUBLIC_API_URL}/user/`,
+        expect.objectContaining({
+          method: "POST",
+          headers: expect.objectContaining({
+            "Content-Type": "application/json",
+            Authorization: "Bearer mock-token",
+          }),
+          body: JSON.stringify({
+            username: "johndoe",
+            email: "johndoe@example.com",
+            password: "password123",
+            role: "Admin",
+            fullname: "John Doe",
+            nokar: "12345",
+            divisiId: 4, // IT Division ID
+            waNumber: null,
+            createdBy: 1,
+            createdOn: "2025-03-14T17:00:00.000Z",
+          }),
+        })
+      );
     });
   });
 
-  // Replace the entire email validation test with this simpler version
-  it('prevents form submission with invalid email', async () => {
-    const mockCreateUserApi = jest.fn().mockResolvedValue({ success: true });
-    render(<UserCreate createUserApi={mockCreateUserApi} />);
-    
-    // Fill in all fields but with invalid email
-    fireEvent.change(screen.getByLabelText(/Username/i), { target: { value: 'testuser' } });
-    fireEvent.change(screen.getByLabelText(/Email/i), { target: { value: 'invalid-email' } }); // Invalid email
-    fireEvent.change(screen.getByLabelText(/Role/i), { target: { value: 'user' } });
-    fireEvent.change(screen.getByLabelText(/Full Name/i), { target: { value: 'Test User' } });
-    fireEvent.change(screen.getByLabelText(/Employee Number/i), { target: { value: 'EMP123' } });
-    fireEvent.change(screen.getByLabelText(/Division/i), { target: { value: '1' } });
-    fireEvent.change(screen.getByLabelText(/WhatsApp Number/i), { target: { value: '628123456789' } });
-    fireEvent.change(screen.getByLabelText(/Date of Entry/i), { target: { value: '2023-01-01' } });
-    
-    // Submit the form
-    fireEvent.click(screen.getByText('Create User'));
-    
-    // API should NOT be called with invalid email
-    await waitFor(() => {
-      expect(mockCreateUserApi).not.toHaveBeenCalled();
-    });
-    
-    // Fix the email and try again
-    fireEvent.change(screen.getByLabelText(/Email/i), { target: { value: 'valid@example.com' } });
-    
-    // Submit again
-    fireEvent.click(screen.getByText('Create User'));
-    
-    // API should be called now with valid data
-    await waitFor(() => {
-      expect(mockCreateUserApi).toHaveBeenCalled();
-    });
-  });
+  it("handles missing authorization token and sends request without Authorization header", async () => {
+    (Cookies.get as jest.Mock).mockReturnValue(null);
+    mockFetch({ id: 1, username: "testuser" });
 
-  // Test WhatsApp number validation
-  it('validates WhatsApp number format', async () => {
     render(<UserCreate />);
-    
-    // Fill in an invalid WhatsApp number
-    fireEvent.change(screen.getByLabelText(/WhatsApp Number/i), { target: { value: '08123456789' } });
-    
-    // Submit the form
-    fireEvent.click(screen.getByText('Create User'));
-    
-    // Check if WhatsApp validation error is displayed
+    fillRequiredFields();
+
+    fireEvent.click(screen.getByText("Simpan"));
+
     await waitFor(() => {
-      expect(screen.getByText('WhatsApp number must start with 628')).toBeInTheDocument();
-    });
-    
-    // Correct the WhatsApp number and verify error is cleared
-    fireEvent.change(screen.getByLabelText(/WhatsApp Number/i), { target: { value: '6281234567890' } });
-    
-    await waitFor(() => {
-      expect(screen.queryByText('WhatsApp number must start with 628')).not.toBeInTheDocument();
+      expect(global.fetch).toHaveBeenCalledWith(
+        `${process.env.NEXT_PUBLIC_API_URL}/user/`,
+        expect.objectContaining({
+          method: "POST",
+          headers: expect.objectContaining({
+            "Content-Type": "application/json",
+            Authorization: "", // Authorization header should be an empty string
+          }),
+        })
+      );
     });
   });
 
-  // Test form cancellation with empty form
-  it('resets form when cancel is clicked with empty form', () => {
+  it("handles onSubmit success and navigates to the user list", async () => {
+    mockFetch({ id: 1, username: "testuser" });
+
     render(<UserCreate />);
-    
-    // Click cancel button
-    fireEvent.click(screen.getByText('Cancel'));
-    
-    // Confirm dialog should not be shown for empty form
-    expect(global.confirm).not.toHaveBeenCalled();
+    fillRequiredFields();
+
+    fireEvent.click(screen.getByText("Simpan"));
+
+    await waitFor(() => {
+      expect(mockPush).toHaveBeenCalledWith("/dashboard/user?success=create");
+    });
   });
 
-  // Test form cancellation with filled form
-  it('shows confirmation dialog when cancel is clicked with filled form', () => {
+  it("handles onSubmit failure and sets error message", async () => {
+    (global.fetch as jest.Mock).mockRejectedValueOnce(new Error("Failed to create user"));
+
     render(<UserCreate />);
-    
-    // Fill in a field
-    fireEvent.change(screen.getByLabelText(/Username/i), { target: { value: 'testuser' } });
-    
-    // Click cancel button
-    fireEvent.click(screen.getByText('Cancel'));
-    
-    // Confirm dialog should be shown
-    expect(global.confirm).toHaveBeenCalledWith('Are you sure you want to cancel? All entered data will be lost.');
-  });
+    fillRequiredFields();
 
-  // Test successful form submission
-  it('submits form successfully with complete data', async () => {
-    // Mock successful API response
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ id: 1, username: 'testuser' }),
-      status: 200,
-    });
-    
-    const mockCreateUserApi = jest.fn().mockResolvedValue({ success: true });
-    render(<UserCreate createUserApi={mockCreateUserApi} />);
-    
-    // Fill in all required fields
-    fireEvent.change(screen.getByLabelText(/Username/i), { target: { value: 'testuser' } });
-    fireEvent.change(screen.getByLabelText(/Email/i), { target: { value: 'test@example.com' } });
-    fireEvent.change(screen.getByLabelText(/Role/i), { target: { value: 'user' } });
-    fireEvent.change(screen.getByLabelText(/Full Name/i), { target: { value: 'Test User' } });
-    fireEvent.change(screen.getByLabelText(/Employee Number/i), { target: { value: 'EMP123' } });
-    fireEvent.change(screen.getByLabelText(/Division/i), { target: { value: '1' } });
-    fireEvent.change(screen.getByLabelText(/WhatsApp Number/i), { target: { value: '628123456789' } });
-    fireEvent.change(screen.getByLabelText(/Date of Entry/i), { target: { value: '2023-01-01' } });
-    
-    // Submit the form
-    fireEvent.click(screen.getByText('Create User'));
-    
-    // Check if API was called with correct data
+    fireEvent.click(screen.getByText("Simpan"));
+
     await waitFor(() => {
-      expect(mockCreateUserApi).toHaveBeenCalledWith({
-        username: 'testuser',
-        email: 'test@example.com',
-        role: 'user',
-        fullname: 'Test User',
-        nokar: 'EMP123',
-        divisiId: '1',
-        waNumber: '628123456789',
-        entryDate: '2023-01-01',
-        createdBy: 1
-      });
-    });
-    
-    // Check if alert and navigation happened
-    expect(global.alert).toHaveBeenCalledWith('User created successfully');
-  });
-
-  // Test form submission with admin role
-  it('submits form successfully with admin role', async () => {
-    const mockCreateUserApi = jest.fn().mockResolvedValue({ success: true });
-    render(<UserCreate createUserApi={mockCreateUserApi} />);
-    
-    // Fill in all required fields with admin role
-    fireEvent.change(screen.getByLabelText(/Username/i), { target: { value: 'adminuser' } });
-    fireEvent.change(screen.getByLabelText(/Email/i), { target: { value: 'admin@example.com' } });
-    fireEvent.change(screen.getByLabelText(/Role/i), { target: { value: 'admin' } });
-    fireEvent.change(screen.getByLabelText(/Full Name/i), { target: { value: 'Admin User' } });
-    fireEvent.change(screen.getByLabelText(/Employee Number/i), { target: { value: 'ADM456' } });
-    fireEvent.change(screen.getByLabelText(/Division/i), { target: { value: '2' } });
-    fireEvent.change(screen.getByLabelText(/WhatsApp Number/i), { target: { value: '628987654321' } });
-    fireEvent.change(screen.getByLabelText(/Date of Entry/i), { target: { value: '2023-02-01' } });
-    
-    // Submit the form
-    fireEvent.click(screen.getByText('Create User'));
-    
-    // Check if API was called with correct data
-    await waitFor(() => {
-      expect(mockCreateUserApi).toHaveBeenCalledWith({
-        username: 'adminuser',
-        email: 'admin@example.com',
-        role: 'admin',
-        fullname: 'Admin User',
-        nokar: 'ADM456',
-        divisiId: '2',
-        waNumber: '628987654321',
-        entryDate: '2023-02-01',
-        createdBy: 1
-      });
+      expect(screen.getByText("Gagal membuat pengguna. Silakan coba lagi.")).toBeInTheDocument();
     });
   });
 
-  // Test form submission failure
-  it('handles API errors when form submission fails', async () => {
-    // Mock API failure
-    const mockCreateUserApi = jest.fn().mockRejectedValue(new Error('API error'));
-    render(<UserCreate createUserApi={mockCreateUserApi} />);
-    
-    // Fill in all required fields
-    fireEvent.change(screen.getByLabelText(/Username/i), { target: { value: 'testuser' } });
-    fireEvent.change(screen.getByLabelText(/Email/i), { target: { value: 'test@example.com' } });
-    fireEvent.change(screen.getByLabelText(/Role/i), { target: { value: 'user' } });
-    fireEvent.change(screen.getByLabelText(/Full Name/i), { target: { value: 'Test User' } });
-    fireEvent.change(screen.getByLabelText(/Employee Number/i), { target: { value: 'EMP123' } });
-    fireEvent.change(screen.getByLabelText(/Division/i), { target: { value: '1' } });
-    fireEvent.change(screen.getByLabelText(/WhatsApp Number/i), { target: { value: '628123456789' } });
-    fireEvent.change(screen.getByLabelText(/Date of Entry/i), { target: { value: '2023-01-01' } });
-    
-    // Submit the form
-    fireEvent.click(screen.getByText('Create User'));
-    
-    // Check if error handling works
-    await waitFor(() => {
-      expect(global.console.error).toHaveBeenCalled();
-      expect(global.alert).toHaveBeenCalledWith('Failed to create user. Please try again.');
-    });
-  });
+  it("handles API failure and throws an error", async () => {
+    mockFetch({ message: "Bad Request" }, false);
 
-  // Test the default createUserApi implementation
-  it('uses default createUserApi implementation when not provided', async () => {
-    // Mock successful fetch response
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: true,
-      json: async () => ({ id: 1, username: 'testuser' }),
-      status: 200,
-    });
-    
     render(<UserCreate />);
-    
-    // Fill in all required fields
-    fireEvent.change(screen.getByLabelText(/Username/i), { target: { value: 'testuser' } });
-    fireEvent.change(screen.getByLabelText(/Email/i), { target: { value: 'test@example.com' } });
-    fireEvent.change(screen.getByLabelText(/Role/i), { target: { value: 'user' } });
-    fireEvent.change(screen.getByLabelText(/Full Name/i), { target: { value: 'Test User' } });
-    fireEvent.change(screen.getByLabelText(/Employee Number/i), { target: { value: 'EMP123' } });
-    fireEvent.change(screen.getByLabelText(/Division/i), { target: { value: '1' } });
-    fireEvent.change(screen.getByLabelText(/WhatsApp Number/i), { target: { value: '628123456789' } });
-    fireEvent.change(screen.getByLabelText(/Date of Entry/i), { target: { value: '2023-01-01' } });
-    
-    // Submit the form
-    fireEvent.click(screen.getByText('Create User'));
-    
-    // Check if fetch was called
+    fillRequiredFields();
+
+    fireEvent.click(screen.getByText("Simpan"));
+
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalled();
+      expect(screen.getByText("Gagal membuat pengguna. Silakan coba lagi.")).toBeInTheDocument();
     });
   });
 
-  // Test what happens when user cancels the confirmation dialog
-  it('does not reset form when user cancels the confirmation dialog', () => {
-    // Mock user cancelling the confirmation dialog
-    (global.confirm as jest.Mock).mockReturnValueOnce(false);
-    
+  it("calls router.back() when 'Batalkan' button is clicked", () => {
+    const mockBack = jest.fn();
+    (useRouter as jest.Mock).mockReturnValue({ back: mockBack });
+
     render(<UserCreate />);
-    
-    // Fill in a field
-    fireEvent.change(screen.getByLabelText(/Username/i), { target: { value: 'testuser' } });
-    
-    // Click cancel button
-    fireEvent.click(screen.getByText('Cancel'));
-    
-    // Confirm dialog should be shown
-    expect(global.confirm).toHaveBeenCalled();
-    
-    // Check that the field still has its value (not reset)
-    expect(screen.getByLabelText(/Username/i)).toHaveValue('testuser');
+
+    fireEvent.click(screen.getByText("Batalkan"));
+
+    expect(mockBack).toHaveBeenCalled();
   });
 
-  // Test API error handling with default implementation
-  it('handles API errors with default implementation', async () => {
-    // Mock fetch failure
-    (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
-    
-    render(<UserCreate />);
-    
-    // Fill in all required fields
-    fireEvent.change(screen.getByLabelText(/Username/i), { target: { value: 'testuser' } });
-    fireEvent.change(screen.getByLabelText(/Email/i), { target: { value: 'test@example.com' } });
-    fireEvent.change(screen.getByLabelText(/Role/i), { target: { value: 'user' } });
-    fireEvent.change(screen.getByLabelText(/Full Name/i), { target: { value: 'Test User' } });
-    fireEvent.change(screen.getByLabelText(/Employee Number/i), { target: { value: 'EMP123' } });
-    fireEvent.change(screen.getByLabelText(/Division/i), { target: { value: '1' } });
-    fireEvent.change(screen.getByLabelText(/WhatsApp Number/i), { target: { value: '628123456789' } });
-    fireEvent.change(screen.getByLabelText(/Date of Entry/i), { target: { value: '2023-01-01' } });
-    
-    // Submit the form
-    fireEvent.click(screen.getByText('Create User'));
-    
-    // Check error handling
-    await waitFor(() => {
-      expect(global.console.error).toHaveBeenCalled();
-      expect(global.alert).toHaveBeenCalledWith('Failed to create user. Please try again.');
-    });
-  });
+  it("disables 'Simpan' button when loading is true", async () => {
+    mockFetchWithDelay();
   
-  // Test API response with non-OK status
-  it('handles API response with non-OK status', async () => {
-    // Mock fetch response with error status
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: false,
-      status: 400,
-      text: async () => JSON.stringify({ message: 'Validation error' })
-    });
-    
     render(<UserCreate />);
-    
-    // Fill in all required fields
-    fireEvent.change(screen.getByLabelText(/Username/i), { target: { value: 'testuser' } });
-    fireEvent.change(screen.getByLabelText(/Email/i), { target: { value: 'test@example.com' } });
-    fireEvent.change(screen.getByLabelText(/Role/i), { target: { value: 'user' } });
-    fireEvent.change(screen.getByLabelText(/Full Name/i), { target: { value: 'Test User' } });
-    fireEvent.change(screen.getByLabelText(/Employee Number/i), { target: { value: 'EMP123' } });
-    fireEvent.change(screen.getByLabelText(/Division/i), { target: { value: '1' } });
-    fireEvent.change(screen.getByLabelText(/WhatsApp Number/i), { target: { value: '628123456789' } });
-    fireEvent.change(screen.getByLabelText(/Date of Entry/i), { target: { value: '2023-01-01' } });
-    
-    // Submit the form
-    fireEvent.click(screen.getByText('Create User'));
-    
-    // Check error handling
+    fillRequiredFields();
+
+    fireEvent.click(screen.getByText("Simpan"));
+
     await waitFor(() => {
-      expect(global.console.error).toHaveBeenCalled();
-      expect(global.alert).toHaveBeenCalledWith('Failed to create user. Please try again.');
+      expect(screen.getByRole("button", { name: /Menyimpan.../i })).toBeDisabled();
     });
   });
 });
