@@ -1,7 +1,7 @@
 "use client"
 
 import { type JSX, Fragment, useState, useEffect } from "react"
-import { TwoUsers, Heart2, Category, Setting, Chart, Activity, User, Logout } from "react-iconly"
+import { TwoUsers, Heart2, Category, Setting, Chart, Activity, User, Logout, Graph } from "react-iconly"
 import SideBarButton from "./sidebar-button"
 
 import Cookies from "js-cookie"
@@ -25,6 +25,11 @@ const menuItems: MenuItem[] = [
     label: "Pengguna",
     icon: <TwoUsers set="curved" stroke="bold" filled />,
     route: "/dashboard/user",
+  },
+  {
+    label: "Divisi",
+    icon: <Graph set="curved" stroke="bold" filled />,
+    route: "/dashboard/division",
   },
   {
     label: "Daftar Alat Medis",
