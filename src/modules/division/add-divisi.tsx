@@ -119,7 +119,7 @@ export default function AddDivisi() {
           : null,
       }
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/divisi/new`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/divisi`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
