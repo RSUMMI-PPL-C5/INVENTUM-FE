@@ -1,6 +1,6 @@
 // __tests__/app/dashboard/spare-part/page.extended.unit.test.tsx
 
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import SparePartDisplayPage from '@/app/dashboard/spare-part/page';
 import { toast } from 'sonner';
 import Cookies from 'js-cookie';
@@ -70,12 +70,14 @@ describe("SparepartDisplay Extended Tests", () => {
       expect(screen.getByText("Spare Part 1")).toBeInTheDocument();
     });
 
-    // Find and click the view button (first button with Eye icon)
-    const viewButtons = screen.getAllByRole('button');
-    const viewButton = viewButtons.find(button => button.innerHTML.includes('Eye'));
-    if (!viewButton) {
-      throw new Error('View button not found');
+    // Find all buttons in the row of the first spare part
+    const firstSparePartRow = screen.getByText("Spare Part 1").closest('tr');
+    if (!firstSparePartRow) {
+      throw new Error('Spare part row not found');
     }
+    
+    // Get the first button in the actions cell (view button)
+    const viewButton = within(firstSparePartRow).getAllByRole('button')[0];
     fireEvent.click(viewButton);
 
     // Verify navigation occurred
@@ -90,12 +92,14 @@ describe("SparepartDisplay Extended Tests", () => {
       expect(screen.getByText("Spare Part 1")).toBeInTheDocument();
     });
 
-    // Find and click the edit button (button with Edit icon)
-    const editButtons = screen.getAllByRole('button');
-    const editButton = editButtons.find(button => button.innerHTML.includes('Edit'));
-    if (!editButton) {
-      throw new Error('Edit button not found');
+    // Find all buttons in the row of the first spare part
+    const firstSparePartRow = screen.getByText("Spare Part 1").closest('tr');
+    if (!firstSparePartRow) {
+      throw new Error('Spare part row not found');
     }
+    
+    // Get the second button in the actions cell (edit button)
+    const editButton = within(firstSparePartRow).getAllByRole('button')[1];
     fireEvent.click(editButton);
 
     // Verify navigation occurred
