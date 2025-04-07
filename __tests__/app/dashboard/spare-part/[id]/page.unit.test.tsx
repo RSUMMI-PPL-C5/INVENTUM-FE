@@ -1,7 +1,13 @@
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+
+import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
 import SparePartDetailsPage from '@/app/dashboard/spare-part/[id]/page';
 import { toast } from 'sonner';
 import Cookies from 'js-cookie';
+
+// Set the API URL for tests
+beforeAll(() => {
+  process.env.NEXT_PUBLIC_API_URL = 'http://localhost:8000';
+});
 
 // Mock router
 const mockPush = jest.fn();
@@ -57,14 +63,27 @@ describe('SparePartDetailsPage', () => {
   });
 
   // Basic rendering test
-  it('renders the page component correctly', () => {
-    render(<SparePartDetailsPage params={{ id: 'test-id-123' }} />);
-    // This should pass with our minimal implementation
-    expect(screen.getByText(/SparePartDetails/i)).toBeInTheDocument();
+  it('renders the loading state initially', async () => {
+    // Set up the fetch mock BEFORE rendering the component
+    (global.fetch as jest.Mock).mockReturnValue(
+      new Promise(resolve => setTimeout(() => resolve({
+        ok: true,
+        json: () => Promise.resolve(mockSparepartData)
+      }), 100))
+    );
+    
+    // Render the component
+    await act(async () => {
+      render(<SparePartDetailsPage params={{ id: 'test-id-123' }} />);
+    });
+    
+    // Check for loading state
+    expect(screen.getByTestId('loading-state')).toBeInTheDocument();
+    expect(screen.getByText("Memuat...")).toBeInTheDocument();
   });
 
   // Test loading state
-  it('displays loading state initially', async () => {
+  it('displays loading state while fetching data', async () => {
     // Mock a delayed response to show loading state
     (global.fetch as jest.Mock).mockImplementationOnce(() =>
       new Promise(resolve => setTimeout(() => 
@@ -74,7 +93,9 @@ describe('SparePartDetailsPage', () => {
         }), 100))
     );
 
-    render(<SparePartDetailsPage params={{ id: 'test-id-123' }} />);
+    await act(async () => {
+      render(<SparePartDetailsPage params={{ id: 'test-id-123' }} />);
+    });
     
     // Loading state should be shown
     expect(screen.getByTestId('loading-state')).toBeInTheDocument();
@@ -89,7 +110,9 @@ describe('SparePartDetailsPage', () => {
       json: async () => mockSparepartData,
     });
 
-    render(<SparePartDetailsPage params={{ id: 'test-id-123' }} />);
+    await act(async () => {
+      render(<SparePartDetailsPage params={{ id: 'test-id-123' }} />);
+    });
 
     // Wait for data to be displayed
     await waitFor(() => {
@@ -122,7 +145,9 @@ describe('SparePartDetailsPage', () => {
       json: async () => mockSparepartData,
     });
 
-    render(<SparePartDetailsPage params={{ id: 'test-id-123' }} />);
+    await act(async () => {
+      render(<SparePartDetailsPage params={{ id: 'test-id-123' }} />);
+    });
 
     // Wait for component to load
     await waitFor(() => {
@@ -143,7 +168,9 @@ describe('SparePartDetailsPage', () => {
       json: async () => mockSparepartData,
     });
 
-    render(<SparePartDetailsPage params={{ id: 'test-id-123' }} />);
+    await act(async () => {
+      render(<SparePartDetailsPage params={{ id: 'test-id-123' }} />);
+    });
 
     // Wait for component to load
     await waitFor(() => {
@@ -174,7 +201,9 @@ describe('SparePartDetailsPage', () => {
       json: async () => ({}),
     });
 
-    render(<SparePartDetailsPage params={{ id: 'test-id-123' }} />);
+    await act(async () => {
+      render(<SparePartDetailsPage params={{ id: 'test-id-123' }} />);
+    });
 
     // Wait for component to load
     await waitFor(() => {
@@ -182,7 +211,9 @@ describe('SparePartDetailsPage', () => {
     });
 
     // Click delete button
-    fireEvent.click(screen.getByTestId('delete-button'));
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('delete-button'));
+    });
 
     // Verify confirmation dialog was shown
     expect(global.confirm).toHaveBeenCalledWith(
@@ -218,7 +249,9 @@ describe('SparePartDetailsPage', () => {
       json: async () => mockSparepartData,
     });
 
-    render(<SparePartDetailsPage params={{ id: 'test-id-123' }} />);
+    await act(async () => {
+      render(<SparePartDetailsPage params={{ id: 'test-id-123' }} />);
+    });
 
     // Wait for component to load
     await waitFor(() => {
@@ -229,7 +262,9 @@ describe('SparePartDetailsPage', () => {
     (global.fetch as jest.Mock).mockClear();
 
     // Click delete button
-    fireEvent.click(screen.getByTestId('delete-button'));
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('delete-button'));
+    });
 
     // Verify confirmation dialog was shown
     expect(global.confirm).toHaveBeenCalledWith(
@@ -265,7 +300,9 @@ describe('SparePartDetailsPage', () => {
       json: async () => ({ message: "Failed to delete spare part" }),
     });
 
-    render(<SparePartDetailsPage params={{ id: 'test-id-123' }} />);
+    await act(async () => {
+      render(<SparePartDetailsPage params={{ id: 'test-id-123' }} />);
+    });
 
     // Wait for component to load
     await waitFor(() => {
@@ -273,7 +310,9 @@ describe('SparePartDetailsPage', () => {
     });
 
     // Click delete button
-    fireEvent.click(screen.getByTestId('delete-button'));
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('delete-button'));
+    });
 
     // Verify error toast was shown
     await waitFor(() => {
@@ -292,7 +331,9 @@ describe('SparePartDetailsPage', () => {
       json: async () => ({ message: "Spare part not found" }),
     });
 
-    render(<SparePartDetailsPage params={{ id: 'test-id-123' }} />);
+    await act(async () => {
+      render(<SparePartDetailsPage params={{ id: 'test-id-123' }} />);
+    });
 
     // Wait for error state to be displayed
     await waitFor(() => {
@@ -305,9 +346,11 @@ describe('SparePartDetailsPage', () => {
 
   // Test formatting functions
   it('formats dates and currencies correctly', async () => {
+    // Use a fixed date to avoid timezone issues in tests
     const sparepartWithFormattingTest = {
       ...mockSparepartData,
-      purchaseDate: '2023-12-31T23:59:59.000Z',
+      // Use a date that will be the same in any timezone
+      purchaseDate: '2023-10-15T12:00:00.000Z', // October 15, 2023
       price: 1250500
     };
 
@@ -317,16 +360,23 @@ describe('SparePartDetailsPage', () => {
       json: async () => sparepartWithFormattingTest,
     });
 
-    render(<SparePartDetailsPage params={{ id: 'test-id-123' }} />);
+    await act(async () => {
+      render(<SparePartDetailsPage params={{ id: 'test-id-123' }} />);
+    });
 
     // Wait for data to be displayed
     await waitFor(() => {
       expect(screen.getByTestId('spare-part-detail')).toBeInTheDocument();
     });
 
-    // Verify formatted date and price
-    expect(screen.getByTestId('spare-part-date')).toHaveTextContent('31 Desember 2023');
+    // Check for the price only, since date format is locale-dependent
     expect(screen.getByTestId('spare-part-price')).toHaveTextContent('Rp 1.250.500');
+    
+    // For date, check for the correct month and year since the day might display differently in various timezones
+    const dateElement = screen.getByTestId('spare-part-date');
+    expect(dateElement.textContent).toContain('15');
+    expect(dateElement.textContent).toContain('Oktober');
+    expect(dateElement.textContent).toContain('2023');
   });
 
   // Test null description handling
@@ -342,7 +392,9 @@ describe('SparePartDetailsPage', () => {
       json: async () => sparepartWithoutDescription,
     });
 
-    render(<SparePartDetailsPage params={{ id: 'test-id-123' }} />);
+    await act(async () => {
+      render(<SparePartDetailsPage params={{ id: 'test-id-123' }} />);
+    });
 
     // Wait for data to be displayed
     await waitFor(() => {
@@ -351,5 +403,41 @@ describe('SparePartDetailsPage', () => {
 
     // Verify "No description" text is shown
     expect(screen.getByTestId('spare-part-description')).toHaveTextContent('Tidak ada deskripsi');
+  });
+
+  // Test for handling date formatting errors - to cover lines 104-105
+  it('handles date formatting errors', async () => {
+    // Create a sparepart with an intentionally invalid date format
+    const sparepartWithInvalidDate = {
+      ...mockSparepartData,
+      purchaseDate: 'not-a-date' // This will cause the Date constructor to throw
+    };
+
+    // Mock successful fetch
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => sparepartWithInvalidDate,
+    });
+
+    // Spy on console.error to verify it's called
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+
+    await act(async () => {
+      render(<SparePartDetailsPage params={{ id: 'test-id-123' }} />);
+    });
+
+    // Wait for data to be displayed
+    await waitFor(() => {
+      expect(screen.getByTestId('spare-part-detail')).toBeInTheDocument();
+    });
+
+    // Verify "Tanggal tidak valid" text is shown
+    expect(screen.getByTestId('spare-part-date')).toHaveTextContent('Tanggal tidak valid');
+    
+    // Verify console.error was called
+    expect(consoleErrorSpy).toHaveBeenCalled();
+    
+    // Clean up
+    consoleErrorSpy.mockRestore();
   });
 });
