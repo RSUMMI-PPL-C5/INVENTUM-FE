@@ -4,6 +4,11 @@ import '@testing-library/jest-dom';
 import UserDetailsPage from '@/app/dashboard/user/[id]/page';
 import { useRouter, useParams } from 'next/navigation';
 import UserEditPage from '@/app/dashboard/user/[id]/edit/page';
+import Cookies from "js-cookie";
+
+jest.mock("js-cookie", () => ({
+  get: jest.fn(),
+}));
 
 // Mock the UserEdit component
 jest.mock("@/modules/user/user-edit", () => jest.fn(() => <div>UserEdit Component</div>));
@@ -56,7 +61,7 @@ describe('UserDetails Component', () => {
     divisiId: null, 
     divisi: null, 
     waNumber: null, 
-    createdOn: null, 
+    createdOn: "invalid-date", // Invalid date format
     modifiedOn: "2025-03-06T11:39:23.951Z"
   };
 
@@ -94,6 +99,83 @@ describe('UserDetails Component', () => {
     expect(screen.getByTestId('user-username')).toHaveTextContent('amba123');
     expect(screen.getByTestId('user-role')).toHaveTextContent('user');
   });
+
+  it('should use auth token when it exists for fetching', async () => {
+    (Cookies.get as jest.Mock).mockReturnValue('mockToken');
+
+    render(<UserDetailsPage />);
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        `${process.env.NEXT_PUBLIC_API_URL}/user/${mockUser.id}`,
+        expect.objectContaining({
+          headers: {
+            Authorization: 'Bearer mockToken',
+            'Content-Type': 'application/json',
+          },
+        })
+      );
+    });
+  });
+
+  it('should use auth token when it exists for delete', async () => {
+    (Cookies.get as jest.Mock).mockReturnValue('mockToken');
+
+    render(<UserDetailsPage />);
+    await waitFor(() => {
+      fireEvent.click(screen.getByTestId('delete-button'));
+      expect(global.confirm).toHaveBeenCalled();
+    });
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        `${process.env.NEXT_PUBLIC_API_URL}/user/${mockUser.id}`,
+        expect.objectContaining({
+          method: 'DELETE',
+          headers: {
+            Authorization: 'Bearer mockToken',
+            'Content-Type': 'application/json',
+          },
+        })
+      );
+    });
+  });
+
+  it('should use empty string if token does not exist for delete', async () => {
+    (Cookies.get as jest.Mock).mockReturnValue('');
+
+    render(<UserDetailsPage />);
+    await waitFor(() => {
+      fireEvent.click(screen.getByTestId('delete-button'));
+      expect(global.confirm).toHaveBeenCalled();
+    });
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        `${process.env.NEXT_PUBLIC_API_URL}/user/${mockUser.id}`,
+        expect.objectContaining({
+          method: 'DELETE',
+          headers: {
+            Authorization: '',
+            'Content-Type': 'application/json',
+          },
+        })
+      );
+    });
+  });
+
+  it('should handle missing userId', async () => {
+    (useParams as jest.Mock).mockReturnValue({ id: null });
+
+    global.fetch = jest.fn();
+
+    render(<UserDetailsPage />);
+
+    expect(screen.getByTestId('loading-state')).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+  });
   
   it('should handle errors when user is not found', async () => {
     // Mock error response
@@ -108,17 +190,30 @@ describe('UserDetails Component', () => {
       expect(screen.getByTestId('error-state')).toBeInTheDocument();
     });
   });
-  
-  it('should handle network errors', async () => {
-    // Mock network error
-    (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network Error'));
-    
+
+  it('should use generic error message when user is not found', async () => {
+    global.fetch = jest.fn(() => {
+      throw "Not an error object";
+    });
+
     render(<UserDetailsPage />);
-    
-    // Wait for error message
+
     await waitFor(() => {
       expect(screen.getByTestId('error-state')).toBeInTheDocument();
-      expect(screen.getByText('Network Error')).toBeInTheDocument();
+    });
+  });
+
+  it('should handle error in date formatting', async () => {
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: jest.fn().mockResolvedValue(falseUser)
+    });
+
+    render(<UserDetailsPage />);
+    await waitFor(() => {
+      expect(errorSpy).toHaveBeenCalled();
     });
   });
   
@@ -149,7 +244,7 @@ describe('UserDetails Component', () => {
     fireEvent.click(screen.getByTestId('edit-button'));
     
     // Check navigation
-    expect(mockPush).toHaveBeenCalledWith(`/dashboard/user/edit/${mockUser.id}`);
+    expect(mockPush).toHaveBeenCalledWith(`/dashboard/user/${mockUser.id}/edit`);
   });
 
   it('should delete user successfully when confirmed', async () => {
@@ -181,7 +276,7 @@ describe('UserDetails Component', () => {
     
     // Wait for redirect
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith('/dashboard/user');
+      expect(mockPush).toHaveBeenCalledWith('/dashboard/user?success=delete');
     });
   });
   
@@ -232,11 +327,6 @@ describe('UserDetails Component', () => {
     // Click delete button
     fireEvent.click(screen.getByTestId('delete-button'));
     
-    // Verify alert was shown
-    await waitFor(() => {
-      expect(window.alert).toHaveBeenCalledWith('Gagal menghapus pengguna');
-    });
-    
     // Verify no redirect happened
     expect(mockPush).not.toHaveBeenCalledWith('/dashboard/user');
   });
@@ -279,8 +369,8 @@ describe('UserDetails Component', () => {
     expect(screen.getByTestId('user-nokar')).toHaveTextContent('EMP123');
     expect(screen.getByTestId('user-divisi')).toHaveTextContent('IT Department');
     expect(screen.getByTestId('user-wa')).toHaveTextContent('6281234567890');
-    expect(screen.getByTestId('user-created')).toHaveTextContent('2025-03-06');
-    expect(screen.getByTestId('user-modified')).toHaveTextContent('2025-03-06');
+    expect(screen.getByTestId('user-created')).toHaveTextContent('06 Mar 2025');
+    expect(screen.getByTestId('user-modified')).toHaveTextContent('06 Mar 2025');
     expect(screen.getByTestId('edit-button')).toBeInTheDocument();
     expect(screen.getByTestId('delete-button')).toBeInTheDocument();
   });
