@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/table";
 import UserFilterModal, {
 	type Filters,
-} from "@/components/general/filter-modal";
+} from "@/components/general/user-filter-modal";
 import { toast } from "sonner";
 import Cookies from "js-cookie";
 
