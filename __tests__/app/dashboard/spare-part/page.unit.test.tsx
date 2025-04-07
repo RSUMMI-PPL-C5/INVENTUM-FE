@@ -1,8 +1,14 @@
+// __tests__/app/dashboard/spare-part/page.unit.test.tsx
+
 import { render, screen, waitFor } from '@testing-library/react';
 import SparePartDisplayPage from '@/app/dashboard/spare-part/page';
-import {toast} from 'sonner';
+import { toast } from 'sonner';
 import Cookies from 'js-cookie';
 
+// Set the API URL for tests
+beforeAll(() => {
+  process.env.NEXT_PUBLIC_API_URL = 'http://localhost:8000';
+});
 
 jest.mock("next/navigation", () => ({
   useRouter: jest.fn(() => ({
@@ -17,15 +23,13 @@ jest.mock('sonner', () => ({
   },
 }));
 
-jest.mock('js-cookie', () => ({
-  get: jest.fn(),
+jest.mock("js-cookie", () => ({
+  get: jest.fn().mockReturnValue("mock-token"),
 }));
 
 describe("SparepartDisplay", () => {
-
   beforeEach(() => {
     (Cookies.get as jest.Mock).mockReturnValue("mock-token");
-    
     global.fetch = jest.fn();
   });
 
@@ -33,13 +37,16 @@ describe("SparepartDisplay", () => {
     jest.clearAllMocks();
   });
 
-  it("renders the component page name", () => {
+  // First test: check if the component renders the heading
+  it("renders the component heading", async () => {
     render(<SparePartDisplayPage />);
-    const pageName = screen.getByText('SparePartDisplay');
-    expect(pageName).toBeInTheDocument();
+    
+    // Wait for the heading to be displayed
+    const heading = await screen.findByText('Daftar Suku Cadang');
+    expect(heading).toBeInTheDocument();
   });
 
-  // Add this to your test file
+  // Second test: check fetching and displaying data
   it("fetches spare parts on component mount", async () => {
     const mockSpareparts = [
       {
@@ -51,6 +58,7 @@ describe("SparepartDisplay", () => {
       }
     ];
 
+    // Mock the fetch response
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => mockSpareparts,
@@ -58,21 +66,22 @@ describe("SparepartDisplay", () => {
 
     render(<SparePartDisplayPage />);
 
-    // Check that fetch was called with correct URL and headers
-    expect(global.fetch).toHaveBeenCalledWith(
-      `${process.env.NEXT_PUBLIC_API_URL}/spareparts`,
-      {
-        method: "GET",
-        headers: {
-          Authorization: "Bearer mock-token",
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    // Check that the spare part data appears in the component
+    // Wait for the fetch call to be made
     await waitFor(() => {
-      expect(screen.getByText("Spare Part 1")).toBeInTheDocument();
+      expect(global.fetch).toHaveBeenCalledWith(
+        `${process.env.NEXT_PUBLIC_API_URL}/spareparts`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: "Bearer mock-token",
+            "Content-Type": "application/json",
+          },
+        }
+      );
     });
+
+    // Wait for the spare part data to appear
+    const sparePartElement = await screen.findByText("Spare Part 1");
+    expect(sparePartElement).toBeInTheDocument();
   });
 });
