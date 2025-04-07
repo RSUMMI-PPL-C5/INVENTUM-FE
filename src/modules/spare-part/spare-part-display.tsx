@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Filter, Plus, Edit, Eye, Search } from "lucide-react";
+import { Filter, Plus, Edit, Eye, Search, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -74,6 +74,34 @@ export default function SparepartDisplay() {
     }
   };
 
+  const handleDelete = async (id: string) => {
+    if (!confirm("Apakah Anda yakin ingin menghapus suku cadang ini?")) {
+      return;
+    }
+  
+    try {
+      const token = Cookies.get("token");
+  
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/spareparts/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+  
+      if (!response.ok) {
+        throw new Error("Gagal menghapus suku cadang");
+      }
+  
+      // Refresh the list
+      fetchSpareparts();
+      toast.success("Suku cadang berhasil dihapus");
+    } catch (error) {
+      toast.error((error as Error).message);
+    }
+  };
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("id-ID", {
       style: "currency",
@@ -95,15 +123,15 @@ export default function SparepartDisplay() {
     }
   };
 
-  const handleViewDetails = (id: string) => {
+  const navigateToViewDetails = (id: string) => {
     router.push(`/dashboard/spare-part/${id}`);
   };
 
-  const handleEdit = (id: string) => {
+  const navigateToEdit = (id: string) => {
     router.push(`/dashboard/spare-part/${id}/edit`);
   };
 
-  const handleAddNew = () => {
+  const navigateToCreate = () => {
     router.push("/dashboard/spare-part/create");
   };
 
@@ -136,7 +164,7 @@ export default function SparepartDisplay() {
           <Button
             variant="ghost"
             className="w-fit"
-            onClick={handleAddNew}
+            onClick={navigateToCreate}
           >
             <Plus className="mr-2 h-4 w-4" /> Tambah Suku Cadang
           </Button>
@@ -188,26 +216,42 @@ export default function SparepartDisplay() {
             <TableBody>
               {spareparts.length > 0 ? (
                 spareparts.map((sparepart) => (
-                  <TableRow key={sparepart.id}>
+                  <TableRow 
+                    key={sparepart.id}
+                    className="cursor-pointer"
+                    onClick={() => navigateToViewDetails(sparepart.id)}
+                    data-testid={`sparepart-row-${sparepart.id}`}
+                  >
                     <TableCell className="font-medium">{sparepart.partsName}</TableCell>
                     <TableCell>{formatDate(sparepart.purchaseDate)}</TableCell>
                     <TableCell>{formatCurrency(sparepart.price)}</TableCell>
                     <TableCell>{sparepart.toolLocation}</TableCell>
-                    <TableCell className="text-right">
+                    <TableCell 
+                      className="text-right"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <div className="flex justify-end gap-2">
                         <Button
                           size="icon"
-                          variant="ghost"
-                          onClick={() => handleViewDetails(sparepart.id)}
+                          variant="outline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigateToEdit(sparepart.id);
+                          }}
+                          data-testid={`edit-button-${sparepart.id}`}
                         >
-                          <Eye className="h-4 w-4" />
+                          <Edit className="h-4 w-4" />
                         </Button>
                         <Button
                           size="icon"
-                          variant="ghost"
-                          onClick={() => handleEdit(sparepart.id)}
+                          variant="destructive"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(sparepart.id);
+                          }}
+                          data-testid={`delete-button-${sparepart.id}`}
                         >
-                          <Edit className="h-4 w-4" />
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </TableCell>
