@@ -1,8 +1,15 @@
+// __tests__/app/dashboard/spare-part/page.extended.unit.test.tsx
 
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import SparePartDisplayPage from '@/app/dashboard/spare-part/page';
 import { toast } from 'sonner';
 import Cookies from 'js-cookie';
+import { useRouter } from 'next/navigation';
+
+// Set the API URL for tests
+beforeAll(() => {
+  process.env.NEXT_PUBLIC_API_URL = 'http://localhost:8000';
+});
 
 // Mock router
 const mockPush = jest.fn();
@@ -66,6 +73,9 @@ describe("SparepartDisplay Extended Tests", () => {
     // Find and click the view button (first button with Eye icon)
     const viewButtons = screen.getAllByRole('button');
     const viewButton = viewButtons.find(button => button.innerHTML.includes('Eye'));
+    if (!viewButton) {
+      throw new Error('View button not found');
+    }
     fireEvent.click(viewButton);
 
     // Verify navigation occurred
@@ -83,6 +93,9 @@ describe("SparepartDisplay Extended Tests", () => {
     // Find and click the edit button (button with Edit icon)
     const editButtons = screen.getAllByRole('button');
     const editButton = editButtons.find(button => button.innerHTML.includes('Edit'));
+    if (!editButton) {
+      throw new Error('Edit button not found');
+    }
     fireEvent.click(editButton);
 
     // Verify navigation occurred
@@ -139,6 +152,9 @@ describe("SparepartDisplay Extended Tests", () => {
     
     // Submit the form
     const form = searchInput.closest('form');
+    if (!form) {
+      throw new Error('Form not found');
+    }
     fireEvent.submit(form);
 
     // Verify fetch was called with search parameter
@@ -259,6 +275,9 @@ describe("SparepartDisplay Extended Tests", () => {
     fireEvent.change(searchInput, { target: { value: "NonexistentPart" } });
     
     const form = searchInput.closest('form');
+    if (!form) {
+      throw new Error('Form not found');
+    }
     fireEvent.submit(form);
 
     // Check for empty state message
