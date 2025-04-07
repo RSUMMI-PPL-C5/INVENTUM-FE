@@ -1,16 +1,3 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`RootLayout matches snapshot 1`] = `
-<DocumentFragment>
-  <div>
-    Snapshot Test
-  </div>
-  <section
-    aria-atomic="false"
-    aria-label="Notifications alt+T"
-    aria-live="polite"
-    aria-relevant="additions text"
-    tabindex="-1"
-  />
-</DocumentFragment>
-`;
+exports[`RootLayout matches snapshot 1`] = `<DocumentFragment />`;
