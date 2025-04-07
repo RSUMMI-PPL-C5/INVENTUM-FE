@@ -1,4 +1,4 @@
-import { middleware } from "@/middleware";
+import { middleware, config } from "@/middleware";
 import { NextRequest, NextResponse } from "next/server";
 
 global.fetch = jest.fn();
@@ -92,5 +92,13 @@ describe("Middleware Authentication", () => {
     expect(NextResponse.redirect).toHaveBeenCalledWith(
       new URL("/?error=server_error", request.url)
     );
+  });
+});
+
+describe("Middleware config", () => {
+  it("should have the correct matcher", () => {
+    expect(config).toEqual({
+      matcher: ["/dashboard/:path*"],
+    });
   });
 });
