@@ -84,4 +84,52 @@ describe("SparepartDisplay", () => {
     const sparePartElement = await screen.findByText("Spare Part 1");
     expect(sparePartElement).toBeInTheDocument();
   });
+
+  it("handles API errors gracefully", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: false,
+      json: async () => ({ message: "Error fetching spare parts" }),
+    });
+
+    render(<SparePartDisplayPage />);
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("Error fetching spare parts");
+    });
+  });
+
+
+  it("displays spare parts in a formatted table", async () => {
+    const mockSpareparts = [
+      {
+        id: "1",
+        partsName: "Spare Part 1",
+        purchaseDate: "2023-01-01T00:00:00.000Z",
+        price: 10000,
+        toolLocation: "Location 1"
+      }
+    ];
+
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockSpareparts,
+    });
+
+    render(<SparePartDisplayPage />);
+
+    await waitFor(() => {
+      // Check for table headers
+      expect(screen.getByText("Nama Suku Cadang")).toBeInTheDocument();
+      expect(screen.getByText("Tanggal Pembelian")).toBeInTheDocument();
+      expect(screen.getByText("Harga")).toBeInTheDocument();
+      expect(screen.getByText("Lokasi")).toBeInTheDocument();
+      
+      // Check for the data
+      expect(screen.getByText("Spare Part 1")).toBeInTheDocument();
+      expect(screen.getByText("Location 1")).toBeInTheDocument();
+      
+      // Price should be formatted as Indonesian currency
+      expect(screen.getByText("Rp 10.000")).toBeInTheDocument();
+    });
+  });
 });
