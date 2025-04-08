@@ -99,7 +99,7 @@ export default function MedicalEquipmentCreate() {
             await createMedicalEquipment(values);
             router.push("/dashboard/medical-equipment?success=create");
         } catch (error) {
-            setError("Gagal menambahkan alat medis. Silakan coba lagi.");
+            setError("Gagal menambahkan alat medis" + error);
         } finally {
             setLoading(false);
         }

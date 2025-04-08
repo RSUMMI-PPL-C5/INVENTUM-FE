@@ -50,7 +50,6 @@ export default function EditDivisi({ id }: EditDivisiProps) {
   const [loading, setLoading] = useState(false)
   const [loadingDivision, setLoadingDivision] = useState(true)
   const [parentDivisions, setParentDivisions] = useState<Division[]>([])
-  const [division, setDivision] = useState<Division | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -87,7 +86,6 @@ export default function EditDivisi({ id }: EditDivisiProps) {
       }
 
       const data = await response.json()
-      setDivision(data)
       
       // Set form values
       form.setValue("divisi", data.divisi)
