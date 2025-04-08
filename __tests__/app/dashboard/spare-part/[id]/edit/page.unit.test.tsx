@@ -181,7 +181,7 @@ describe("SparePartEdit Tests", () => {
       })
 
       // Check if router.push was called with success URL
-      expect(mockRouter.push).toHaveBeenCalledWith("/dashboard/sparepart?success=update")
+      expect(mockRouter.push).toHaveBeenCalledWith("/dashboard/spare-part?success=update")
     })
 
     it("handles API error during form submission", async () => {

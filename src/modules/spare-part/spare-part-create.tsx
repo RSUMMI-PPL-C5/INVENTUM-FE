@@ -56,7 +56,7 @@ export default function SparePartCreate() {
           purchaseDate: data.purchaseDate.toISOString(),
           price: Number.parseFloat(data.price),
           toolLocation: data.toolLocation,
-          toolDate: format(data.toolDate, "dd-MM-yyyy"), // Format as string in yyyy-MM-dd format
+          toolDate: data.toolDate, // Format as string in yyyy-MM-dd format
           createdBy: 1, // Assuming current user ID
         }),
       })

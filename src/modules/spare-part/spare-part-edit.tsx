@@ -52,7 +52,7 @@ export default function SparePartEdit() {
           headers.Authorization = `Bearer ${token}`
         }
 
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sparepart/${sparePartId}`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/spareparts/${sparePartId}`, {
           headers,
         })
 
@@ -63,17 +63,14 @@ export default function SparePartEdit() {
         const sparePartData = await response.json()
 
         const createdDate = new Date(sparePartData.createdOn)
-        const formattedDate = isValid(createdDate) ? format(createdDate, "dd-MM-yyy") : "Invalid date"
-
-        const purchaseDate = parseISO(sparePartData.purchaseDate)
-        const toolDate = parseISO(sparePartData.toolDate)
+        const formattedDate = isValid(createdDate) ? format(createdDate, "dd-MM-yyyy") : "Invalid date"
 
         form.reset({
           partsName: sparePartData.partsName,
-          purchaseDate: purchaseDate,
+          purchaseDate: isValid(sparePartData.purchaseDate) ? sparePartData.purchaseDate: undefined,
           price: sparePartData.price.toString(),
           toolLocation: sparePartData.toolLocation,
-          toolDate: toolDate,
+          toolDate: isValid(sparePartData.toolDate) ? sparePartData.toolDate: undefined,
           createdOn: formattedDate,
         })
       } catch (error) {
@@ -99,7 +96,7 @@ export default function SparePartEdit() {
         headers.Authorization = `Bearer ${token}`
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sparepart/${sparePartId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/spareparts/${sparePartId}`, {
         method: "PUT",
         headers,
         body: JSON.stringify({
@@ -127,7 +124,7 @@ export default function SparePartEdit() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       await updateSparePart(values)
-      router.push("/dashboard/sparepart?success=update") // Redirect setelah simpan
+      router.push("/dashboard/spare-part?success=update") // Redirect setelah simpan
     } catch (error) {
       console.error("Failed to update spare part:", error)
       setUpdateError("Failed to update spare part")
@@ -176,7 +173,7 @@ export default function SparePartEdit() {
                         variant={"outline"}
                         className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
                       >
-                        {field.value ? format(field.value, "PPP") : <span>Pilih tanggal</span>}
+                        {field.value ? format(field.value, "yyyy-MM-dd") : <span>Pilih tanggal</span>}
                         <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                       </Button>
                     </FormControl>
@@ -236,7 +233,7 @@ export default function SparePartEdit() {
                         variant={"outline"}
                         className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
                       >
-                        {field.value ? format(field.value, "PPP") : <span>Pilih tanggal</span>}
+                        {field.value && isValid(field.value) ? format(field.value, "yyyy-MM-dd") : <span>Pilih tanggal</span>}
                         <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                       </Button>
                     </FormControl>
