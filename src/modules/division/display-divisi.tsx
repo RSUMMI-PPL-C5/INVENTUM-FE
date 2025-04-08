@@ -131,6 +131,15 @@ export default function DisplayDivisi() {
     router.push(`/dashboard/division/${division.id}/edit`)
   }
 
+  function removeDivisionRecursively(divisions: Division[], divisionId: number): Division[] {
+    return divisions
+      .filter((division) => division.id !== divisionId)
+      .map((division) => ({
+        ...division,
+        children: removeDivisionRecursively(division.children, divisionId),
+      }))
+  }
+
   const handleDeleteClick = (division: Division, e: React.MouseEvent) => {
     e.stopPropagation()
     setDivisionToDelete(division)
@@ -139,13 +148,13 @@ export default function DisplayDivisi() {
 
   const confirmDelete = async () => {
     if (!divisionToDelete) return
-    
+  
     try {
       setIsDeleting(true)
       const token = Cookies.get("token")
-      
+  
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/divisi/${divisionToDelete.id}`, 
+        `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'}/divisi/${divisionToDelete.id}`,
         {
           method: "DELETE",
           headers: {
@@ -154,32 +163,16 @@ export default function DisplayDivisi() {
           },
         }
       )
-
+  
       if (!response.ok) {
         throw new Error(`Failed to delete division`)
       }
-
-      // Remove the deleted division from state
-      if (divisionToDelete.parentId) {
-        // If it's a child division, update the parent's children
-        setDivisions(prevDivisions => 
-          prevDivisions.map(div => {
-            if (div.id === divisionToDelete.parentId) {
-              return {
-                ...div,
-                children: div.children.filter(child => child.id !== divisionToDelete.id)
-              }
-            }
-            return div
-          })
-        )
-      } else {
-        // If it's a top-level division, remove it from the array
-        setDivisions(prevDivisions => 
-          prevDivisions.filter(div => div.id !== divisionToDelete.id)
-        )
-      }
-      
+  
+      // Perbarui state divisions secara rekursif
+      setDivisions((prevDivisions) =>
+        removeDivisionRecursively(prevDivisions, divisionToDelete.id)
+      )
+  
       toast({
         title: "Success",
         description: "Division deleted successfully",

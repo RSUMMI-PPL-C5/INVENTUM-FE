@@ -59,7 +59,7 @@ export default function MedicalEquipmentCreate() {
         try {
             const token = Cookies.get("token");
 
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/medicalequipment/`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/medical-equipment/`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -68,12 +68,12 @@ export default function MedicalEquipmentCreate() {
                 body: JSON.stringify({
                     inventorisId: data.inventorisId,
                     name: data.name,
-                    brandName: data.brandName || null,
-                    modelName: data.modelName || null,
+                    brandName: data.brandName ?? null,
+                    modelName: data.modelName ?? null,
                     purchaseDate: data.purchaseDate ? data.purchaseDate.toISOString() : null,
                     purchasePrice: data.purchasePrice ? Number(data.purchasePrice) : null,
                     status: data.status,
-                    vendor: data.vendor || null,
+                    vendor: data.vendor ?? null,
                     createdBy: 1, // Default user ID
                 }),
             });
@@ -97,7 +97,7 @@ export default function MedicalEquipmentCreate() {
 
         try {
             await createMedicalEquipment(values);
-            router.push("/dashboard/medicalequipment?success=create");
+            router.push("/dashboard/medical-equipment?success=create");
         } catch (error) {
             setError("Gagal menambahkan alat medis. Silakan coba lagi.");
         } finally {
@@ -160,6 +160,32 @@ export default function MedicalEquipmentCreate() {
                                 <FormLabel>Model</FormLabel>
                                 <FormControl>
                                     <Input {...field} placeholder="Masukkan model (opsional)" />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="purchasePrice"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Harga Pembelian</FormLabel>
+                                <FormControl>
+                                    <Input {...field} placeholder="Masukkan harga pembelian (opsional)" type="number" />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="vendor"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Vendor</FormLabel>
+                                <FormControl>
+                                    <Input {...field} placeholder="Masukkan vendor (opsional)" />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>

@@ -45,7 +45,7 @@ export default function SparePartCreate() {
     try {
       const token = Cookies.get("token")
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sparepart/`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/spareparts/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -79,7 +79,7 @@ export default function SparePartCreate() {
 
     try {
       await createSparePart(values)
-      router.push("/dashboard/sparepart?success=create")
+      router.push("/dashboard/spare-part?success=create")
     } catch (error) {
       console.error("Failed to create spare part:", error)
       setError("Gagal membuat spare part. Silakan coba lagi.")
