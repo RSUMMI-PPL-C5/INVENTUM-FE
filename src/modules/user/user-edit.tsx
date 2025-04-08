@@ -52,42 +52,47 @@ export default function UserEdit() {
 
   useEffect(() => {
     async function fetchUser() {
-        try {
-          const token = Cookies.get("token");
-      
-          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/${userId}`, {
-            headers: {
-              Authorization: token ? `Bearer ${token}` : "",
-              "Content-Type": "application/json",
-            },
-          });
-      
-          if (!response.ok) {
-            throw new Error("Failed to fetch user data");
-          }
-      
-          const userData = await response.json();
-      
-          const entryDate = new Date(userData.createdOn);
-          const formattedDate = isValid(entryDate) ? format(entryDate, "yyyy-MM-dd") : "Invalid date";
-      
-          form.reset({
-            nokar: userData.nokar,
-            fullname: userData.fullname,
-            username: userData.username,
-            password: "",
-            divisi_id: userData.divisiId.toString(),
-            role: userData.role,
-            wa_number: userData.waNumber,
-            createdOn: formattedDate,
-          });
-        } catch (error) {
-          console.error("Error fetching user data:", error);
-          setError("Failed to fetch user data");
-        } finally {
-          setLoading(false);
+      try {
+        const token = Cookies.get("token");
+    
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+        };
+    
+        if (token) {
+          headers.Authorization = `Bearer ${token}`;
         }
+    
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/${userId}`, {
+          headers,
+        });
+    
+        if (!response.ok) {
+          throw new Error("Failed to fetch user data");
+        }
+    
+        const userData = await response.json();
+    
+        const entryDate = new Date(userData.createdOn);
+        const formattedDate = isValid(entryDate) ? format(entryDate, "yyyy-MM-dd") : "Invalid date";
+    
+        form.reset({
+          nokar: userData.nokar,
+          fullname: userData.fullname,
+          username: userData.username,
+          password: "",
+          divisi_id: userData.divisiId.toString(),
+          role: userData.role,
+          wa_number: userData.waNumber,
+          createdOn: formattedDate,
+        });
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        setError("Failed to fetch user data");
+      } finally {
+        setLoading(false);
       }
+    }
 
     fetchUser()
   }, [userId, form])
@@ -96,12 +101,17 @@ export default function UserEdit() {
     try {
       const token = Cookies.get("token");
   
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+  
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+  
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/${userId}`, {
         method: "PUT",
-        headers: {
-          Authorization: token ? `Bearer ${token}` : "",
-          "Content-Type": "application/json",
-        },
+        headers,
         body: JSON.stringify(data),
       });
   
@@ -326,4 +336,3 @@ export default function UserEdit() {
     </>
   )
 }
-

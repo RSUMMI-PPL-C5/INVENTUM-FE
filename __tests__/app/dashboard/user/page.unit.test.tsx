@@ -2,7 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { useRouter } from 'next/navigation';
 import UserDisplayPage from '@/app/dashboard/user/page';
-import { buildQueryParams } from '@/modules/user/user-display';
+import  buildQueryParams from '@/modules/user/user-display';
 
 // Mock useRouter
 jest.mock('next/navigation', () => ({

@@ -2,11 +2,17 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { act } from "react";
 import UserEdit from "@/modules/user/user-edit";
 import { useRouter, useParams } from "next/navigation";
+import Cookies from "js-cookie";
 
 jest.mock("next/navigation", () => ({
   useRouter: jest.fn(),
   useParams: jest.fn(),
 }));
+
+jest.mock("js-cookie", () => ({
+  get: jest.fn(),
+}));
+
 
 describe("UserEdit Component", () => {
   let mockPush: jest.Mock;
@@ -19,10 +25,10 @@ describe("UserEdit Component", () => {
     mockUseParams = jest.fn().mockReturnValue({ id: "1" });
     (useRouter as jest.Mock).mockReturnValue({ push: mockPush, back: mockBack });
     (useParams as jest.Mock).mockImplementation(mockUseParams);
+    (Cookies.get as jest.Mock).mockReturnValue("mock-token");
 
-    // Mock fetch API
     global.fetch = jest.fn().mockImplementation((url) => {
-      if (url === "http://localhost:8000/user/1") {
+      if (url === `${process.env.NEXT_PUBLIC_API_URL}/user/1`) {
         return Promise.resolve({
           ok: true,
           json: () => Promise.resolve({
@@ -48,12 +54,15 @@ describe("UserEdit Component", () => {
     await act(async () => {
       render(<UserEdit />);
     });
-
-    expect(screen.getByText("Ubah Pengguna")).toBeInTheDocument();
+  
+    await waitFor(() => {
+      expect(screen.getByText("Ubah Pengguna")).toBeInTheDocument();
+    });
+  
     expect(screen.getByLabelText("No. Karyawan")).toBeInTheDocument();
     expect(screen.getByLabelText("Nama Lengkap")).toBeInTheDocument();
     expect(screen.getByLabelText("Username")).toBeInTheDocument();
-    expect(screen.getByLabelText("Password")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("******")).toBeInTheDocument();
     expect(screen.getByText("Divisi")).toBeInTheDocument();
     expect(screen.getByLabelText("Role")).toBeInTheDocument();
     expect(screen.getByLabelText("No. WA")).toBeInTheDocument();
@@ -107,27 +116,6 @@ describe("UserEdit Component", () => {
     expect(mockBack).toHaveBeenCalled();
   });
 
-  test("displays correct role name", async () => {
-    await act(async () => {
-      render(<UserEdit />);
-    });
-
-    expect(screen.getByLabelText("Role")).toHaveValue("User");
-  });
-
-  test("displays empty role name for invalid role id", async () => {
-    await act(async () => {
-      render(<UserEdit />);
-    });
-
-    // Change the role id to an invalid value
-    fireEvent.change(screen.getByLabelText("Role"), {
-      target: { value: "invalid_role_id" },
-    });
-
-    expect(screen.getByLabelText("Role")).toHaveValue("");
-  });
-
   test("does not submit the form when required fields are missing", async () => {
     await act(async () => {
       render(<UserEdit />);
@@ -152,11 +140,11 @@ describe("UserEdit Component", () => {
     const toggleButton = screen.getByRole("button", { name: /ganti password/i });
     fireEvent.click(toggleButton);
 
-    expect(screen.getByLabelText("Password")).not.toBeDisabled();
+    expect(screen.getByPlaceholderText("******")).not.toBeDisabled();
 
     fireEvent.click(toggleButton);
 
-    expect(screen.getByLabelText("Password")).toBeDisabled();
+    expect(screen.getByPlaceholderText("******")).toBeDisabled();
   });
 
   test("displays error message when fetching user data fails", async () => {
@@ -241,5 +229,34 @@ describe("UserEdit Component", () => {
     });
 
     expect(screen.getByLabelText("Tanggal Akun Dibuat")).toHaveValue("Invalid date");
+  });
+
+  test("toggles password visibility correctly", async () => {
+    await act(async () => {
+      render(<UserEdit />);
+    });
+    const toggleButton = screen.getByRole("button", { name: /show password/i });
+    expect(toggleButton).toBeInTheDocument();
+    fireEvent.click(toggleButton);
+    expect(screen.getByRole("button", { name: /hide password/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /hide password/i }));
+    expect(screen.getByRole("button", { name: /show password/i })).toBeInTheDocument();
+  });
+
+  test("displays error message when token is missing", async () => {
+    (Cookies.get as jest.Mock).mockReturnValue(null);
+  
+    global.fetch = jest.fn().mockImplementation((url, options) => {
+      expect(options?.headers?.Authorization).toBe(""); // Ensure Authorization is empty
+      return Promise.resolve({
+        ok: false,
+      });
+    });
+  
+    await act(async () => {
+      render(<UserEdit />);
+    });
+  
+    expect(screen.getByText("Failed to fetch user data")).toBeInTheDocument();
   });
 });

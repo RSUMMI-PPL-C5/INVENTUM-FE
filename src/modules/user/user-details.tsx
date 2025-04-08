@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { ArrowLeft, Edit, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -30,11 +30,11 @@ export default function UserDetails() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchUser = async () => {
+  const fetchUser = useCallback(async () => {
     if (!userId) return;
   
     setLoading(true);
-    
+  
     try {
       const token = Cookies.get("token");
   
@@ -63,11 +63,11 @@ export default function UserDetails() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId]);
   
   useEffect(() => {
     fetchUser();
-  }, [userId]);
+  }, [fetchUser]);
 
   const handleGoBack = () => {
     router.push("/dashboard/user")
@@ -98,7 +98,7 @@ export default function UserDetails() {
 		}
 
         router.push("/dashboard/user?success=delete")
-	} catch (error) {
+	} catch {
 		toast.error("Gagal menghapus pengguna");
 	}
 };
@@ -131,8 +131,8 @@ export default function UserDetails() {
           <div className="h-8 w-1/3 bg-muted animate-pulse rounded mb-6"></div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {Array.from({ length: 8 }).map((_, index) => (
-              <div key={index} className="space-y-2">
+            {Array.from({ length: 8 }).map(() => (
+              <div key={crypto.randomUUID()} className="space-y-2">
                 <div className="h-4 w-20 bg-muted animate-pulse rounded"></div>
                 <div className="h-5 w-40 bg-muted animate-pulse rounded"></div>
               </div>
@@ -166,7 +166,7 @@ export default function UserDetails() {
       {/* User details */}
       <div className="border rounded-lg p-6 shadow-sm ">
         <h1 className="text-header-h6 font-bold mb-6" data-testid="user-name">
-          {user.fullname || user.username}
+          {user.fullname ?? user.username}
         </h1>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -187,7 +187,7 @@ export default function UserDetails() {
           <div className="space-y-1">
             <h3 className="text-sm font-medium text-muted-foreground">Role</h3>
             <p className="text-sm" data-testid="user-role">
-              {user.role || "Tidak ada"}
+              {user.role ?? "Tidak ada"}
             </p>
           </div>
 
@@ -208,7 +208,7 @@ export default function UserDetails() {
           <div className="space-y-1">
             <h3 className="text-sm font-medium text-muted-foreground">WhatsApp</h3>
             <p className="text-sm" data-testid="user-wa">
-              {user.waNumber || "Tidak ada"}
+              {user.waNumber ?? "Tidak ada"}
             </p>
           </div>
 

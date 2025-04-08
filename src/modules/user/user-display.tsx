@@ -156,7 +156,7 @@ export default function UsersPage() {
     
             fetchUsers();
             toast.info("Pengguna berhasil dihapus");
-        } catch (error) {
+        } catch {
             toast.error("Gagal menghapus pengguna");
         }
     };
@@ -296,10 +296,10 @@ export default function UsersPage() {
 									>
 										<TableCell>{user.email}</TableCell>
 										<TableCell>
-											{user.fullname || user.username}
+											{user.fullname ?? user.username}
 										</TableCell>
 										<TableCell>
-											{user.divisi?.name || `-`}
+											{user.divisi?.name ?? `-`}
 										</TableCell>
 										<TableCell>
 											{formatDate(user.createdOn)}
