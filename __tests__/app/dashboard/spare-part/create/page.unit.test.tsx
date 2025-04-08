@@ -129,7 +129,7 @@ describe('SparePartCreate Tests', () => {
       });
       
       // Check if router.push was called with success URL
-      expect(mockRouter.push).toHaveBeenCalledWith('/dashboard/sparepart?success=create');
+      expect(mockRouter.push).toHaveBeenCalledWith('/dashboard/spare-part?success=create');
     });
 
     it('handles API error during form submission', async () => {
