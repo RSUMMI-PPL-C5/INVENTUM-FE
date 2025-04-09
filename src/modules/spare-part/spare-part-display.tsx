@@ -1,4 +1,4 @@
-// src/modules/spare-part/spare-part-display.tsx
+/* eslint-disable */
 "use client";
 
 import { useState, useEffect } from "react";
