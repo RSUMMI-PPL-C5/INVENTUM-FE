@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Filter, Plus, Edit, Eye, Search, Trash2 } from "lucide-react";
+import { Filter, Plus, Edit, Search, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -119,6 +119,7 @@ export default function SparepartDisplay() {
         day: "numeric",
       }).format(date);
     } catch (error) {
+        console.error(error)
       return "Invalid Date";
     }
   };

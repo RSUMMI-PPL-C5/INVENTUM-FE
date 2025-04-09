@@ -30,9 +30,9 @@ const formSchema = z.object({
 
 // ✅ Daftar status alat medis
 const equipmentStatus = [
-    { id: "active", name: "Active" },
-    { id: "inactive", name: "Inactive" },
-    { id: "under_maintenance", name: "Under Maintenance" },
+    { id: "Active", name: "Active" },
+    { id: "Inactive", name: "Inactive" },
+    { id: "Maintenance", name: "Under Maintenance" },
 ];
 
 export default function MedicalEquipmentCreate() {
@@ -99,7 +99,7 @@ export default function MedicalEquipmentCreate() {
             await createMedicalEquipment(values);
             router.push("/dashboard/medical-equipment?success=create");
         } catch (error) {
-            setError("Gagal menambahkan alat medis. Silakan coba lagi.");
+            setError("Gagal menambahkan alat medis" + error);
         } finally {
             setLoading(false);
         }

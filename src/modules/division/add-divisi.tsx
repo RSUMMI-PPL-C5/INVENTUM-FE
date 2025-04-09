@@ -154,6 +154,10 @@ export default function AddDivisi() {
     }
   }
 
+  if (loadingParents) {
+    return <div>Loading...</div>
+  }
+
   return (
     <>
       <div className="flex items-center mb-6">

@@ -91,7 +91,7 @@ export default function EditDivisi({ id }: EditDivisiProps) {
       )
 
       const data = await response.json()
-
+      
       // Set form values
       form.setValue("divisi", data.divisi)
       form.setValue("parentId", data.parentId ? data.parentId.toString() : "none")
