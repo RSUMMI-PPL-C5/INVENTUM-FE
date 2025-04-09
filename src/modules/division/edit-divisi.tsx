@@ -27,6 +27,14 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
 import { Loader2 } from "lucide-react"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog"
 
 interface Division {
   id: number
@@ -41,7 +49,7 @@ const formSchema = z.object({
 })
 
 interface EditDivisiProps {
-  id: number
+  readonly id: number
 }
 
 export default function EditDivisi({ id }: EditDivisiProps) {
@@ -50,8 +58,8 @@ export default function EditDivisi({ id }: EditDivisiProps) {
   const [loading, setLoading] = useState(false)
   const [loadingDivision, setLoadingDivision] = useState(true)
   const [parentDivisions, setParentDivisions] = useState<Division[]>([])
-  const [division, setDivision] = useState<Division | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [errorModalOpen, setErrorModalOpen] = useState(false)
+  const [errorMessage, setErrorMessage] = useState("")
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -63,43 +71,34 @@ export default function EditDivisi({ id }: EditDivisiProps) {
 
   useEffect(() => {
     // Fetch the division to edit and all potential parent divisions
-    Promise.all([
-      fetchDivision(id),
-      fetchAllDivisions()
-    ])
+    Promise.all([fetchDivision(id), fetchAllDivisions()])
   }, [id])
 
   async function fetchDivision(id: number) {
     try {
       setLoadingDivision(true)
       const token = Cookies.get("token")
-      
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/divisi/${id}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
-        },
-      })
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch division")
-      }
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/divisi/${id}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : "",
+          },
+        }
+      )
 
       const data = await response.json()
-      setDivision(data)
-      
+
       // Set form values
       form.setValue("divisi", data.divisi)
       form.setValue("parentId", data.parentId ? data.parentId.toString() : "none")
     } catch (err) {
       console.error("Error fetching division:", err)
-      setError("Failed to load division data.")
-      toast({
-        title: "Error",
-        description: "Failed to load division data",
-        variant: "destructive",
-      })
+      setErrorMessage("Failed to load division data.")
+      setErrorModalOpen(true)
     } finally {
       setLoadingDivision(false)
     }
@@ -108,18 +107,17 @@ export default function EditDivisi({ id }: EditDivisiProps) {
   async function fetchAllDivisions() {
     try {
       const token = Cookies.get("token")
-      
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/divisi/all`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
-        },
-      })
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch divisions")
-      }
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/divisi/all`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : "",
+          },
+        }
+      )
 
       const data = await response.json()
       // Filter out the current division and its children to prevent circular references
@@ -127,18 +125,15 @@ export default function EditDivisi({ id }: EditDivisiProps) {
       setParentDivisions(filteredDivisions)
     } catch (err) {
       console.error("Error fetching divisions:", err)
-      toast({
-        title: "Error",
-        description: "Failed to load parent divisions",
-        variant: "destructive",
-      })
+      setErrorMessage("Failed to load parent divisions.")
+      setErrorModalOpen(true)
     }
   }
 
   // Function to flatten divisions and filter out the current one and its descendants
   function flattenAndFilterDivisions(divisions: Division[], currentId: number): Division[] {
     let result: Division[] = []
-    
+
     for (const division of divisions) {
       // Skip the current division and its children
       if (division.id !== currentId) {
@@ -148,7 +143,7 @@ export default function EditDivisi({ id }: EditDivisiProps) {
         }
       }
     }
-    
+
     return result
   }
 
@@ -160,13 +155,11 @@ export default function EditDivisi({ id }: EditDivisiProps) {
       // Convert parentId to number or null
       const payload = {
         divisi: values.divisi,
-        parentId: values.parentId && values.parentId !== "none" 
-          ? parseInt(values.parentId) 
-          : null,
+        parentId: values.parentId && values.parentId !== "none" ? parseInt(values.parentId) : null,
       }
-      
+
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/divisi/${id}`, 
+        `${process.env.NEXT_PUBLIC_API_URL}/divisi/${id}`,
         {
           method: "PUT",
           headers: {
@@ -190,11 +183,8 @@ export default function EditDivisi({ id }: EditDivisiProps) {
       router.push("/dashboard/division")
     } catch (err) {
       console.error("Error updating division:", err)
-      toast({
-        title: "Error",
-        description: "Failed to update division",
-        variant: "destructive",
-      })
+      setErrorMessage("Gagal mengupdate divisi. Silakan cek kembali cek kembali nama divisi dan parent divisi yang dipilih.")
+      setErrorModalOpen(true)
     } finally {
       setLoading(false)
     }
@@ -209,24 +199,11 @@ export default function EditDivisi({ id }: EditDivisiProps) {
     )
   }
 
-  if (error) {
-    return (
-      <div className="text-red-500 p-4 text-center">
-        {error}
-        <div className="mt-4">
-          <Button onClick={() => router.push("/dashboard/division")}>
-            Back to Divisions
-          </Button>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <>
       <div className="flex items-center mb-6">
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           onClick={() => router.push("/dashboard/division")}
           className="mr-4"
         >
@@ -262,11 +239,7 @@ export default function EditDivisi({ id }: EditDivisiProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Parent Divisi</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      defaultValue={field.value}
-                      value={field.value}
-                    >
+                    <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Pilih parent divisi (opsional)" />
@@ -296,6 +269,20 @@ export default function EditDivisi({ id }: EditDivisiProps) {
           </Form>
         </CardContent>
       </Card>
+
+      {errorModalOpen && (
+        <Dialog open={errorModalOpen} onOpenChange={setErrorModalOpen}>
+          <DialogContent className="max-w-md w-full">
+            <DialogHeader>
+              <DialogTitle>Error</DialogTitle>
+              <DialogDescription>{errorMessage}</DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button onClick={() => setErrorModalOpen(false)}>Tutup</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </>
   )
 }

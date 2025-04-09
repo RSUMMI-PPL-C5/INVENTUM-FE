@@ -1,188 +1,34 @@
-import React from "react"
-import { render, screen, fireEvent, waitFor } from "@testing-library/react"
-import "@testing-library/jest-dom"
-import { useRouter } from "next/navigation"
-import AddDivisiPage from "@/app/dashboard/division/add/page"
-import AddDivisi from "@/modules/division/add-divisi"
-import Cookies from "js-cookie"
-import { act } from "react-dom/test-utils"
+import React from "react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import "@testing-library/jest-dom";
+import { useRouter } from "next/navigation";
+import AddDivisi from "@/app/dashboard/division/add/page";
+import Cookies from "js-cookie";
 
 // Mock next/navigation
 jest.mock("next/navigation", () => ({
   useRouter: jest.fn(),
-  usePathname: jest.fn(),
-}))
+}));
 
 // Mock js-cookie
 jest.mock("js-cookie", () => ({
   get: jest.fn(),
-}))
+}));
 
 // Mock @/hooks/use-toast
 jest.mock("@/hooks/use-toast", () => ({
   useToast: jest.fn().mockReturnValue({
     toast: jest.fn(),
   }),
-}))
+}));
 
 // Mock fetch
-global.fetch = jest.fn() as jest.Mock
-
-// Mock component for page tests
-jest.mock("@/modules/division/add-divisi", () => {
-  return jest.fn(() => <div data-testid="add-divisi">AddDivisi Component</div>)
-})
-
-describe("AddDivisiPage", () => {
-  it("renders the AddDivisi component", () => {
-    render(<AddDivisiPage />)
-    
-    // Check that AddDivisi was rendered
-    expect(screen.getByTestId("add-divisi")).toBeInTheDocument()
-    
-    // Verify the AddDivisi component was called
-    expect(AddDivisi).toHaveBeenCalled()
-  })
-})
-
-// Unmock AddDivisi for direct component tests
-jest.unmock("@/modules/division/add-divisi")
-
-// Mock form components with proper TypeScript types
-jest.mock("@/components/ui/form", () => ({
-  Form: ({ children, ...props }: { children: React.ReactNode }) => 
-    <div data-testid="form" {...props}>{children}</div>,
-    
-  FormField: ({ 
-    children, 
-    control, 
-    name, 
-    render 
-  }: { 
-    children?: React.ReactNode;
-    control: any;
-    name: string;
-    render: (props: { field: any }) => React.ReactNode;
-  }) => {
-    // Call render with mock field to simulate form field
-    const field = { 
-      value: name === "divisi" ? "Test Division" : name === "parentId" ? "1" : "",
-      onChange: jest.fn(),
-      onBlur: jest.fn(),
-      ref: { current: null }
-    }
-    return <div data-testid={`form-field-${name}`}>{render({ field })}</div>
-  },
-  
-  FormItem: ({ children }: { children: React.ReactNode }) => 
-    <div data-testid="form-item">{children}</div>,
-    
-  FormLabel: ({ children }: { children: React.ReactNode }) => 
-    <div data-testid="form-label">{children}</div>,
-    
-  FormControl: ({ children }: { children: React.ReactNode }) => 
-    <div data-testid="form-control">{children}</div>,
-    
-  FormDescription: ({ children }: { children: React.ReactNode }) => 
-    <div data-testid="form-description">{children}</div>,
-    
-  FormMessage: () => <div data-testid="form-message"></div>,
-}))
-
-jest.mock("@/components/ui/input", () => ({
-  Input: (props: any) => <input data-testid="input" {...props} />
-}))
-
-jest.mock("@/components/ui/select", () => ({
-  Select: ({ children, onValueChange }: { children: React.ReactNode, onValueChange?: (value: string) => void }) => (
-    <div data-testid="select" onClick={() => onValueChange && onValueChange("1")}>{children}</div>
-  ),
-  SelectContent: ({ children }: { children: React.ReactNode }) => 
-    <div data-testid="select-content">{children}</div>,
-    
-  SelectItem: ({ children, value }: { children: React.ReactNode, value: string }) => 
-    <div data-testid={`select-item-${value}`}>{children}</div>,
-    
-  SelectTrigger: ({ children }: { children: React.ReactNode }) => 
-    <div data-testid="select-trigger">{children}</div>,
-    
-  SelectValue: ({ children }: { children: React.ReactNode }) => 
-    <div data-testid="select-value">{children}</div>,
-}))
-
-jest.mock("@/components/ui/card", () => ({
-  Card: ({ children }: { children: React.ReactNode }) => 
-    <div data-testid="card">{children}</div>,
-    
-  CardContent: ({ children }: { children: React.ReactNode }) => 
-    <div data-testid="card-content">{children}</div>,
-    
-  CardHeader: ({ children }: { children: React.ReactNode }) => 
-    <div data-testid="card-header">{children}</div>,
-    
-  CardTitle: ({ children }: { children: React.ReactNode }) => 
-    <div data-testid="card-title">{children}</div>,
-}))
-
-jest.mock("@/components/ui/button", () => {
-  return {
-    Button: ({ 
-      children, 
-      onClick, 
-      type 
-    }: { 
-      children: React.ReactNode;
-      onClick?: () => void;
-      type?: string;
-    }) => (
-      <button data-testid={`button-${type || "default"}`} onClick={onClick}>
-        {children}
-      </button>
-    ),
-  }
-})
-
-// Mock hook form with proper types
-jest.mock("react-hook-form", () => ({
-  useForm: () => ({
-    handleSubmit: (callback: (data: any) => void) => (e?: React.FormEvent) => {
-      e?.preventDefault?.()
-      return callback({ 
-        divisi: "Test Division", 
-        parentId: "1" 
-      })
-    },
-    control: {},
-    formState: { errors: {} },
-    setValue: jest.fn(),
-  }),
-}))
+global.fetch = jest.fn();
 
 describe("AddDivisi Component", () => {
-  const mockPush = jest.fn()
-  const mockToast = jest.fn()
+  const mockPush = jest.fn();
+  const mockToast = jest.fn();
 
-  // Simplify tests with these helper functions
-  const mockFetchSuccess = (responseData: any) => {
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: true,
-      json: jest.fn().mockResolvedValue(responseData)
-    })
-  }
-
-  const mockPostSuccess = () => {
-    (global.fetch as jest.Mock).mockImplementation((url: string, options?: any) => {
-      if (options?.method === 'POST') {
-        return Promise.resolve({ ok: true })
-      }
-      return Promise.resolve({
-        ok: true,
-        json: jest.fn().mockResolvedValue(mockDivisions)
-      })
-    })
-  }
-
-  // Mock division data
   const mockDivisions = [
     {
       id: 1,
@@ -193,55 +39,73 @@ describe("AddDivisi Component", () => {
           id: 3,
           divisi: "Dev Team",
           parentId: 1,
-          children: []
-        }
-      ]
+          children: [],
+        },
+      ],
     },
     {
       id: 2,
       divisi: "IT Department",
       parentId: null,
-      children: []
-    }
-  ]
+      children: [],
+    },
+  ];
 
   beforeEach(() => {
     jest.clearAllMocks();
 
-    // Setup router mock
+    // Mock router
     (useRouter as jest.Mock).mockReturnValue({
       push: mockPush,
-    })
+    });
 
-    // Default cookie mock
-    (Cookies.get as jest.Mock).mockReturnValue("mock-token")
+    // Mock cookies
+    (Cookies.get as jest.Mock).mockReturnValue("mock-token");
 
-    // Default toast mock
-    const useToastModule = require("@/hooks/use-toast")
+    // Mock toast
+    const useToastModule = require("@/hooks/use-toast");
     useToastModule.useToast.mockReturnValue({
       toast: mockToast,
-    })
+    });
 
-    // Default fetch success for divisions
-    mockFetchSuccess(mockDivisions)
-  })
+    // Mock fetch success
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: jest.fn().mockResolvedValue(mockDivisions),
+    });
+  });
 
-  // Basic rendering test
-  it("should render the form correctly", async () => {
-    render(<AddDivisi />)
-    
-    // Verify key elements
-    expect(screen.getByText("Tambah Divisi Baru")).toBeInTheDocument()
-    expect(screen.getByText("Nama Divisi")).toBeInTheDocument()
-    expect(screen.getByText("Parent Divisi")).toBeInTheDocument()
-    expect(screen.getByTestId("input")).toBeInTheDocument()
-    expect(screen.getByTestId("button-submit")).toBeInTheDocument()
-  })
+  it("renders the form correctly", async () => {
+    render(<AddDivisi />);
+  
+    // Wait for the loading state to disappear
+    await waitFor(() => {
+      expect(screen.queryByText("Loading parent divisions...")).not.toBeInTheDocument();
+    });
+  
+    // Assert that the form elements are rendered
+    expect(screen.getByText("Tambah Divisi Baru")).toBeInTheDocument();
+    expect(screen.getByText("Nama Divisi")).toBeInTheDocument();
+    expect(screen.getByText("Parent Divisi")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Masukkan nama divisi")).toBeInTheDocument();
+    expect(screen.getByText("Simpan Divisi")).toBeInTheDocument();
+  });
 
-  // Positive tests
-  it("should fetch parent divisions on load", async () => {
-    render(<AddDivisi />)
-    
+  it("fetches parent divisions on load", async () => {
+    render(<AddDivisi />);
+  
+    // Wait for the loading state to disappear
+    await waitFor(() => {
+      expect(screen.queryByText("Loading parent divisions...")).not.toBeInTheDocument();
+    });
+  
+    // Wait for the parent divisions to be rendered
+    await waitFor(() => {
+      expect(screen.getByText("Operations")).toBeInTheDocument();
+      expect(screen.getByText("IT Department")).toBeInTheDocument();
+    });
+  
+    // Assert that the fetch call was made with the correct parameters
     expect(global.fetch).toHaveBeenCalledWith(
       "http://localhost:8000/divisi/all",
       expect.objectContaining({
@@ -249,85 +113,226 @@ describe("AddDivisi Component", () => {
           Authorization: "Bearer mock-token",
         }),
       })
-    )
-  })
+    );
+  });
 
-  it("should submit form successfully", async () => {
-    mockPostSuccess()
-    render(<AddDivisi />)
-    
-    fireEvent.click(screen.getByTestId("button-submit"))
-    
+  it("submits the form with parentId as null when 'Tidak Ada Parent' is selected", async () => {
+    (global.fetch as jest.Mock).mockImplementation((url: string, options?: any) => {
+      if (options?.method === "POST") {
+        const body = JSON.parse(options.body);
+        expect(body).toEqual({
+          divisi: "New Division",
+          parentId: null,
+        });
+        return Promise.resolve({ ok: true });
+      }
+      return Promise.resolve({
+        ok: true,
+        json: jest.fn().mockResolvedValue(mockDivisions),
+      });
+    });
+  
+    render(<AddDivisi />);
+  
+    await waitFor(() => {
+      expect(screen.queryByText("Loading parent divisions...")).not.toBeInTheDocument();
+    });
+  
+    // Fill in the form
+    fireEvent.change(screen.getByPlaceholderText("Masukkan nama divisi"), {
+      target: { value: "New Division" },
+    });
+  
+    // Open the dropdown
+    fireEvent.click(screen.getByText("Pilih parent divisi (opsional)"));
+  
+    // Select "Tidak Ada Parent" using a more specific query
+    const options = screen.getAllByText("Tidak Ada Parent");
+    fireEvent.click(options.find((option) => option.tagName === "SPAN")!);
+  
+    // Submit the form
+    fireEvent.click(screen.getByText("Simpan Divisi"));
+  
+    // Wait for the success toast
     await waitFor(() => {
       expect(mockToast).toHaveBeenCalledWith({
         title: "Success",
-        description: "Division created successfully",
-      })
-      expect(mockPush).toHaveBeenCalledWith("/dashboard/division")
-    })
-  })
+        description: "Divisi berhasil dibuat",
+      });
+    });
+  });
 
-  it("should navigate back when back button is clicked", () => {
-    render(<AddDivisi />)
-    fireEvent.click(screen.getByText("Back"))
-    expect(mockPush).toHaveBeenCalledWith("/dashboard/division")
-  })
+  it("submits the form successfully", async () => {
+    (global.fetch as jest.Mock).mockImplementation((url: string, options?: any) => {
+      if (options?.method === "POST") {
+        return Promise.resolve({ ok: true });
+      }
+      return Promise.resolve({
+        ok: true,
+        json: jest.fn().mockResolvedValue(mockDivisions),
+      });
+    });
 
-  // Error handling tests
-  it("should handle API error when fetching divisions", async () => {
-    (global.fetch as jest.Mock).mockRejectedValueOnce(new Error("Failed to fetch"))
-    
-    render(<AddDivisi />)
-    
+    render(<AddDivisi />);
+
+    await waitFor(() => {
+      expect(screen.queryByText("Loading parent divisions...")).not.toBeInTheDocument();
+    });
+
+    fireEvent.change(screen.getByPlaceholderText("Masukkan nama divisi"), {
+      target: { value: "New Division" },
+    });
+    fireEvent.click(screen.getByText("Simpan Divisi"));
+
+    await waitFor(() => {
+      expect(mockToast).toHaveBeenCalledWith({
+        title: "Success",
+        description: "Divisi berhasil dibuat",
+      });
+      expect(mockPush).toHaveBeenCalledWith("/dashboard/division");
+    });
+  });
+
+  it("handles API error when fetching divisions", async () => {
+    (global.fetch as jest.Mock).mockRejectedValueOnce(new Error("Failed to fetch"));
+
+    render(<AddDivisi />);
+
     await waitFor(() => {
       expect(mockToast).toHaveBeenCalledWith({
         title: "Error",
         description: "Failed to load parent divisions",
         variant: "destructive",
-      })
-    })
-  })
+      });
+    });
+  });
 
-  it("should handle API error when submitting form", async () => {
+  it("handles API error when submitting form", async () => {
     (global.fetch as jest.Mock).mockImplementation((url: string, options?: any) => {
-      if (options?.method === 'POST') {
-        return Promise.resolve({ ok: false })
+      if (options?.method === "POST") {
+        return Promise.resolve({ ok: false, json: jest.fn().mockResolvedValue({ message: "Error creating division" }) });
       }
       return Promise.resolve({
         ok: true,
-        json: jest.fn().mockResolvedValue(mockDivisions)
-      })
-    })
-    
-    render(<AddDivisi />)
-    fireEvent.click(screen.getByTestId("button-submit"))
-    
+        json: jest.fn().mockResolvedValue(mockDivisions),
+      });
+    });
+
+    render(<AddDivisi />);
+
+    await waitFor(() => {
+      expect(screen.queryByText("Loading parent divisions...")).not.toBeInTheDocument();
+    });
+
+    fireEvent.change(screen.getByPlaceholderText("Masukkan nama divisi"), {
+      target: { value: "New Division" },
+    });
+    fireEvent.click(screen.getByText("Simpan Divisi"));
+
+    await waitFor(() => {
+      expect(screen.getByText("Gagal membuat divisi, Silahkan cek kembali nama divisi dan parent divisi yang dipilih.")).toBeInTheDocument();
+    });
+  });
+
+  it("handles API error when fetching divisions", async () => {
+    (global.fetch as jest.Mock).mockRejectedValueOnce(new Error("Failed to fetch divisions"));
+  
+    render(<AddDivisi />);
+  
+    // Wait for the error toast to appear
     await waitFor(() => {
       expect(mockToast).toHaveBeenCalledWith({
         title: "Error",
-        description: "Failed to create division",
+        description: "Failed to load parent divisions",
         variant: "destructive",
-      })
-    })
-  })
+      });
+    });
+  });
 
-  it("should handle loading state during form submission", async () => {
-    // Mock delayed response
+  it("closes the error modal when the close button is clicked", async () => {
+    // Setup fetch to return error response for POST requests
     (global.fetch as jest.Mock).mockImplementation((url: string, options?: any) => {
-      if (options?.method === 'POST') {
-        return new Promise(resolve => {
-          setTimeout(() => resolve({ ok: true }), 100)
-        })
+      if (options?.method === "POST") {
+        return Promise.resolve({ 
+          ok: false, 
+          json: jest.fn().mockResolvedValue({ message: "Error creating division" }) 
+        });
       }
       return Promise.resolve({
         ok: true,
-        json: jest.fn().mockResolvedValue(mockDivisions)
-      })
-    })
+        json: jest.fn().mockResolvedValue(mockDivisions),
+      });
+    });
+
+    render(<AddDivisi />);
+  
+    await waitFor(() => {
+      expect(screen.queryByText("Loading parent divisions...")).not.toBeInTheDocument();
+    });
+
+    // Fill in the form to pass client-side validation
+    fireEvent.change(screen.getByPlaceholderText("Masukkan nama divisi"), {
+      target: { value: "New Division" },
+    });
     
-    render(<AddDivisi />)
-    fireEvent.click(screen.getByTestId("button-submit"))
+    // Submit the form (which will trigger the mocked failed API response)
+    fireEvent.click(screen.getByText("Simpan Divisi"));
     
-    expect(screen.getByText("Menyimpan...")).toBeInTheDocument()
-  })
-})
+    // Wait for the error modal to appear
+    await waitFor(() => {
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+      expect(screen.getByText("Error")).toBeInTheDocument();
+    });
+    
+    // Click the close button
+    fireEvent.click(screen.getByText("Tutup"));
+    
+    // Assert that the modal is closed
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+  });
+
+  it("displays loading state during form submission", async () => {
+    (global.fetch as jest.Mock).mockImplementation((url: string, options?: any) => {
+      if (options?.method === "POST") {
+        return new Promise((resolve) => setTimeout(() => resolve({ ok: true }), 100));
+      }
+      return Promise.resolve({
+        ok: true,
+        json: jest.fn().mockResolvedValue(mockDivisions),
+      });
+    });
+  
+    render(<AddDivisi />);
+  
+    // Wait for the loading state to disappear
+    await waitFor(() => {
+      expect(screen.queryByText("Loading parent divisions...")).not.toBeInTheDocument();
+    });
+  
+    // Interact with the form
+    fireEvent.change(screen.getByPlaceholderText("Masukkan nama divisi"), {
+      target: { value: "New Division" },
+    });
+    fireEvent.click(screen.getByText("Simpan Divisi"));
+  
+    // Assert that the loading state is displayed
+    await waitFor(() => {
+      expect(screen.getByText("Menyimpan...")).toBeInTheDocument();
+    });
+  
+      await waitFor(() => {
+        expect(screen.queryByText("Menyimpan...")).not.toBeInTheDocument();
+      });
+    await waitFor(() => {
+      expect(screen.queryByText("Menyimpan...")).not.toBeInTheDocument();
+    });
+  });
+
+  it("navigates back when the back button is clicked", () => {
+    render(<AddDivisi />);
+    fireEvent.click(screen.getByText("Back"));
+    expect(mockPush).toHaveBeenCalledWith("/dashboard/division");
+  });
+});

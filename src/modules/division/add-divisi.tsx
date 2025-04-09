@@ -16,6 +16,15 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+
 import { Input } from "@/components/ui/input"
 import {
   Select,
@@ -44,7 +53,9 @@ export default function AddDivisi() {
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
   const [parentDivisions, setParentDivisions] = useState<Division[]>([])
-  const [loadingParents, setLoadingParents] = useState(true)
+  const [loadingParents, setLoadingParents] = useState(false)
+  const [errorModalOpen, setErrorModalOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -64,17 +75,13 @@ export default function AddDivisi() {
       const token = Cookies.get("token")
       
       // Change the API endpoint to fetch all divisions
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/divisi/all`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/divisi/all`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
+          Authorization: `Bearer ${token}`,
         },
       })
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch divisions")
-      }
 
       const data = await response.json()
       // Flatten the division hierarchy to get all divisions in a single array
@@ -108,46 +115,42 @@ export default function AddDivisi() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
-      setLoading(true)
-      const token = Cookies.get("token")
-
-      // Convert parentId to number or null
+      setLoading(true);
+      const token = Cookies.get("token");
+  
       const payload = {
         divisi: values.divisi,
-        parentId: values.parentId && values.parentId !== "none" 
+        parentId: values.parentId 
           ? parseInt(values.parentId) 
           : null,
-      }
-      
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/divisi`, {
+      };
+  
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/divisi`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(payload),
-      })
-
+      });
+  
       if (!response.ok) {
-        throw new Error("Failed to create division")
+        const errorData = await response.json();
+        throw new Error(errorData.message);
       }
-
+  
       toast({
         title: "Success",
-        description: "Division created successfully",
-      })
-
-      // Navigate back to division list
-      router.push("/dashboard/division")
-    } catch (err) {
-      console.error("Error creating division:", err)
-      toast({
-        title: "Error",
-        description: "Failed to create division",
-        variant: "destructive",
-      })
+        description: "Divisi berhasil dibuat",
+      });
+  
+      router.push("/dashboard/division");
+    } catch (err: any) {
+      console.error("Error creating division:", err);
+      setErrorMessage("Gagal membuat divisi, Silahkan cek kembali nama divisi dan parent divisi yang dipilih.");
+      setErrorModalOpen(true); // Buka modal error
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
@@ -163,67 +166,87 @@ export default function AddDivisi() {
         </Button>
         <span className="text-header-h5 font-bold font-poppins">Tambah Divisi Baru</span>
       </div>
-
+  
       <Card>
         <CardHeader>
           <CardTitle>Form Divisi Baru</CardTitle>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField
-                control={form.control}
-                name="divisi"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nama Divisi</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Masukkan nama divisi" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="parentId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Parent Divisi</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      defaultValue={field.value}
-                    >
+          {loadingParents ? (
+            <div className="flex justify-center items-center">
+              <span>Loading parent divisions...</span>
+            </div>
+          ) : (
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <FormField
+                  control={form.control}
+                  name="divisi"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nama Divisi</FormLabel>
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Pilih parent divisi (opsional)" />
-                        </SelectTrigger>
+                        <Input placeholder="Masukkan nama divisi" {...field} />
                       </FormControl>
-                      <SelectContent>
-                        <SelectItem value="none">Tidak Ada Parent</SelectItem>
-                        {parentDivisions.map((division) => (
-                          <SelectItem key={division.id} value={division.id.toString()}>
-                            {division.divisi}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>
-                      Pilih parent divisi jika merupakan sub divisi
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <Button type="submit" disabled={loading}>
-                {loading ? "Menyimpan..." : "Simpan Divisi"}
-              </Button>
-            </form>
-          </Form>
+                <FormField
+                  control={form.control}
+                  name="parentId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Parent Divisi</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Pilih parent divisi (opsional)" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="none">Tidak Ada Parent</SelectItem>
+                          {parentDivisions.map((division) => (
+                            <SelectItem key={division.id} value={division.id.toString()}>
+                              {division.divisi}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        Pilih parent divisi jika merupakan sub divisi
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <Button type="submit" disabled={loading}>
+                  {loading ? "Menyimpan..." : "Simpan Divisi"}
+                </Button>
+              </form>
+            </Form>
+          )}
         </CardContent>
       </Card>
+  
+      {errorModalOpen && (
+        <Dialog open={errorModalOpen} onOpenChange={setErrorModalOpen}>
+          <DialogContent className="max-w-md w-full">
+            <DialogHeader>
+              <DialogTitle>Error</DialogTitle>
+              <DialogDescription>{errorMessage}</DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button onClick={() => setErrorModalOpen(false)}>Tutup</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </>
   )
 }
