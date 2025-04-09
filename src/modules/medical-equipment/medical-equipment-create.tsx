@@ -16,19 +16,31 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import Cookies from "js-cookie";
 
-// ✅ Schema validasi menggunakan Zod
 const formSchema = z.object({
     inventorisId: z.string().min(1, { message: "Inventoris ID wajib diisi" }),
     name: z.string().min(1, { message: "Nama alat wajib diisi" }),
     brandName: z.string().optional(),
     modelName: z.string().optional(),
-    purchaseDate: z.date({ required_error: "Tanggal pembelian wajib diisi" }).optional(),
-    purchasePrice: z.string().optional(),
+    purchaseDate: z
+        .date({ required_error: "Tanggal pembelian wajib diisi" })
+        .refine((date) => date <= new Date(), {
+            message: "Tanggal pembelian tidak boleh lebih dari hari ini",
+        })
+        .optional(),
+    purchasePrice: z
+        .string()
+        .optional()
+        .transform((val) => val === "" ? undefined : Number(val))
+        .refine((val) => val === undefined || !isNaN(val), {
+            message: "Harga pembelian harus berupa angka",
+        })
+        .refine((val) => val === undefined || val >= 0, {
+            message: "Harga tidak boleh kurang dari 0",
+        }),
     status: z.string().min(1, { message: "Status wajib diisi" }),
     vendor: z.string().optional(),
 });
 
-// ✅ Daftar status alat medis
 const equipmentStatus = [
     { id: "Active", name: "Active" },
     { id: "Inactive", name: "Inactive" },
@@ -48,13 +60,12 @@ export default function MedicalEquipmentCreate() {
             brandName: "",
             modelName: "",
             purchaseDate: undefined,
-            purchasePrice: "",
+            purchasePrice: undefined,
             status: "",
             vendor: "",
         },
     });
 
-    // ✅ Fungsi untuk mengirim data ke backend
     async function createMedicalEquipment(data: z.infer<typeof formSchema>) {
         try {
             const token = Cookies.get("token");
@@ -90,7 +101,6 @@ export default function MedicalEquipmentCreate() {
         }
     }
 
-    // ✅ Handle submit form
     async function onSubmit(values: z.infer<typeof formSchema>) {
         setLoading(true);
         setError(null);

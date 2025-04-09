@@ -22,8 +22,22 @@ const formSchema = z.object({
   name: z.string().min(1, { message: "Nama alat wajib diisi" }),
   brandName: z.string().optional(),
   modelName: z.string().optional(),
-  purchaseDate: z.date().optional(),
-  purchasePrice: z.string().optional(),
+  purchaseDate: z
+    .date({ required_error: "Tanggal pembelian wajib diisi" })
+    .refine((date) => date <= new Date(), {
+      message: "Tanggal pembelian tidak boleh lebih dari hari ini",
+    })
+    .optional(),
+  purchasePrice: z
+    .string()
+    .optional()
+    .transform((val) => val === "" ? undefined : Number(val))
+    .refine((val) => val === undefined || !isNaN(val), {
+      message: "Harga pembelian harus berupa angka",
+    })
+    .refine((val) => val === undefined || val >= 0, {
+      message: "Harga tidak boleh kurang dari 0",
+    }),
   status: z.string().min(1, { message: "Status wajib diisi" }),
   vendor: z.string().optional(),
   createdOn: z.string().optional(),
@@ -73,10 +87,10 @@ export default function MedicalEquipmentEdit() {
 
         // Convert string dates to Date objects where needed
         const purchaseDate = equipmentData.purchaseDate ? parseISO(equipmentData.purchaseDate) : undefined;
-        
+
         const createdDate = new Date(equipmentData.createdOn);
         const formattedCreatedDate = isValid(createdDate) ? format(createdDate, "dd MMM yyyy") : "Invalid date";
-        
+
         const modifiedDate = new Date(equipmentData.modifiedOn);
         const formattedModifiedDate = isValid(modifiedDate) ? format(modifiedDate, "dd MMM yyyy") : "Invalid date";
 
