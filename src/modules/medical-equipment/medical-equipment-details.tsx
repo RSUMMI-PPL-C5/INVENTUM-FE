@@ -149,8 +149,8 @@ export default function MedicalEquipmentDetails() {
           <div className="h-8 w-1/3 bg-muted animate-pulse rounded mb-6"></div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {Array.from({ length: 8 }).map(() => (
-              <div key={crypto.randomUUID()} className="space-y-2">
+            {Array.from({ length: 8 }).map((_, index) => (
+              <div key={index} className="space-y-2">
                 <div className="h-4 w-20 bg-muted animate-pulse rounded"></div>
                 <div className="h-5 w-40 bg-muted animate-pulse rounded"></div>
               </div>
