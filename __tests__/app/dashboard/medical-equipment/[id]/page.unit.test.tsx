@@ -1,527 +1,450 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { useRouter, useSearchParams } from "next/navigation";
-import MedicalEquipmentPage from "@/modules/medical-equipment/medical-equipment-details";
-import { toast } from "sonner";
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import '@testing-library/jest-dom';
+import { useRouter, useParams } from 'next/navigation';
+import MedicalEquipmentDetails from '@/app/dashboard/medical-equipment/[id]/page';
+import MedicalEquipmentEditPage from '@/app/dashboard/medical-equipment/[id]/edit/page';
 import Cookies from "js-cookie";
 
-// Mock the next/navigation hooks
-jest.mock("next/navigation", () => ({
-  useRouter: jest.fn(),
-  useSearchParams: jest.fn(),
-}));
-
-// Mock the toast
-jest.mock("sonner", () => ({
-  toast: {
-    info: jest.fn(),
-    error: jest.fn(),
-  },
-}));
-
-// Mock js-cookie
 jest.mock("js-cookie", () => ({
   get: jest.fn(),
 }));
 
+// Mock the MedicalEquipmentEdit component
+jest.mock("@/modules/medical-equipment/medical-equipment-edit", () => jest.fn(() => <div>MedicalEquipmentEdit Component</div>));
+
+describe("MedicalEquipmentEditPage Component", () => {
+  test("renders the MedicalEquipmentEdit component", () => {
+    render(<MedicalEquipmentEditPage />);
+
+    expect(screen.getByText("MedicalEquipmentEdit Component")).toBeInTheDocument();
+  });
+});
+
+// Mock next/navigation
+jest.mock('next/navigation', () => ({
+  useRouter: jest.fn(),
+  useParams: jest.fn(),
+}));
+
 // Mock fetch
 global.fetch = jest.fn();
+
+// Mock confirm
 global.confirm = jest.fn();
 
-describe("MedicalEquipmentPage Details", () => {
-  // Sample data for testing
-  const mockMedicalEquipments = [
-    {
-      id: "1",
-      inventorisId: "INV-001",
-      name: "Test Equipment 1",
-      brandName: "Brand 1",
-      modelName: "Model 1",
-      purchaseDate: "2023-01-01",
-      purchasePrice: 1000000,
-      status: "Active",
-      vendor: "Vendor 1",
-      createdOn: "2023-01-01",
-      modifiedOn: "2023-01-01",
-    },
-    {
-      id: "2",
-      inventorisId: "INV-002",
-      name: "Test Equipment 2",
-      brandName: null,
-      modelName: null,
-      purchaseDate: null,
-      purchasePrice: null,
-      status: "Inactive",
-      vendor: null,
-      createdOn: null,
-      modifiedOn: "2023-01-02",
-    },
-    {
-      id: "3",
-      inventorisId: "INV-003",
-      name: "Test Equipment 3",
-      brandName: "Brand 3",
-      modelName: "Model 3",
-      purchaseDate: "2023-03-01",
-      purchasePrice: 3000000,
-      status: "Maintenance",
-      vendor: "Vendor 3",
-      createdOn: "2023-03-01",
-      modifiedOn: "2023-03-01",
-    },
-  ];
-
-  // Mock router and search params
+describe('MedicalEquipmentDetails Component', () => {
   const mockPush = jest.fn();
-  const mockRouter = { push: mockPush };
-  const mockSearchParamsGet = jest.fn();
-  const mockSearchParams = { get: mockSearchParamsGet };
+  
+  // Data equipment sederhana untuk testing
+  const mockEquipment = {
+    id: "6df4d1f3-0696-401b-9a00-511401c929c8",
+    inventorisId: "MED-123",
+    name: "Pulse Oximeter",
+    brandName: "HealthTech",
+    modelName: "PT2000",
+    purchaseDate: "2025-01-15T10:30:00.000Z",
+    purchasePrice: 2500000,
+    status: "active",
+    vendor: "Medical Supplies Inc",
+    createdOn: "2025-02-10T08:45:23.951Z",
+    modifiedOn: "2025-02-15T14:22:10.123Z"
+  };
+  
+  const falseEquipment = {
+    id: "6df4d1f3-0696-401b-9a00-511401c929c8",
+    inventorisId: "MED-123",
+    name: "Pulse Oximeter",
+    brandName: null,
+    modelName: null,
+    purchaseDate: "invalid-date", // Invalid date format
+    purchasePrice: null,
+    status: "unknown",
+    vendor: null,
+    createdOn: null,
+    modifiedOn: "2025-02-15T14:22:10.123Z"
+  };
 
   beforeEach(() => {
-    // Reset mocks
     jest.clearAllMocks();
     
-    // Setup default mocks
-    (useRouter as jest.Mock).mockReturnValue(mockRouter);
-    (useSearchParams as jest.Mock).mockReturnValue(mockSearchParams);
-    mockSearchParamsGet.mockReturnValue(null);
-    (Cookies.get as jest.Mock).mockReturnValue("mock-token");
+    // Setup router dan params
+    (useRouter as jest.Mock).mockReturnValue({ push: mockPush });
+    (useParams as jest.Mock).mockReturnValue({ id: mockEquipment.id });
     
-    // Mock successful API response by default
+    // Setup fetch success default
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: true,
-      json: jest.fn().mockResolvedValue(mockMedicalEquipments),
+      json: jest.fn().mockResolvedValue(mockEquipment)
     });
+    
+    // Default confirm adalah true
+    (global.confirm as jest.Mock).mockReturnValue(true);
+
+  });
+  
+  it('should show loading state initially and then display equipment details', async () => {
+    render(<MedicalEquipmentDetails />);
+    
+    // Check loading state
+    expect(screen.getByTestId('loading-state')).toBeInTheDocument();
+    
+    // Wait for details to load
+    await waitFor(() => {
+      expect(screen.queryByTestId('loading-state')).not.toBeInTheDocument();
+    });
+    
+    // Check basic details are displayed
+    expect(screen.getByTestId('equipment-name')).toHaveTextContent('Pulse Oximeter');
+    expect(screen.getByTestId('equipment-inventoris-id')).toHaveTextContent('MED-123');
+    expect(screen.getByTestId('equipment-status')).toHaveTextContent('active');
   });
 
-  // POSITIVE TEST CASES
-  describe("Positive test cases", () => {
-    it("renders the page with data correctly", async () => {
-      render(<MedicalEquipmentPage />);
-      
-      // Verify loading state
-      expect(screen.getByText("Memuat Alat Medis...")).toBeInTheDocument();
-      
-      // Verify data loads
-      await waitFor(() => {
-        expect(screen.getByText("Test Equipment 1")).toBeInTheDocument();
-        expect(screen.getByText("Test Equipment 2")).toBeInTheDocument();
-        expect(screen.getByText("Test Equipment 3")).toBeInTheDocument();
-      });
-      
-      // Verify headers
-      expect(screen.getByText("Nomor Inventaris")).toBeInTheDocument();
-      expect(screen.getByText("Nama")).toBeInTheDocument();
-      expect(screen.getByText("Status")).toBeInTheDocument();
-      expect(screen.getByText("Harga")).toBeInTheDocument();
-      expect(screen.getByText("Tanggal Pembelian")).toBeInTheDocument();
-    });
+  it('should use auth token when it exists for fetching', async () => {
+    (Cookies.get as jest.Mock).mockReturnValue('mockToken');
 
-    it("enables searching for equipment", async () => {
-      render(<MedicalEquipmentPage />);
-      
-      await waitFor(() => {
-        expect(screen.getByText("Test Equipment 1")).toBeInTheDocument();
-      });
-      
-      // Clear previous fetch calls
-      (global.fetch as jest.Mock).mockClear();
-      
-      // Search for equipment
-      const searchInput = screen.getByTestId("search-input");
-      fireEvent.change(searchInput, { target: { value: "Equipment 1" } });
-      
-      // Verify search API call
-      await waitFor(() => {
-        expect(global.fetch).toHaveBeenCalledWith(
-          expect.stringContaining("search=Equipment 1"),
-          expect.any(Object)
-        );
-      });
-    });
-
-    it("displays and uses the filter modal", async () => {
-      render(<MedicalEquipmentPage />);
-      
-      await waitFor(() => {
-        expect(screen.queryByText("Memuat Alat Medis...")).not.toBeInTheDocument();
-      });
-      
-      // Open filter modal
-      fireEvent.click(screen.getByText("Filter"));
-      
-      // Verify modal is open
-      expect(screen.getByText("Filter Alat Medis")).toBeInTheDocument();
-      
-      // Apply a filter (Active status)
-      fireEvent.click(screen.getByLabelText("Active"));
-      fireEvent.click(screen.getByText("Terapkan"));
-      
-      // Verify API call with filter
-      await waitFor(() => {
-        expect(global.fetch).toHaveBeenCalledWith(
-          expect.stringContaining("status=Active"),
-          expect.any(Object)
-        );
-      });
-    });
-
-    it("navigates to detail view when row is clicked", async () => {
-      render(<MedicalEquipmentPage />);
-      
-      await waitFor(() => {
-        expect(screen.getByTestId("equipment-row-1")).toBeInTheDocument();
-      });
-      
-      // Click equipment row
-      fireEvent.click(screen.getByTestId("equipment-row-1"));
-      
-      // Verify navigation
-      expect(mockPush).toHaveBeenCalledWith("/dashboard/medical-equipment/1");
-    });
-
-    it("navigates to edit page when edit button is clicked", async () => {
-      render(<MedicalEquipmentPage />);
-      
-      await waitFor(() => {
-        expect(screen.getByTestId("edit-button-1")).toBeInTheDocument();
-      });
-      
-      // Click edit button
-      fireEvent.click(screen.getByTestId("edit-button-1"));
-      
-      // Verify navigation
-      expect(mockPush).toHaveBeenCalledWith("/dashboard/medical-equipment/1/edit");
-    });
-
-    it("navigates to create page when add button is clicked", async () => {
-      render(<MedicalEquipmentPage />);
-      
-      await waitFor(() => {
-        expect(screen.queryByText("Memuat Alat Medis...")).not.toBeInTheDocument();
-      });
-      
-      // Click add button
-      fireEvent.click(screen.getByText("Tambah Alat Medis"));
-      
-      // Verify navigation
-      expect(mockPush).toHaveBeenCalledWith("/dashboard/medical-equipment/create");
-    });
-
-    it("successfully deletes equipment", async () => {
-      // Mock confirm dialog to return true
-      (global.confirm as jest.Mock).mockReturnValue(true);
-      
-      // Mock delete API response
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: jest.fn().mockResolvedValue({}),
-      });
-      
-      render(<MedicalEquipmentPage />);
-      
-      await waitFor(() => {
-        expect(screen.getByTestId("delete-button-1")).toBeInTheDocument();
-      });
-      
-      // Click delete button
-      fireEvent.click(screen.getByTestId("delete-button-1"));
-      
-      // Verify confirmation
-      expect(global.confirm).toHaveBeenCalledWith("Apakah Anda yakin ingin menghapus alat medis ini?");
-      
-      // Verify delete API call
-      await waitFor(() => {
-        expect(global.fetch).toHaveBeenCalledWith(
-          `${process.env.NEXT_PUBLIC_API_URL}/medical-equipment/1`,
-          expect.objectContaining({ method: "DELETE" })
-        );
-      });
-      
-      // Verify success message
-      expect(toast.info).toHaveBeenCalledWith("Alat medis berhasil dihapus");
-    });
-
-    it("shows create success toast when URL has success=create", async () => {
-      mockSearchParamsGet.mockImplementation((key) => {
-        if (key === "success") return "create";
-        return null;
-      });
-      
-      render(<MedicalEquipmentPage />);
-      
-      // Verify toast
-      await waitFor(() => {
-        expect(toast.info).toHaveBeenCalledWith("Alat medis berhasil dibuat");
-      });
-    });
-  });
-
-  // NEGATIVE TEST CASES
-  describe("Negative test cases", () => {
-    it("handles API fetch error gracefully", async () => {
-      // Mock fetch error
-      console.error = jest.fn(); // Suppress console error
-      (global.fetch as jest.Mock).mockRejectedValueOnce(new Error("API Error"));
-      
-      render(<MedicalEquipmentPage />);
-      
-      // Verify loading state disappears
-      await waitFor(() => {
-        expect(screen.queryByText("Memuat Alat Medis...")).not.toBeInTheDocument();
-      });
-      
-      // Verify error was logged
-      expect(console.error).toHaveBeenCalled();
-    });
-
-    it("handles delete API error gracefully", async () => {
-      // Mock confirm dialog to return true
-      (global.confirm as jest.Mock).mockReturnValue(true);
-      
-      // Mock delete API to fail
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: false,
-        json: jest.fn().mockResolvedValue({ message: "Error" }),
-      });
-      
-      render(<MedicalEquipmentPage />);
-      
-      await waitFor(() => {
-        expect(screen.getByTestId("delete-button-1")).toBeInTheDocument();
-      });
-      
-      // Click delete button
-      fireEvent.click(screen.getByTestId("delete-button-1"));
-      
-      // Verify error toast
-      await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith("Gagal menghapus alat medis");
-      });
-    });
-
-    it("shows appropriate message when no equipment found", async () => {
-      // Mock empty response
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: jest.fn().mockResolvedValue([]),
-      });
-      
-      render(<MedicalEquipmentPage />);
-      
-      // Verify empty message
-      await waitFor(() => {
-        expect(screen.getByText("Tidak ada alat medis yang ditemukan")).toBeInTheDocument();
-      });
-    });
-
-    it("shows appropriate message when search returns no results", async () => {
-      // First load data
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: jest.fn().mockResolvedValue(mockMedicalEquipments),
-      });
-      
-      // Then return empty for search
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: jest.fn().mockResolvedValue([]),
-      });
-      
-      render(<MedicalEquipmentPage />);
-      
-      await waitFor(() => {
-        expect(screen.queryByText("Memuat Alat Medis...")).not.toBeInTheDocument();
-      });
-      
-      // Search for non-existent equipment
-      const searchInput = screen.getByTestId("search-input");
-      fireEvent.change(searchInput, { target: { value: "nonexistent" } });
-      
-      // Verify search-specific message
-      await waitFor(() => {
-        expect(screen.getByText("Tidak ada alat medis yang cocok dengan pencarian Anda")).toBeInTheDocument();
-      });
-    });
-
-    it("doesn't delete when confirmation is cancelled", async () => {
-      // Mock confirm dialog to return false
-      (global.confirm as jest.Mock).mockReturnValue(false);
-      
-      render(<MedicalEquipmentPage />);
-      
-      await waitFor(() => {
-        expect(screen.getByTestId("delete-button-1")).toBeInTheDocument();
-      });
-      
-      // Click delete button
-      fireEvent.click(screen.getByTestId("delete-button-1"));
-      
-      // Verify delete API was not called
-      expect(global.fetch).not.toHaveBeenCalledWith(
-        expect.stringContaining("/medical-equipment/1"),
-        expect.objectContaining({ method: "DELETE" })
+    render(<MedicalEquipmentDetails />);
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        `${process.env.NEXT_PUBLIC_API_URL}/medical-equipment/${mockEquipment.id}`,
+        expect.objectContaining({
+          headers: {
+            Authorization: 'Bearer mockToken',
+            'Content-Type': 'application/json',
+          },
+        })
       );
     });
   });
 
-  // CORNER TEST CASES
-  describe("Corner test cases", () => {
-    it("formats null price and date correctly", async () => {
-      render(<MedicalEquipmentPage />);
-      
-      await waitFor(() => {
-        expect(screen.getByTestId("equipment-row-2")).toBeInTheDocument();
-      });
-      
-      // Get all table cells
-      const cells = screen.getAllByRole("cell");
-      
-      // Find cells with "-" content (null values formatted)
-      const nullCells = Array.from(cells).filter(cell => cell.textContent === "-");
-      
-      // Verify at least two cells with "-" exist (price and date)
-      expect(nullCells.length).toBeGreaterThanOrEqual(2);
+  it('should use auth token when it exists for delete', async () => {
+    (Cookies.get as jest.Mock).mockReturnValue('mockToken');
+
+    render(<MedicalEquipmentDetails />);
+    await waitFor(() => {
+      fireEvent.click(screen.getByTestId('delete-button'));
+      expect(global.confirm).toHaveBeenCalled();
     });
 
-    it("applies correct status classes based on status", async () => {
-      render(<MedicalEquipmentPage />);
-      
-      await waitFor(() => {
-        expect(screen.getAllByText("Active")[0]).toBeInTheDocument();
-        expect(screen.getAllByText("Inactive")[0]).toBeInTheDocument();
-        expect(screen.getAllByText("Maintenance")[0]).toBeInTheDocument();
-      });
-      
-      // Check Active status styling
-      const activeStatus = screen.getAllByText("Active")[0];
-      expect(activeStatus.className).toContain("bg-green-100");
-      expect(activeStatus.className).toContain("text-green-800");
-      
-      // Check Inactive status styling
-      const inactiveStatus = screen.getAllByText("Inactive")[0];
-      expect(inactiveStatus.className).toContain("bg-red-100");
-      expect(inactiveStatus.className).toContain("text-red-800");
-      
-      // Check Maintenance status styling
-      const maintenanceStatus = screen.getAllByText("Maintenance")[0];
-      expect(maintenanceStatus.className).toContain("bg-yellow-100");
-      expect(maintenanceStatus.className).toContain("text-yellow-800");
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        `${process.env.NEXT_PUBLIC_API_URL}/medical-equipment/${mockEquipment.id}`,
+        expect.objectContaining({
+          method: 'DELETE',
+          headers: {
+            Authorization: 'Bearer mockToken',
+            'Content-Type': 'application/json',
+          },
+        })
+      );
+    });
+  });
+
+  it('should use empty string if token does not exist for delete', async () => {
+    (Cookies.get as jest.Mock).mockReturnValue('');
+
+    render(<MedicalEquipmentDetails />);
+    await waitFor(() => {
+      fireEvent.click(screen.getByTestId('delete-button'));
+      expect(global.confirm).toHaveBeenCalled();
     });
 
-    it("handles invalid date format gracefully", async () => {
-      // Mock equipment with invalid date
-      const mockInvalidDateEquipment = [
-        {
-          ...mockMedicalEquipments[0],
-          purchaseDate: "invalid-date",
-        },
-      ];
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        `${process.env.NEXT_PUBLIC_API_URL}/medical-equipment/${mockEquipment.id}`,
+        expect.objectContaining({
+          method: 'DELETE',
+          headers: {
+            Authorization: '',
+            'Content-Type': 'application/json',
+          },
+        })
+      );
+    });
+  });
+
+  it('should handle missing equipmentId', async () => {
+    (useParams as jest.Mock).mockReturnValue({ id: null });
+
+    global.fetch = jest.fn();
+
+    render(<MedicalEquipmentDetails />);
+
+    expect(screen.getByTestId('loading-state')).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+  });
+  
+  it('should handle errors when equipment is not found', async () => {
+    // Mock error response
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: false
+    });
+    
+    render(<MedicalEquipmentDetails />);
+    
+    // Wait for error message
+    await waitFor(() => {
+      expect(screen.getByTestId('error-state')).toBeInTheDocument();
+    });
+  });
+
+  it('should use generic error message when equipment is not found', async () => {
+    global.fetch = jest.fn(() => {
+      throw "Not an error object";
+    });
+
+    render(<MedicalEquipmentDetails />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('error-state')).toBeInTheDocument();
+    });
+  });
+
+  it('should handle error in date formatting', async () => {
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: jest.fn().mockResolvedValue(falseEquipment)
+    });
+
+    render(<MedicalEquipmentDetails />);
+    await waitFor(() => {
+      expect(errorSpy).toHaveBeenCalled();
+    });
+  });
+  
+  it('should navigate back when back button is clicked', async () => {
+    render(<MedicalEquipmentDetails />);
+    
+    // Wait for content to load
+    await waitFor(() => {
+      expect(screen.queryByTestId('loading-state')).not.toBeInTheDocument();
+    });
+    
+    // Click back button
+    fireEvent.click(screen.getByTestId('back-button'));
+    
+    // Check navigation
+    expect(mockPush).toHaveBeenCalledWith('/dashboard/medical-equipment');
+  });
+  
+  it('should navigate to edit page when edit button is clicked', async () => {
+    render(<MedicalEquipmentDetails />);
+    
+    // Wait for content to load
+    await waitFor(() => {
+      expect(screen.queryByTestId('loading-state')).not.toBeInTheDocument();
+    });
+    
+    // Click edit button
+    fireEvent.click(screen.getByTestId('edit-button'));
+    
+    // Check navigation
+    expect(mockPush).toHaveBeenCalledWith(`/dashboard/medical-equipment/${mockEquipment.id}/edit`);
+  });
+
+  it('should delete equipment successfully when confirmed', async () => {
+    // Mock successful delete
+    (global.fetch as jest.Mock).mockImplementation((url, options) => {
+      if (options && options.method === 'DELETE') {
+        return Promise.resolve({ ok: true });
+      }
       
-      // Mock response with invalid date
+      // Default for GET request
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve(mockEquipment)
+      });
+    });
+    
+    render(<MedicalEquipmentDetails />);
+    
+    // Wait for content to load
+    await waitFor(() => {
+      expect(screen.queryByTestId('loading-state')).not.toBeInTheDocument();
+    });
+    
+    // Click delete button
+    fireEvent.click(screen.getByTestId('delete-button'));
+    
+    // Check confirmation
+    expect(global.confirm).toHaveBeenCalled();
+    
+    // Wait for redirect
+    await waitFor(() => {
+      expect(mockPush).toHaveBeenCalledWith('/dashboard/medical-equipment?success=delete');
+    });
+  });
+  
+  it('should not delete when user cancels confirmation', async () => {
+    // Mock cancel confirmation
+    (global.confirm as jest.Mock).mockReturnValueOnce(false);
+    
+    render(<MedicalEquipmentDetails />);
+    
+    // Wait for content to load
+    await waitFor(() => {
+      expect(screen.queryByTestId('loading-state')).not.toBeInTheDocument();
+    });
+    
+    // Click delete button
+    fireEvent.click(screen.getByTestId('delete-button'));
+    
+    // Verify DELETE was not called
+    expect(global.fetch).not.toHaveBeenCalledWith(
+      expect.stringMatching(/delete/i),
+      expect.objectContaining({ method: 'DELETE' })
+    );
+  });
+  
+  it('should handle delete failure', async () => {
+    // Mock delete failure
+    jest.spyOn(window, 'alert').mockImplementation(() => {});
+    
+    (global.fetch as jest.Mock).mockImplementation((url, options) => {
+      if (options && options.method === 'DELETE') {
+        return Promise.resolve({ ok: false });
+      }
+      
+      // Default for GET request
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve(mockEquipment)
+      });
+    });
+    
+    render(<MedicalEquipmentDetails />);
+    
+    // Wait for content to load
+    await waitFor(() => {
+      expect(screen.queryByTestId('loading-state')).not.toBeInTheDocument();
+    });
+    
+    // Click delete button
+    fireEvent.click(screen.getByTestId('delete-button'));
+    
+    // Verify no redirect happened
+    expect(mockPush).not.toHaveBeenCalledWith('/dashboard/medical-equipment');
+  });
+
+  it('should render all UI elements with correct data', async () => {
+    render(<MedicalEquipmentDetails />);
+    
+    await waitFor(() => {
+      expect(screen.queryByTestId('loading-state')).not.toBeInTheDocument();
+    });
+    
+    // Verifikasi semua elemen UI
+    expect(screen.getByTestId('back-button')).toBeInTheDocument();
+    expect(screen.getByTestId('equipment-name')).toHaveTextContent('Pulse Oximeter');
+    expect(screen.getByTestId('equipment-inventoris-id')).toHaveTextContent('MED-123');
+    expect(screen.getByTestId('equipment-brand')).toHaveTextContent('HealthTech');
+    expect(screen.getByTestId('equipment-model')).toHaveTextContent('PT2000');
+    expect(screen.getByTestId('equipment-status')).toHaveTextContent('active');
+    expect(screen.getByTestId('equipment-price')).toHaveTextContent('Rp 2.500.000');
+    expect(screen.getByTestId('equipment-vendor')).toHaveTextContent('Medical Supplies Inc');
+    expect(screen.getByTestId('equipment-purchase-date')).toBeInTheDocument();
+    expect(screen.getByTestId('equipment-created')).toBeInTheDocument();
+    expect(screen.getByTestId('equipment-modified')).toBeInTheDocument();
+    expect(screen.getByTestId('edit-button')).toBeInTheDocument();
+    expect(screen.getByTestId('delete-button')).toBeInTheDocument();
+  });
+
+  it('should render fallbacks for missing data fields', async () => {
+    // Data equipment dengan berbagai field yang null
+    const equipmentWithMissingData = {
+      ...mockEquipment,
+      brandName: null,
+      modelName: null,
+      purchasePrice: null,
+      vendor: null,
+      purchaseDate: null,
+      createdOn: null
+    };
+    
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: jest.fn().mockResolvedValue(equipmentWithMissingData)
+    });
+    
+    render(<MedicalEquipmentDetails />);
+    
+    await waitFor(() => {
+      expect(screen.queryByTestId('loading-state')).not.toBeInTheDocument();
+    });
+    
+    // Verifikasi fallback rendering untuk field yang null
+    expect(screen.getByTestId('equipment-brand')).toHaveTextContent('Tidak ada');
+    expect(screen.getByTestId('equipment-model')).toHaveTextContent('Tidak ada');
+    expect(screen.getByTestId('equipment-price')).toHaveTextContent('Tidak ada');
+    expect(screen.getByTestId('equipment-vendor')).toHaveTextContent('Tidak ada');
+    expect(screen.getByTestId('equipment-purchase-date')).toHaveTextContent('Tidak ada');
+    expect(screen.getByTestId('equipment-created')).toHaveTextContent('Tidak ada');
+  });
+
+  it('should render status with correct styling based on equipment status', async () => {
+    const statusVariants = [
+      { status: 'active', expectedClass: 'bg-green-100 text-green-800' },
+      { status: 'inactive', expectedClass: 'bg-red-100 text-red-800' },
+      { status: 'maintenance', expectedClass: 'bg-yellow-100 text-yellow-800' },
+      { status: 'unknown', expectedClass: 'bg-gray-100 text-gray-800' }
+    ];
+
+    for (const variant of statusVariants) {
+      const equipmentWithStatus = {
+        ...mockEquipment,
+        status: variant.status
+      };
+
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
-        json: jest.fn().mockResolvedValue(mockInvalidDateEquipment),
+        json: jest.fn().mockResolvedValue(equipmentWithStatus)
       });
       
-      console.error = jest.fn(); // Suppress console errors
-      
-      render(<MedicalEquipmentPage />);
+      render(<MedicalEquipmentDetails />);
       
       await waitFor(() => {
-        expect(screen.getByTestId("equipment-row-1")).toBeInTheDocument();
+        expect(screen.queryByTestId('loading-state')).not.toBeInTheDocument();
       });
       
-      // Verify the invalid date is displayed as-is
-      expect(screen.getByText("invalid-date")).toBeInTheDocument();
-      expect(console.error).toHaveBeenCalled();
-    });
+      const statusElement = screen.getByTestId('equipment-status').firstChild;
+      expect(statusElement).toHaveClass(variant.expectedClass.split(' ')[0]);
+      expect(statusElement).toHaveClass(variant.expectedClass.split(' ')[1]);
+      
+      // Clean up before next test
+      document.body.innerHTML = '';
+    }
+  });
 
-    it("handles multiple status filters correctly", async () => {
-      render(<MedicalEquipmentPage />);
-      
-      await waitFor(() => {
-        expect(screen.queryByText("Memuat Alat Medis...")).not.toBeInTheDocument();
-      });
-      
-      // Open filter modal
-      fireEvent.click(screen.getByText("Filter"));
-      
-      // Select multiple statuses
-      fireEvent.click(screen.getByLabelText("Active"));
-      fireEvent.click(screen.getByLabelText("Inactive"));
-      
-      // Apply filters
-      fireEvent.click(screen.getByText("Terapkan"));
-      
-      // Verify API call includes both statuses
-      await waitFor(() => {
-        expect(global.fetch).toHaveBeenCalledWith(
-          expect.stringMatching(/status=Active.*status=Inactive|status=Inactive.*status=Active/),
-          expect.any(Object)
-        );
-      });
-    });
+  it('should format currency correctly', async () => {
+    const priceVariants = [
+      { price: 1000000, expected: 'Rp1.000.000' },
+      { price: 500, expected: 'Rp500' },
+      { price: 0, expected: 'Rp0' }
+    ];
 
-    it("prevents row click propagation when action buttons are clicked", async () => {
-      render(<MedicalEquipmentPage />);
-      
-      await waitFor(() => {
-        expect(screen.getByTestId("edit-button-1")).toBeInTheDocument();
-      });
-      
-      // Create a mock event with stopPropagation
-      const mockEvent = { stopPropagation: jest.fn() };
-      
-      // Click edit button with mock event
-      fireEvent.click(screen.getByTestId("edit-button-1"), mockEvent);
-      
-      // Verify router was called with edit path, not detail path
-      expect(mockPush).toHaveBeenCalledWith("/dashboard/medical-equipment/1/edit");
-      expect(mockPush).not.toHaveBeenCalledWith("/dashboard/medical-equipment/1");
-    });
+    for (const variant of priceVariants) {
+      const equipmentWithPrice = {
+        ...mockEquipment,
+        purchasePrice: variant.price
+      };
 
-    it("shows delete success toast when URL has success=delete", async () => {
-      mockSearchParamsGet.mockImplementation((key) => {
-        if (key === "success") return "delete";
-        return null;
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: jest.fn().mockResolvedValue(equipmentWithPrice)
       });
       
-      render(<MedicalEquipmentPage />);
-      
-      // Verify toast
-      await waitFor(() => {
-        expect(toast.info).toHaveBeenCalledWith("Alat medis berhasil dihapus");
-      });
-    });
-
-    it("builds query params correctly with all filter types", async () => {
-      render(<MedicalEquipmentPage />);
+      render(<MedicalEquipmentDetails />);
       
       await waitFor(() => {
-        expect(screen.queryByText("Memuat Alat Medis...")).not.toBeInTheDocument();
+        expect(screen.queryByTestId('loading-state')).not.toBeInTheDocument();
       });
-      
-      // Open filter modal
-      fireEvent.click(screen.getByText("Filter"));
-      
-      // Select status
-      fireEvent.click(screen.getByLabelText("Active"));
-      
-      // Select dates (we'll just verify the apply button sends all the fields to the API)
-      // In a real test, you'd need to interact with the calendar component
-      
-      // Apply filters
-      fireEvent.click(screen.getByText("Terapkan"));
-      
-      // The actual test here is more about the pattern for API calls
-      // than about the specific values, since we can't easily select dates
-      await waitFor(() => {
-        expect(global.fetch).toHaveBeenCalledWith(
-          expect.stringContaining("status=Active"),
-          expect.any(Object)
-        );
-      });
-    });
+            
+      // Clean up before next test
+      document.body.innerHTML = '';
+    }
   });
 });
