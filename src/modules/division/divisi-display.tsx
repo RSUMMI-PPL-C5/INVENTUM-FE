@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Cookies from "js-cookie"
-import { ChevronRight, ChevronDown, Loader2, Pencil, Trash2, Plus, Edit } from "lucide-react"
+import { ChevronRight, ChevronDown, Loader2, Trash2, Plus, Edit } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
