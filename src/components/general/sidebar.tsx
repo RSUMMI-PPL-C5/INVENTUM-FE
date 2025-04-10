@@ -92,7 +92,6 @@ export default function SideBar() {
               "Content-Type": "application/json",
             },
           });
-      
           if (!response.ok) {
             throw new Error("Failed to fetch user data");
           }
@@ -138,7 +137,7 @@ export default function SideBar() {
               >
                 {item.label}
               </SideBarButton>
-              {[0, 2, 4].includes(index) && <hr className="w-full min-w-[3.5rem] border-1 border-[#C2C2C2]" />}
+              {[1, 3, 5].includes(index) && <hr className="w-full min-w-[3.5rem] border-1 border-[#C2C2C2]" />}
             </Fragment>
           ))}
         </div>

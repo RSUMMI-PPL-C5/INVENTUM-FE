@@ -147,30 +147,32 @@ export default function SparepartDisplay() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Daftar Suku Cadang</h1>
+      <h1 className="text-header-h5 font-bold font-poppins">Suku Cadang</h1>
       
       {/* Header Section */}
-      <div className="bg-primary-solid items-center p-4 flex gap-4 text-white rounded-lg">
-        <div className="flex items-center justify-center w-[200px] h-[180px] border border-primary-super-light rounded-lg">
-          illustration
-        </div>
+      <div className="bg-primary-solid items-center p-2 flex gap-3 h-fit text-white rounded-lg overflow-hidden">
+            <div className="flex items-center justify-center w-[264px] h-[224px] border border-primary-super-light rounded-lg">
+                illustration
+            </div>
 
-        <div className="flex flex-col gap-4">
-          <div className="space-y-2">
-            <h2 className="text-xl font-bold">Suku Cadang</h2>
-            <p>
-              Kelola informasi suku cadang untuk peralatan medis, termasuk stok, lokasi, dan riwayat penggunaan.
-            </p>
-          </div>
-          <Button
-            variant="ghost"
-            className="w-fit"
-            onClick={navigateToCreate}
-          >
-            <Plus className="mr-2 h-4 w-4" /> Tambah Suku Cadang
-          </Button>
+            <div className="flex flex-col gap-6 py-6 px-6">
+                <div className="space-y-2">
+                    <h2 className="text-header-h6 font-bold font-poppins">
+                        Suku Cadang
+                    </h2>
+                    <p className="text-s-medium">
+                        Kelola informasi suku cadang untuk peralatan medis, termasuk stok, lokasi, dan riwayat penggunaan.
+                    </p>
+                </div>
+                <Button
+                    variant="ghost"
+                    className="w-fit"
+                    onClick={() => navigateToCreate()}
+                >
+                    <Plus className="mr-2 h-4 w-4" /> Tambah Suku Cadang
+                </Button>
+            </div>
         </div>
-      </div>
 
       {/* Search & Filter */}
       <div className="flex flex-col sm:flex-row items-center gap-4">

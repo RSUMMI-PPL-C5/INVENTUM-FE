@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CalendarIcon } from "lucide-react";
+import { ArrowLeft, CalendarIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
@@ -117,7 +117,17 @@ export default function MedicalEquipmentCreate() {
 
     return (
         <>
-            <span className="text-header-h5 font-bold font-poppins">Tambah Alat Medis</span>
+            <div className="flex flex-col items-start gap-4">
+                <Button 
+                variant="outline" 
+                onClick={() => router.push("/dashboard/medical-equipment")}
+                className="mr-4"
+                >
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Kembali
+                </Button>
+                <span className="text-header-h5 font-bold font-poppins">Tambah Alat Medis</span>
+            </div>
 
             {error && <div className="text-red-500 mt-2">{error}</div>}
 

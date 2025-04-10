@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import DisplayDivisi from "@/modules/division/display-divisi"
+import DisplayDivisi from "@/modules/division/divisi-display";
 
 export default function DivisionPage() {
-  return <DisplayDivisi />
+	return <DisplayDivisi />;
 }

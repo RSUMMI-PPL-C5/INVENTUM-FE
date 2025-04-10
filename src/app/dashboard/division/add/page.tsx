@@ -1,6 +1,6 @@
 "use client"
 
-import AddDivisi from "@/modules/division/add-divisi"
+import AddDivisi from "@/modules/division/divisi-create"
 
 export default function AddDivisiPage() {
   return <AddDivisi />
