@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -8,13 +8,19 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { CalendarIcon } from "lucide-react"
+import { ArrowLeft, CalendarIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { format } from "date-fns"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { cn } from "@/lib/utils"
-import Cookies from "js-cookie";
+import { cn, decodeToken } from "@/lib/utils"
+import Cookies from "js-cookie"
+
+// Add the Division type at the top of the file, after imports
+interface Division {
+  id: number
+  divisi: string
+}
 
 const formSchema = z.object({
   nokar: z.string().min(1, { message: "No. Kar wajib diisi" }),
@@ -24,33 +30,75 @@ const formSchema = z.object({
   password: z.string().min(6, { message: "Password minimal 6 karakter" }),
   divisi_id: z.string().min(1, { message: "Divisi wajib diisi" }),
   role: z.string().min(1, { message: "Role wajib diisi" }),
-  wa_number: z
-    .string()
-    .min(1, { message: "No. WA wajib diisi" })
-    .nullable(),
+  wa_number: z.string().min(1, { message: "No. WA wajib diisi" }),
   entryDate: z.date({
     required_error: "Tanggal masuk wajib diisi",
   }),
 })
 
-const divisions = [
-  { id: "1", name: "Unit Medis" },
-  { id: "2", name: "Unit Keperawatan" },
-  { id: "3", name: "Teknis" },
-  { id: "4", name: "IT Division" },
-  { id: "5", name: "HR Division" },
-]
-
 const roles = [
   { id: "1", name: "User" },
-  { id: "2", name: "Asesor" },
+  { id: "2", name: "Fasum" },
   { id: "3", name: "Admin" },
 ]
 
 export default function UserCreate() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [userId, setUserId] = useState(null)
   const [error, setError] = useState<string | null>(null)
+  const [divisions, setDivisions] = useState<Division[]>([])
+  const [errorMessage, setErrorMessage] = useState("")
+  const [errorModalOpen, setErrorModalOpen] = useState(false)
+
+  useEffect(() => {
+    fetchAllDivisions()
+    fetchUserId()
+  }, [])
+
+  const fetchUserId = async () => {
+    try {
+      const token = Cookies.get("token");
+  
+      if (!token) {
+        console.error("No token found");
+        setLoading(false);
+        return;
+      }
+  
+      const decodedToken = decodeToken(token);
+  
+      setUserId(decodedToken.userId);
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  // Update the fetchAllDivisions function to use the proper typing
+  async function fetchAllDivisions() {
+    try {
+      const token = Cookies.get("token")
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/divisi/all`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+      })
+
+      const data = await response.json()
+      console.log(data)
+      setDivisions(data)
+    } catch (err) {
+      console.error("Error fetching divisions:", err)
+      setErrorMessage("Failed to load parent divisions.")
+      setErrorModalOpen(true)
+    }
+  }
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -62,45 +110,45 @@ export default function UserCreate() {
       password: "",
       divisi_id: "",
       role: "",
-      wa_number: null,
+      wa_number: "",
     },
   })
 
   async function createUser(data: z.infer<typeof formSchema>) {
     try {
-        const token = Cookies.get("token");
+      const token = Cookies.get("token")
 
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: token ? `Bearer ${token}` : "",
-            },
-            body: JSON.stringify({
-                username: data.username,
-                email: data.email,
-                password: data.password,
-                role: data.role,
-                fullname: data.fullname,
-                nokar: data.nokar,
-                divisiId: Number.parseInt(data.divisi_id),
-                waNumber: data.wa_number,
-                createdBy: 1,
-                createdOn: data.entryDate.toISOString(),
-            }),
-        });
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+        body: JSON.stringify({
+          username: data.username,
+          email: data.email,
+          password: data.password,
+          role: data.role,
+          fullname: data.fullname,
+          nokar: data.nokar,
+          divisiId: Number.parseInt(data.divisi_id),
+          waNumber: data.wa_number,
+          createdBy: userId,
+          createdOn: data.entryDate.toISOString(),
+        }),
+      })
 
-        if (!response.ok) {
-            throw new Error("Failed to create user");
-        }
+      if (!response.ok) {
+        throw new Error("Failed to create user")
+      }
 
-        const result = await response.json();
-        return result;
+      const result = await response.json()
+      return result
     } catch (error) {
-        console.error("Error creating user:", error);
-        throw error;
+      console.error("Error creating user:", error)
+      throw error
     }
-}
+  }
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setLoading(true)
@@ -119,9 +167,31 @@ export default function UserCreate() {
 
   return (
     <>
-      <span className="text-header-h5 font-bold font-poppins">Tambah Pengguna</span>
+      <div className="flex flex-col items-start gap-4">
+        <Button variant="outline" onClick={() => router.push("/dashboard/user")} className="mr-4">
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Kembali
+        </Button>
+        <span className="text-header-h5 font-bold font-poppins">Tambah Pengguna</span>
+      </div>
 
       {error && <div className="text-red-500 mt-2">{error}</div>}
+      {errorModalOpen && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+          <span className="block sm:inline">{errorMessage}</span>
+          <span className="absolute top-0 bottom-0 right-0 px-4 py-3" onClick={() => setErrorModalOpen(false)}>
+            <svg
+              className="fill-current h-6 w-6 text-red-500"
+              role="button"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+            >
+              <title>Close</title>
+              <path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z" />
+            </svg>
+          </span>
+        </div>
+      )}
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mt-4">
           <FormField
@@ -157,7 +227,7 @@ export default function UserCreate() {
               <FormItem>
                 <FormLabel>No. WA</FormLabel>
                 <FormControl>
-                  <Input {...field} value={field.value ?? ""} placeholder="Masukkan nomor WA" />
+                  <Input {...field} placeholder="Masukkan nomor WA" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -215,9 +285,10 @@ export default function UserCreate() {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
+                    {/* Update the division mapping in the Select component to use the proper structure */}
                     {divisions.map((division) => (
-                      <SelectItem key={division.id} value={division.id}>
-                        {division.name}
+                      <SelectItem key={division.id} value={division.id.toString()}>
+                        {division.divisi}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -289,4 +360,3 @@ export default function UserCreate() {
     </>
   )
 }
-

@@ -15,7 +15,7 @@ type User = {
   fullname: string | null
   nokar: string
   divisiId: number | null
-  divisiName?: string
+  divisionName: string
   waNumber: string | null
   createdOn: string | null
   modifiedOn: string
@@ -51,13 +51,9 @@ export default function UserDetails() {
       }
   
       const userData = await response.json();
+      console.log(userData)
   
-      const user = {
-        ...userData,
-        divisiName: userData?.divisi?.name || "Tidak ada divisi",
-      };
-  
-      setUser(user);
+      setUser(userData);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Terjadi kesalahan");
     } finally {
@@ -201,7 +197,7 @@ export default function UserDetails() {
           <div className="space-y-1">
             <h3 className="text-sm font-medium text-muted-foreground">Divisi</h3>
             <p className="text-sm" data-testid="user-divisi">
-              {user.divisiName}
+              {user.divisionName}
             </p>
           </div>
 
