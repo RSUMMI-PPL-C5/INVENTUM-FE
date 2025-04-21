@@ -3,12 +3,10 @@ import MedicalEquipmentCreate from "../../../../../src/modules/medical-equipment
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 
-// ✅ Mock useRouter dari Next.js
 jest.mock("next/navigation", () => ({
   useRouter: jest.fn(),
 }));
 
-// ✅ Mock Cookies untuk token autentikasi
 jest.mock("js-cookie", () => ({
   get: jest.fn(),
 }));
@@ -108,7 +106,7 @@ describe("MedicalEquipmentCreate Component", () => {
     }, { timeout: 2000 });
   });
 
-  /** 🛑 Corner Case: Validasi form gagal */
+  /** Corner Case: Validasi form gagal */
   it("should show validation errors if form fields are empty", async () => {
     render(<MedicalEquipmentCreate />);
 
@@ -123,7 +121,7 @@ describe("MedicalEquipmentCreate Component", () => {
     });
   });
 
-  /** ✅ Positive Case: Pembatalan form */
+  /** Positive Case: Pembatalan form */
   it("should go back when 'Batalkan' is clicked", () => {
     render(<MedicalEquipmentCreate />);
 
