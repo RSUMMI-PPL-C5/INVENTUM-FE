@@ -1,5 +1,4 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { act } from 'react';
 import MaintenanceRequestCreate from '@/modules/medical-equipment/request/maintenance/maintenance-request-create';
 import { useRouter, useParams } from 'next/navigation';
 import Cookies from "js-cookie";
@@ -42,7 +41,7 @@ describe('MaintenanceRequestCreatePage', () => {
       } else if (url === `${process.env.NEXT_PUBLIC_API_URL}/medical-equipment/1`) {
         return Promise.resolve({
           ok: true,
-          json: () => Promise.resolve({ name: "mock-equipment-name" }),
+          json: () => Promise.resolve({ data: { name: "mock-equipment-name" } }),
         });
       }
       return Promise.resolve({
@@ -146,7 +145,7 @@ describe('MaintenanceRequestCreatePage', () => {
       } else if (url === `${process.env.NEXT_PUBLIC_API_URL}/medical-equipment/1`) {
         return Promise.resolve({
           ok: true,
-          json: () => Promise.resolve({ name: "mock-equipment-name" }),
+          json: () => Promise.resolve({ data: { name: "mock-equipment-name" } }),
         });
       }
       return Promise.resolve({
