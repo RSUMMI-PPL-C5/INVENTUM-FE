@@ -1,20 +1,23 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Textarea } from "@/components/ui/textarea"
 import { ArrowLeft } from "lucide-react"
 import { useRouter, useParams } from "next/navigation"
+import { decodeToken } from "@/lib/utils"
+import Cookies from "js-cookie"
 
 const formSchema = z.object({
-  userId: z.string().min(1),
   medicalEquipment: z.string().min(1),
   complaint: z.string().optional(),
-  submissionDate: z.date(),
+  userId: z.string().min(1),
+  submissionDate: z.string(),
   createdBy: z.string().min(1),
 });
 
@@ -22,28 +25,114 @@ export default function MaintenanceRequestCreate() {
   const router = useRouter()
   const params = useParams()
   const equipmentId = params.id as string
-
-  const userId = localStorage.getItem("userId") || "";
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [errorModalOpen, setErrorModalOpen] = useState(false)
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-      defaultValues: {
-      userId: userId,
-      medicalEquipment: equipmentId,
+    defaultValues: {
+      medicalEquipment: "Loading...",
       complaint: "",
-      submissionDate: new Date(),
-      createdBy: userId,
+      userId: "",
+      submissionDate: "",
+      createdBy: "",
     },
   });
 
-  const onsubmit = async (values: z.infer<typeof formSchema>) => {
+  const getToken = async () => {
+    const token = Cookies.get("token");
 
+    if (!token) throw new Error("No token found");
+    return token;
+  }
+
+  const fetchUserId = async () => {
+    setLoading(true);
+    try {
+      const token = await getToken();
+  
+      const decodedToken = decodeToken(token);
+      form.setValue("userId", decodedToken.userId);
+      form.setValue("createdBy", decodedToken.userId);
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [errorMessage, setErrorMessage] = useState("")
-  const [errorModalOpen, setErrorModalOpen] = useState(false)
+  const fetchMedicalEquipmentName = async () => {
+    setLoading(true);
+    try {
+      const token = await getToken();
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/medical-equipment/${equipmentId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch medical equipment name");
+      }
+
+      const data = await response.json();
+      form.setValue("medicalEquipment", data.data.name);
+    } catch (error) {
+      console.error("Error fetching medical equipment name:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createMaintenanceRequest = async (data: z.infer<typeof formSchema>) => {
+    try {
+      const token = await getToken();
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/maintenance-request`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create maintenance request");
+      }
+
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      console.error("Error creating maintenance request:", error);
+      throw(error);
+    }
+  };
+
+  const onsubmit = async (data: z.infer<typeof formSchema>) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const submissionDate = new Date().toISOString();
+      await createMaintenanceRequest({...data, submissionDate});
+      router.push(`/dashboard/medical-equipment/${equipmentId}?success=true`);
+    } catch (error) {
+      setError("Failed to create maintenance request");
+      setErrorModalOpen(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUserId();
+    fetchMedicalEquipmentName();
+  }, [equipmentId]);
 
   return (
     <>
@@ -58,7 +147,7 @@ export default function MaintenanceRequestCreate() {
       {error && <div className="text-red-500 mt-2">{error}</div>}
       {errorModalOpen && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
-          <span className="block sm:inline">{errorMessage}</span>
+          <span className="block sm:inline">{error}</span>
           <span className="absolute top-0 bottom-0 right-0 px-4 py-3" onClick={() => setErrorModalOpen(false)}>
             <svg
               className="fill-current h-6 w-6 text-red-500"
@@ -84,6 +173,7 @@ export default function MaintenanceRequestCreate() {
                 <FormControl>
                     <Input disabled {...field} />
                 </FormControl>
+                <FormMessage />
               </FormItem>
             )}
           />
@@ -95,15 +185,15 @@ export default function MaintenanceRequestCreate() {
               <FormItem>
                 <FormLabel>Catatan</FormLabel>
                 <FormControl>
-                  <Input placeholder="Masukkan keluhan" {...field} />
+                  <Textarea
+                    placeholder="Masukkan keluhan"
+                    className="min-h-[100px]"
+                    {...field}
+                  />
                 </FormControl>
               </FormItem>
             )}
           />
-
-          <input type="hidden" {...form.register("userId")} />
-          <input type="hidden" {...form.register("submissionDate")} />
-          <input type="hidden" {...form.register("createdBy")} />
 
           <div className="flex justify-end space-x-4">
             <Button type="button" variant="destructive" onClick={() => router.back()}>
