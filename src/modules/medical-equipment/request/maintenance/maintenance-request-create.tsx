@@ -32,7 +32,7 @@ export default function MaintenanceRequestCreate() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      medicalEquipment: "Loading...",
+      medicalEquipment: "",
       complaint: "",
       userId: "",
       submissionDate: "",
@@ -171,7 +171,7 @@ export default function MaintenanceRequestCreate() {
               <FormItem>
                 <FormLabel>Alat</FormLabel>
                 <FormControl>
-                    <Input disabled {...field} />
+                    <Input disabled placeholder="Loading..." {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
