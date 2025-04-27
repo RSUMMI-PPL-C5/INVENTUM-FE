@@ -20,6 +20,7 @@ import UserFilterModal, {
 } from "@/components/general/user-filter-modal";
 import { toast } from "sonner";
 import Cookies from "js-cookie";
+import { PaginationControls } from "@/components/ui/pagination-control";
 
 type User = {
 	id: string;
@@ -37,6 +38,18 @@ type User = {
 	};
 };
 
+type PaginationMeta = {
+	total: number;
+	page: number;
+	limit: number;
+	totalPages: number;
+};
+
+type UserResponse = {
+	data: User[];
+	meta: PaginationMeta;
+};
+
 const divisionMapping: Record<string, number> = {
 	"Divisi A": 1,
 	"Divisi B": 2,
@@ -45,6 +58,12 @@ const divisionMapping: Record<string, number> = {
 
 export default function UsersPage() {
 	const [users, setUsers] = useState<User[]>([]);
+	const [paginationMeta, setPaginationMeta] = useState<PaginationMeta>({
+		total: 0,
+		page: 1,
+		limit: 10,
+		totalPages: 1,
+	});
 	const [search, setSearch] = useState("");
 	const [showFilterModal, setShowFilterModal] = useState(false);
 	const [filters, setFilters] = useState<Filters>({
@@ -58,41 +77,54 @@ export default function UsersPage() {
 	const [loading, setLoading] = useState(true);
 	const router = useRouter();
 	const params = new URLSearchParams();
-    const searchParams = useSearchParams();
+	const searchParams = useSearchParams();
 
 	const fetchUsers = async () => {
-        try {
-            setLoading(true);
-            const token = Cookies.get("token");
-            const queryParams = buildQueryParams(filters);
-            let url = `${process.env.NEXT_PUBLIC_API_URL}/user`;
-    
-            if (queryParams || search) {
-                const searchParam = search ? `search=${search}` : "";
-                url += `?${[queryParams, searchParam].filter(Boolean).join("&")}`;
-            }
-    
-            const response = await fetch(url, {
-                headers: {
-                    Authorization: token ? `Bearer ${token}` : "",
-                    "Content-Type": "application/json",
-                },
-            });
-    
-            if (!response.ok) {
-                const res = await response.json()
-                console.log(res)
-                throw new Error("Failed to fetch users");
-            }
-    
-            const data = await response.json();
-            setUsers(data);
-        } catch (err) {
-            console.error("Error fetching users:", err);
-        } finally {
-            setLoading(false);
-        }
-    };
+		try {
+			setLoading(true);
+			const token = Cookies.get("accessToken");
+			const queryParams = buildQueryParams(filters);
+
+			// Get the current page from URL or use default
+			const currentPage = searchParams.get("page")
+				? Number.parseInt(searchParams.get("page") as string)
+				: 1;
+
+			let url = `${process.env.NEXT_PUBLIC_API_URL}/user`;
+
+			// Add pagination parameters
+			const paginationParams = `page=${currentPage}&limit=${paginationMeta.limit}`;
+
+			if (queryParams || search || paginationParams) {
+				const searchParam = search ? `search=${search}` : "";
+				url += `?${[queryParams, searchParam, paginationParams]
+					.filter(Boolean)
+					.join("&")}`;
+			}
+
+			const response = await fetch(url, {
+				headers: {
+					Authorization: token ? `Bearer ${token}` : "",
+					"Content-Type": "application/json",
+				},
+			});
+
+			if (!response.ok) {
+				const res = await response.json();
+				console.log(res);
+				throw new Error("Failed to fetch users");
+			}
+
+			const responseData: UserResponse = await response.json();
+            console.log(responseData)
+			setUsers(responseData.data);
+			setPaginationMeta(responseData.meta);
+		} catch (err) {
+			console.error("Error fetching users:", err);
+		} finally {
+			setLoading(false);
+		}
+	};
 
 	const buildQueryParams = (filters: Filters): string => {
 		filters.role.forEach((role) => {
@@ -136,51 +168,54 @@ export default function UsersPage() {
 	};
 
 	const handleDelete = async (userId: string) => {
-        if (!confirm("Apakah Anda yakin ingin menghapus pengguna ini?")) {
-            return;
-        }
-    
-        try {
-            const token = Cookies.get("token");
-    
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/${userId}`, {
-                method: "DELETE",
-                headers: {
-                    Authorization: token ? `Bearer ${token}` : "",
-                    "Content-Type": "application/json",
-                },
-            });
-    
-            if (!response.ok) {
-                throw new Error("Gagal menghapus pengguna");
-            }
-    
-            fetchUsers();
-            toast.info("Pengguna berhasil dihapus");
-        } catch {
-            toast.error("Gagal menghapus pengguna");
-        }
-    };
+		if (!confirm("Apakah Anda yakin ingin menghapus pengguna ini?")) {
+			return;
+		}
+
+		try {
+			const token = Cookies.get("accessToken");
+
+			const response = await fetch(
+				`${process.env.NEXT_PUBLIC_API_URL}/user/${userId}`,
+				{
+					method: "DELETE",
+					headers: {
+						Authorization: token ? `Bearer ${token}` : "",
+						"Content-Type": "application/json",
+					},
+				}
+			);
+
+			if (!response.ok) {
+				throw new Error("Gagal menghapus pengguna");
+			}
+
+			fetchUsers();
+			toast.info("Pengguna berhasil dihapus");
+		} catch {
+			toast.error("Gagal menghapus pengguna");
+		}
+	};
 
 	useEffect(() => {
 		fetchUsers();
-	}, [search, filters]);
+	}, [search, filters, searchParams]);
 
-    const hasRun = useRef(false); 
+	const hasRun = useRef(false);
 
-    useEffect(() => {
-        if (hasRun.current) return; 
+	useEffect(() => {
+		if (hasRun.current) return;
 
-        const success = searchParams.get("success");
+		const success = searchParams.get("success");
 
-        if (success === "create") {
-            setTimeout(() => toast.info("Pengguna berhasil dibuat"), 100);
-        }
-        if (success === "delete") {
-            setTimeout(() => toast.info("Pengguna berhasil dihapus"), 100);
-        }
-        hasRun.current = true; 
-    }, [searchParams]);
+		if (success === "create") {
+			setTimeout(() => toast.info("Pengguna berhasil dibuat"), 100);
+		}
+		if (success === "delete") {
+			setTimeout(() => toast.info("Pengguna berhasil dihapus"), 100);
+		}
+		hasRun.current = true;
+	}, [searchParams]);
 
 	const formatDate = (dateString: string | null) => {
 		if (!dateString) return "-";
@@ -202,6 +237,12 @@ export default function UsersPage() {
 
 	const navigateToUserCreate = () => {
 		router.push(`/dashboard/user/create`);
+	};
+
+	const handlePageChange = (page: number) => {
+		const params = new URLSearchParams(searchParams.toString());
+		params.set("page", page.toString());
+		router.push(`/dashboard/user?${params.toString()}`);
 	};
 
 	return (
@@ -238,19 +279,19 @@ export default function UsersPage() {
 
 			{/* Search & Filter */}
 			<div className="flex flex-col sm:flex-row items-center gap-4">
-                <div className="relative w-full">
-                    <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                        <Search className="h-4 w-4 text-gray-400" />
-                    </div>
-                    <Input
-                        type="text"
-                        placeholder="Cari pengguna ..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="w-full pl-10" // Added left padding to make room for the icon
-                        data-testid="search-input"
-                    />
-                </div>
+				<div className="relative w-full">
+					<div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+						<Search className="h-4 w-4 text-gray-400" />
+					</div>
+					<Input
+						type="text"
+						placeholder="Cari pengguna ..."
+						value={search}
+						onChange={(e) => setSearch(e.target.value)}
+						className="w-full pl-10" // Added left padding to make room for the icon
+						data-testid="search-input"
+					/>
+				</div>
 				<Button
 					variant="outline"
 					onClick={() => setShowFilterModal(true)}
@@ -271,88 +312,100 @@ export default function UsersPage() {
 
 			{/* Users Table */}
 			{!loading && (
-				<div className="border rounded-lg overflow-hidden">
-					<Table data-testid="users-table">
-						<TableHeader>
-							<TableRow>
-								<TableHead>Email</TableHead>
-								<TableHead>Nama</TableHead>
-								<TableHead>Divisi</TableHead>
-								<TableHead>Tanggal Pembuatan</TableHead>
-								<TableHead className="text-right">
-									Aksi
-								</TableHead>
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{users.length > 0 ? (
-								users.map((user) => (
-									<TableRow
-										key={user.id}
-										className="cursor-pointer"
-										onClick={() =>
-											navigateToUserDetail(user.id)
-										}
-										data-testid={`user-row-${user.id}`}
-									>
-										<TableCell>{user.email}</TableCell>
-										<TableCell>
-											{user.fullname ?? user.username}
-										</TableCell>
-										<TableCell>
-											{user.divisi?.name ?? `-`}
-										</TableCell>
-										<TableCell>
-											{formatDate(user.createdOn)}
-										</TableCell>
-										<TableCell
-											className="text-right"
-											onClick={(e) => e.stopPropagation()}
+				<>
+					<div className="border rounded-lg overflow-hidden">
+						<Table data-testid="users-table">
+							<TableHeader>
+								<TableRow>
+									<TableHead>Email</TableHead>
+									<TableHead>Nama</TableHead>
+									<TableHead>Divisi</TableHead>
+									<TableHead>Tanggal Pembuatan</TableHead>
+									<TableHead className="text-right">
+										Aksi
+									</TableHead>
+								</TableRow>
+							</TableHeader>
+							<TableBody>
+								{users.length > 0 ? (
+									users.map((user) => (
+										<TableRow
+											key={user.id}
+											className="cursor-pointer"
+											onClick={() =>
+												navigateToUserDetail(user.id)
+											}
+											data-testid={`user-row-${user.id}`}
 										>
-											<div className="flex justify-end gap-2">
-												<Button
-													size="icon"
-													variant="outline"
-													onClick={(e) => {
-														e.stopPropagation();
-														navigateToUserEdit(
-															user.id
-														);
-													}}
-													data-testid={`edit-button-${user.id}`}
-												>
-													<Edit className="h-4 w-4" />
-												</Button>
-												<Button
-													size="icon"
-													variant="destructive"
-													onClick={(e) => {
-														e.stopPropagation();
-														handleDelete(user.id);
-													}}
-													data-testid={`delete-button-${user.id}`}
-												>
-													<Trash2 className="h-4 w-4" />
-												</Button>
-											</div>
+											<TableCell>{user.email}</TableCell>
+											<TableCell>
+												{user.fullname ?? user.username}
+											</TableCell>
+											<TableCell>
+												{user.divisi?.name ?? `-`}
+											</TableCell>
+											<TableCell>
+												{formatDate(user.createdOn)}
+											</TableCell>
+											<TableCell
+												className="text-right"
+												onClick={(e) =>
+													e.stopPropagation()
+												}
+											>
+												<div className="flex justify-end gap-2">
+													<Button
+														size="icon"
+														variant="outline"
+														onClick={(e) => {
+															e.stopPropagation();
+															navigateToUserEdit(
+																user.id
+															);
+														}}
+														data-testid={`edit-button-${user.id}`}
+													>
+														<Edit className="h-4 w-4" />
+													</Button>
+													<Button
+														size="icon"
+														variant="destructive"
+														onClick={(e) => {
+															e.stopPropagation();
+															handleDelete(
+																user.id
+															);
+														}}
+														data-testid={`delete-button-${user.id}`}
+													>
+														<Trash2 className="h-4 w-4" />
+													</Button>
+												</div>
+											</TableCell>
+										</TableRow>
+									))
+								) : (
+									<TableRow>
+										<TableCell
+											colSpan={5}
+											className="text-center"
+										>
+											{search
+												? "Tidak ada pengguna yang cocok dengan pencarian Anda"
+												: "Tidak ada pengguna yang ditemukan"}
 										</TableCell>
 									</TableRow>
-								))
-							) : (
-								<TableRow>
-									<TableCell
-										colSpan={5}
-										className="text-center"
-									>
-										{search
-											? "Tidak ada pengguna yang cocok dengan pencarian Anda"
-											: "Tidak ada pengguna yang ditemukan"}
-									</TableCell>
-								</TableRow>
-							)}
-						</TableBody>
-					</Table>
-				</div>
+								)}
+							</TableBody>
+						</Table>
+					</div>
+
+					<PaginationControls
+						currentPage={paginationMeta.page}
+						totalPages={paginationMeta.totalPages}
+						onPageChange={handlePageChange}
+					/>
+				</>
 			)}
 
 			{/* Filter Modal */}

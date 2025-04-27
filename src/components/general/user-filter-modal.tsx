@@ -34,7 +34,7 @@ type UserFilterModalProps = {
   onCancel: () => void
 }
 
-const roles = ["Admin", "User", "Manager"]
+const roles = ["Admin", "User", "Fasum"]
 const divisions = ["Divisi A", "Divisi B", "Divisi C"]
 
 export default function UserFilterModal({ isOpen, filters, onConfirm, onCancel }: UserFilterModalProps) {
