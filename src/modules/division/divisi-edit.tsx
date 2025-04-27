@@ -191,15 +191,6 @@ export default function EditDivisi({ id }: EditDivisiProps) {
     }
   }
 
-  if (loadingDivision) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin" />
-        <span className="ml-2">Loading division data...</span>
-      </div>
-    )
-  }
-
   return (
     <>
       <div className="flex flex-col items-start gap-4">
@@ -219,61 +210,67 @@ export default function EditDivisi({ id }: EditDivisiProps) {
           <CardTitle>Form Edit Divisi</CardTitle>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField
-                control={form.control}
-                name="divisi"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nama Divisi</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Masukkan nama divisi" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="parentId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Parent Divisi</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+          {loadingDivision ? (
+            <div className="flex justify-center items-center">
+              <span>Loading divisions data...</span>
+            </div>
+          ) : (
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <FormField
+                  control={form.control}
+                  name="divisi"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nama Divisi</FormLabel>
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Pilih parent divisi (opsional)" />
-                        </SelectTrigger>
+                        <Input placeholder="Masukkan nama divisi" {...field} />
                       </FormControl>
-                      <SelectContent>
-                        <SelectItem value="none">Tidak Ada Parent</SelectItem>
-                        {parentDivisions.map((division) => (
-                          <SelectItem key={division.id} value={division.id.toString()}>
-                            {division.divisi}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>
-                      Pilih parent divisi jika merupakan sub divisi
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="parentId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Parent Divisi</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Pilih parent divisi (opsional)" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="none">Tidak Ada Parent</SelectItem>
+                          {parentDivisions.map((division) => (
+                            <SelectItem key={division.id} value={division.id.toString()}>
+                              {division.divisi}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        Pilih parent divisi jika merupakan sub divisi
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 <div className="flex justify-end space-x-4">
-                    <Button type="button" variant="destructive" onClick={() => router.back()}>
+                  <Button type="button" variant="destructive" onClick={() => router.back()}>
                     Batalkan
-                    </Button>
-                    <Button type="submit" disabled={loading}>
+                  </Button>
+                  <Button type="submit" disabled={loading}>
                     {loading ? "Menyimpan..." : "Simpan"}
-                    </Button>
+                  </Button>
                 </div>
-            </form>
-          </Form>
+              </form>
+            </Form>
+          )}
         </CardContent>
       </Card>
 
