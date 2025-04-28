@@ -57,7 +57,7 @@ export default function MedicalEquipmentDetails() {
   const [calibrationHistories, setCalibrationHistories] = useState<CalibrationHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingHistories, setLoadingHistories] = useState(true);
-  const [activeTab, setActiveTab] = useState<'maintenance' | 'kalibrasi'>('maintenance');
+  const [activeTab, setActiveTab] = useState<'maintenance' | 'kalibrasi' | 'ganti_suku_cadang'>('maintenance');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
@@ -180,36 +180,33 @@ export default function MedicalEquipmentDetails() {
         {/* Right: History */}
         <div className="col-span-2 bg-white border rounded-lg shadow-sm">
           {/* Tabs */}
-          <div className="flex">
-            {["maintenance", "kalibrasi"].map((tab) => (
+          <div className="flex border-b">
+            {["maintenance", "kalibrasi", "ganti_suku_cadang"].map((tab) => (
               <button
                 key={tab}
                 onClick={() => { setActiveTab(tab as any); setCurrentPage(1); }}
-                className={`py-4 px-6 text-sm font-medium ${activeTab === tab ? 'border-b-2 border-primary text-primary' : 'text-muted-foreground'}`}
+                className={`py-4 px-6 text-sm font-medium transition-colors ${activeTab === tab
+                  ? 'border-b-2 border-primary text-primary'
+                  : 'text-muted-foreground hover:text-primary/80'}`}
               >
-                {tab === "maintenance" ? "Maintenance" : "Kalibrasi"}
+                {tab === "maintenance"
+                  ? "Maintenance"
+                  : tab === "kalibrasi"
+                    ? "Kalibrasi"
+                    : "Ganti Suku Cadang"}
               </button>
             ))}
-            <div className="flex-1 border-b" />
-          </div>
-
-          {/* Filters */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 border-b">
-            <Input placeholder="Cari kode inventaris" />
-            <Input placeholder="Cari nama alat" />
-            <Input placeholder="Cari model" />
-            <Input placeholder="Cari departemen" />
           </div>
 
           {/* Table */}
           <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-muted">
-                <tr>
-                  <th className="text-left py-3 px-4 font-medium text-muted-foreground">Tanggal</th>
-                  <th className="text-left py-3 px-4 font-medium text-muted-foreground">Teknisi</th>
-                  <th className="text-left py-3 px-4 font-medium text-muted-foreground">Tindakan</th>
-                  <th className="text-left py-3 px-4 font-medium text-muted-foreground">Hasil</th>
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="bg-muted/50">
+                  <th className="text-left py-3 px-4 font-medium text-muted-foreground border-b">Kode Inventaris</th>
+                  <th className="text-left py-3 px-4 font-medium text-muted-foreground border-b">Nama Alat</th>
+                  <th className="text-left py-3 px-4 font-medium text-muted-foreground border-b">Merek</th>
+                  <th className="text-left py-3 px-4 font-medium text-muted-foreground border-b">Model</th>
                 </tr>
               </thead>
               <tbody>
@@ -217,22 +214,26 @@ export default function MedicalEquipmentDetails() {
                   <tr><td colSpan={4} className="py-4 text-center">Loading...</td></tr>
                 ) : paginatedData.length > 0 ? (
                   paginatedData.map((item) => (
-                    <tr key={item.id} className="hover:bg-muted/50 border-b">
-                      <td className="py-3 px-4">{formatDate(activeTab === "maintenance" ? (item as MaintenanceHistory).maintenanceDate : (item as CalibrationHistory).calibrationDate)}</td>
-                      <td className="py-3 px-4">{item.technician}</td>
-                      <td className="py-3 px-4">{item.actionPerformed}</td>
-                      <td className="py-3 px-4">{item.result}</td>
+                    <tr key={item.id} className="hover:bg-muted/30 border-b">
+                      <td className="py-3 px-4">{equipment?.inventorisId || "-"}</td>
+                      <td className="py-3 px-4">{equipment?.name || "-"}</td>
+                      <td className="py-3 px-4">{equipment?.brandName || "-"}</td>
+                      <td className="py-3 px-4">{equipment?.modelName || "-"}</td>
                     </tr>
                   ))
                 ) : (
-                  <tr><td colSpan={4} className="py-4 text-center text-muted-foreground">Tidak ada data.</td></tr>
+                  <tr>
+                    <td colSpan={4} className="py-8 text-center">
+                      <div className="text-amber-600 font-medium">Tidak ada data.</div>
+                    </td>
+                  </tr>
                 )}
               </tbody>
             </table>
           </div>
 
           {/* Pagination */}
-          <div className="p-4">
+          <div className="p-4 flex justify-center">
             <PaginationControls
               currentPage={currentPage}
               totalPages={Math.max(1, Math.ceil(
