@@ -1,16 +1,23 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import React from "react";
 import UserFilterModal from "@/components/general/user-filter-modal";
 
 describe("UserFilterModal", () => {
 	const mockFilters = {
 		role: [],
-		division: [],
+		division: "all", // Changed from empty string to "all"
 		createdOnStart: null,
 		createdOnEnd: null,
 		modifiedOnStart: null,
 		modifiedOnEnd: null,
 	};
+
+	// Mock divisions data
+	const mockDivisions = [
+		{ id: 1, divisi: "Divisi A" },
+		{ id: 2, divisi: "Divisi B" },
+		{ id: 3, divisi: "Divisi C" },
+	];
 
 	const mockOnConfirm = jest.fn();
 	const mockOnCancel = jest.fn();
@@ -35,11 +42,14 @@ describe("UserFilterModal", () => {
 			<UserFilterModal
 				isOpen={true}
 				filters={mockFilters}
+				divisions={mockDivisions}
 				onConfirm={mockOnConfirm}
 				onCancel={mockOnCancel}
 			/>
 		);
 	}
+
+	Element.prototype.scrollIntoView = jest.fn();
 	
 	beforeEach(() => {
 		mockOnConfirm.mockClear();
@@ -51,12 +61,11 @@ describe("UserFilterModal", () => {
 		expect(screen.getByText("Filter Pengguna")).toBeInTheDocument();
 		expect(screen.getByText("Role")).toBeInTheDocument();
 		expect(screen.getByText("User")).toBeInTheDocument();
-		expect(screen.getByText("Manager")).toBeInTheDocument();
+		expect(screen.getByText("Fasum")).toBeInTheDocument();
 		expect(screen.getByText("Admin")).toBeInTheDocument();
 		expect(screen.getByText("Divisi")).toBeInTheDocument();
-		expect(screen.getByText("Divisi A")).toBeInTheDocument();
-		expect(screen.getByText("Divisi B")).toBeInTheDocument();
-		expect(screen.getByText("Divisi C")).toBeInTheDocument();
+		const divisionHeading = screen.getByText("Divisi");
+		expect(divisionHeading.parentElement?.querySelector("button")).toBeInTheDocument();
 		expect(screen.getByText("Tanggal Pembuatan")).toBeInTheDocument();
 		expect(screen.getByText("Tanggal Modifikasi")).toBeInTheDocument();
 		expect(screen.getByText("Reset")).toBeInTheDocument();
@@ -69,6 +78,7 @@ describe("UserFilterModal", () => {
 			<UserFilterModal
 				isOpen={false}
 				filters={mockFilters}
+				divisions={mockDivisions}
 				onConfirm={mockOnConfirm}
 				onCancel={mockOnCancel}
 			/>
@@ -80,56 +90,52 @@ describe("UserFilterModal", () => {
 	it("allows selecting multiple roles", () => {
 		renderModal();
 		const userCheckbox = screen.getByLabelText("User");
+		const fasumCheckbox = screen.getByLabelText("Fasum");
 		const adminCheckbox = screen.getByLabelText("Admin");
-		const managerCheckbox = screen.getByLabelText("Manager");
 
 		fireEvent.click(userCheckbox);
+		fireEvent.click(fasumCheckbox);
 		fireEvent.click(adminCheckbox);
-		fireEvent.click(managerCheckbox);
 
 		expect(userCheckbox).toBeChecked();
+		expect(fasumCheckbox).toBeChecked();
 		expect(adminCheckbox).toBeChecked();
-		expect(managerCheckbox).toBeChecked();
 	});
 
-	it("allows selecting multiple divisions", () => {
+	it("allows selecting a division from dropdown", async () => {
 		renderModal();
-		const divA = screen.getByLabelText("Divisi A");
-		const divB = screen.getByLabelText("Divisi B");
-		const divC = screen.getByLabelText("Divisi C");
-
-		fireEvent.click(divA);
-		fireEvent.click(divB);
-		fireEvent.click(divC);
-
-		expect(divA).toBeChecked();
-		expect(divB).toBeChecked();
-		expect(divC).toBeChecked();
+		const divisionHeading = screen.getByText("Divisi");
+		const divisionSelect = divisionHeading.parentElement?.querySelector("button");
+		fireEvent.click(divisionSelect!);
+		
+		await waitFor(() => {
+			expect(screen.getByText("Divisi A")).toBeInTheDocument();
+		});
+		
+		fireEvent.click(screen.getByText("Divisi A"));
+		
+		fireEvent.click(screen.getByText("Terapkan"));
+		
+		expect(mockOnConfirm).toHaveBeenCalledWith(expect.objectContaining({
+			division: "1"
+		}));
 	});
 
-	it("unchecks the checkboxes if clicked twice", () => {
+	it("unchecks the role checkboxes if clicked twice", () => {
 		renderModal();
 		const userCheckbox = screen.getByLabelText("User");
+		const fasumCheckbox = screen.getByLabelText("Fasum");
 		const adminCheckbox = screen.getByLabelText("Admin");
-		const managerCheckbox = screen.getByLabelText("Manager");
-		const divA = screen.getByLabelText("Divisi A");
-		const divB = screen.getByLabelText("Divisi B");
-		const divC = screen.getByLabelText("Divisi C");
 
 		fireEvent.click(userCheckbox);
 		fireEvent.click(userCheckbox);
+		fireEvent.click(fasumCheckbox);
+		fireEvent.click(fasumCheckbox);
 		fireEvent.click(adminCheckbox);
 		fireEvent.click(adminCheckbox);
-		fireEvent.click(managerCheckbox);
-		fireEvent.click(managerCheckbox);
-		fireEvent.click(divA);
-		fireEvent.click(divA);
-		fireEvent.click(divB);
-		fireEvent.click(divB);
-		fireEvent.click(divC);
-		fireEvent.click(divC);
 
 		expect(userCheckbox).not.toBeChecked();
+		expect(fasumCheckbox).not.toBeChecked();
 		expect(adminCheckbox).not.toBeChecked();
 	});
 
@@ -264,7 +270,7 @@ describe("UserFilterModal", () => {
 		expect(lastCall.modifiedOnEnd).toBeNull();
 	});
 	
-	  it("forbids user from picking end date that's before the selected start date", () => {
+	it("forbids user from picking end date that's before the selected start date", () => {
 		renderModal();
 		const dateInputs = screen.getAllByText("Pilih tanggal");
 		
@@ -356,7 +362,7 @@ describe("UserFilterModal", () => {
 		fireEvent.click(screen.getByText("Terapkan"));
 		expect(mockOnConfirm).toHaveBeenCalledWith({
 			role: [],
-			division: [],
+			division: "all",
 			createdOnStart: null,
 			createdOnEnd: null,
 			modifiedOnStart: null,
@@ -382,7 +388,24 @@ describe("UserFilterModal", () => {
 	it("updates filter state when confirm button is clicked", () => {
 		renderModal();
 		fireEvent.click(screen.getByText("Terapkan"));
+	});
 
-		expect(mockOnConfirm).toHaveBeenCalled();
+	it("allows selecting 'All Divisions' option", async () => {
+		renderModal();
+		
+		const divisionHeading = screen.getByText("Divisi");
+		const divisionSelect = divisionHeading.parentElement?.querySelector("button");
+		fireEvent.click(divisionSelect!);
+		
+		await waitFor(() => {
+			const allDivisionsOptions = screen.getAllByText("Semua Divisi");
+			fireEvent.click(allDivisionsOptions[0]);
+		});
+		
+		fireEvent.click(screen.getByText("Terapkan"));
+		
+		expect(mockOnConfirm).toHaveBeenCalledWith(expect.objectContaining({
+			division: "all"
+		}));
 	});
 });
