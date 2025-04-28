@@ -21,6 +21,11 @@ import MaintenanceRequestFilterModal, {
 import { toast } from "sonner";
 import Cookies from "js-cookie";
 
+enum RequestType {
+  MAINTENANCE = "MAINTENANCE",
+  CALIBRATION = "CALIBRATION"
+}
+
 type MaintenanceRequest = {
   id: string;
   userId: string;
@@ -32,6 +37,7 @@ type MaintenanceRequest = {
   createdOn: string | null;
   modifiedBy?: number;
   modifiedOn: string;
+  requestType: RequestType;
 };
 
 export default function MaintenanceRequestDisplay() {
@@ -54,8 +60,14 @@ export default function MaintenanceRequestDisplay() {
     try {
       setLoading(true);
       const token = Cookies.get("token");
+      console.log("Token exists:", !!token); // Cek apakah token adaconsole
       const queryParams = buildQueryParams(filters);
-      let url = `${process.env.NEXT_PUBLIC_API_URL}/maintenance-requests`;
+      let url = `${process.env.NEXT_PUBLIC_API_URL}/request/maintenance`;
+
+
+      // Tambahkan debugging untuk memeriksa nilai URL
+      console.log("API URL:", process.env.NEXT_PUBLIC_API_URL);
+      console.log("Full Request URL:", `${process.env.NEXT_PUBLIC_API_URL}/request/maintenance`);
 
       if (queryParams || search) {
         const searchParam = search ? `search=${search}` : "";
@@ -76,6 +88,7 @@ export default function MaintenanceRequestDisplay() {
       }
 
       const data = await response.json();
+      console.log("API responses: ", data);
       setMaintenanceRequests(data);
     } catch (err) {
       console.error("Error fetching maintenance requests:", err);
@@ -127,7 +140,7 @@ export default function MaintenanceRequestDisplay() {
     try {
       const token = Cookies.get("token");
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/maintenance-requests/${requestId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/request/${requestId}`, {
         method: "DELETE",
         headers: {
           Authorization: token ? `Bearer ${token}` : "",
@@ -166,16 +179,6 @@ export default function MaintenanceRequestDisplay() {
     hasRun.current = true;
   }, [searchParams]);
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return "-";
-    try {
-      return format(new Date(dateString), "dd MMM yyyy");
-    } catch (_error) {
-      console.error("Error formatting date:", _error);
-      return dateString;
-    }
-  };
-
   const getStatusClass = (status: string) => {
     switch (status.toLowerCase()) {
       case "completed":
@@ -194,11 +197,11 @@ export default function MaintenanceRequestDisplay() {
   };
 
   const navigateToRequestDetail = (requestId: string) => {
-    router.push(`/dashboard/maintenance-requests/${requestId}`);
+    router.push(`/dashboard/request/${requestId}`);
   };
 
   const navigateToRequestCreate = () => {
-    router.push(`/dashboard/maintenance-requests/create`);
+    router.push(`/dashboard/request/create`);
   };
 
   return (
