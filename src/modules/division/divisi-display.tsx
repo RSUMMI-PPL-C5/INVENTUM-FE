@@ -48,7 +48,7 @@ export default function DisplayDivisi() {
       setLoading(true)
       const token = Cookies.get("token")
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/divisi`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/divisi`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -82,7 +82,7 @@ export default function DisplayDivisi() {
       const token = Cookies.get("token")
       
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/divisi/${divisionId}`, 
+        `${process.env.NEXT_PUBLIC_API_URL}/divisi/${divisionId}`, 
         {
           method: "GET",
           headers: {
@@ -116,14 +116,16 @@ export default function DisplayDivisi() {
 
   const handleToggleExpand = async (divisionId: number) => {
     // If expanding and we don't have children loaded yet, fetch them
-    if (!expandedDivisions[divisionId]) {
-      await fetchDivisionChildren(divisionId)
-    }
+    const wasExpanded = expandedDivisions[divisionId]
     
     setExpandedDivisions((prev) => ({
       ...prev,
       [divisionId]: !prev[divisionId],
     }))
+
+    if (!wasExpanded) {
+      await fetchDivisionChildren(divisionId)
+    }
   }
 
   const handleEditDivision = (division: Division, e: React.MouseEvent) => {
@@ -154,7 +156,7 @@ export default function DisplayDivisi() {
       const token = Cookies.get("token")
   
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'}/divisi/${divisionToDelete.id}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/divisi/${divisionToDelete.id}`,
         {
           method: "DELETE",
           headers: {
@@ -244,7 +246,7 @@ export default function DisplayDivisi() {
             {expandedDivisions[division.id] && (
               <div className="ml-4 border-l border-gray-200 pl-2 mt-1">
                 {loadingChildren[division.id] ? (
-                  <div className="p-2">
+                  <div data-testid="expanded-divisions" className="p-2">
                     <Skeleton className="h-6 w-full" />
                     <Skeleton className="h-6 w-full mt-2" />
                   </div>
@@ -277,7 +279,7 @@ export default function DisplayDivisi() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="space-y-2">
+            <div data-testid="loading-state" className="space-y-2">
               <Skeleton className="h-10 w-full" />
               <Skeleton className="h-10 w-full" />
               <Skeleton className="h-10 w-full" />
