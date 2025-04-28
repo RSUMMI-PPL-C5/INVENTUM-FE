@@ -10,15 +10,12 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Textarea } from "@/components/ui/textarea"
 import { ArrowLeft } from "lucide-react"
 import { useRouter, useParams } from "next/navigation"
-import { decodeToken } from "@/lib/utils"
 import Cookies from "js-cookie"
 
 const formSchema = z.object({
   medicalEquipment: z.string().min(1),
   complaint: z.string().optional(),
-  userId: z.string().min(1),
   submissionDate: z.string(),
-  createdBy: z.string().min(1),
 });
 
 export default function CalibrationRequestCreate() {
@@ -34,9 +31,7 @@ export default function CalibrationRequestCreate() {
     defaultValues: {
       medicalEquipment: "",
       complaint: "",
-      userId: "",
       submissionDate: "",
-      createdBy: "",
     },
   });
 
@@ -46,21 +41,6 @@ export default function CalibrationRequestCreate() {
     if (!token) throw new Error("No token found");
     return token;
   }
-
-  const fetchUserId = async () => {
-    setLoading(true);
-    try {
-      const token = await getToken();
-  
-      const decodedToken = decodeToken(token);
-      form.setValue("userId", decodedToken.userId);
-      form.setValue("createdBy", decodedToken.userId);
-    } catch (error) {
-      console.error("Error fetching user data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const fetchMedicalEquipmentName = async () => {
     setLoading(true);
@@ -92,7 +72,7 @@ export default function CalibrationRequestCreate() {
     try {
       const token = await getToken();
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/calibration-request`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/request/calibration`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -130,7 +110,6 @@ export default function CalibrationRequestCreate() {
   };
 
   useEffect(() => {
-    fetchUserId();
     fetchMedicalEquipmentName();
   }, [equipmentId]);
 

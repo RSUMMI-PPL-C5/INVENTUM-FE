@@ -2,7 +2,6 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import MaintenanceRequestCreate from '@/modules/medical-equipment/request/maintenance/maintenance-request-create';
 import { useRouter, useParams } from 'next/navigation';
 import Cookies from "js-cookie";
-import { decodeToken } from "@/lib/utils";
 
 jest.mock('next/navigation', () => ({
   useRouter: jest.fn(),
@@ -11,11 +10,6 @@ jest.mock('next/navigation', () => ({
 
 jest.mock("js-cookie", () => ({
   get: jest.fn(),
-}));
-
-jest.mock("@/lib/utils", () => ({
-  ...jest.requireActual("@/lib/utils"),
-  decodeToken: jest.fn(),
 }));
 
 describe('MaintenanceRequestCreatePage', () => {
@@ -30,10 +24,9 @@ describe('MaintenanceRequestCreatePage', () => {
     (useRouter as jest.Mock).mockReturnValue({ push: mockPush, back: mockBack });
     (useParams as jest.Mock).mockImplementation(mockUseParams);
     (Cookies.get as jest.Mock).mockReturnValue("mock-token");
-    (decodeToken as jest.Mock).mockReturnValue({ userId: 'mock-user-id' });
 
     global.fetch = jest.fn().mockImplementation((url) => {
-      if (url === `${process.env.NEXT_PUBLIC_API_URL}/maintenance-request`) {
+      if (url === `${process.env.NEXT_PUBLIC_API_URL}/request/maintenance`) {
         return Promise.resolve({
           ok: true,
           json: () => Promise.resolve({}),
@@ -137,7 +130,7 @@ describe('MaintenanceRequestCreatePage', () => {
   
   it('should open the error modal when there is an error and closed when get clicked', async () => {
     global.fetch = jest.fn().mockImplementation((url) => {
-      if (url === `${process.env.NEXT_PUBLIC_API_URL}/maintenance-request`) {
+      if (url === `${process.env.NEXT_PUBLIC_API_URL}/request/maintenance`) {
         return Promise.resolve({
           ok: false,
           json: () => Promise.resolve({}),
@@ -194,7 +187,7 @@ describe('MaintenanceRequestCreatePage', () => {
 
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(
-        `${process.env.NEXT_PUBLIC_API_URL}/maintenance-request`,
+        `${process.env.NEXT_PUBLIC_API_URL}/request/maintenance`,
         expect.objectContaining({
           method: 'POST',
           headers: {
