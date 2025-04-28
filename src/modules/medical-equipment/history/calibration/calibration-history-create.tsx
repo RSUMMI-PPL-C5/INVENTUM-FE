@@ -101,7 +101,7 @@ export default function CalibrationHistoryCreate() {
         nextCalibrationDue: data.nextCalibrationDue ? data.nextCalibrationDue.toISOString() : undefined,
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/calibration-history`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/medical-equipment/${medicalEquipmentId}/calibration-history`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
