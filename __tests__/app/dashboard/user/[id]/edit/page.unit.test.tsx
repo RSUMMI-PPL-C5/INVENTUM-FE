@@ -170,6 +170,16 @@ describe("UserEdit Component", () => {
           ok: false,
         });
       }
+      // Handle divisions endpoint
+      if (url.includes('/divisions') || url.includes('/divisi')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve([
+            { id: "1", name: "Division 1" },
+            { id: "2", name: "Division 2" }
+          ]),
+        });
+      }
       return Promise.resolve({
         ok: true,
         json: () => Promise.resolve({
@@ -258,5 +268,46 @@ describe("UserEdit Component", () => {
     });
   
     expect(screen.getByText("Failed to fetch user data")).toBeInTheDocument();
+  });
+
+  test("closes error modal when clicking the close button", async () => {
+    // Mock fetch to trigger the error modal specifically for division fetching
+    global.fetch = jest.fn().mockImplementation((url) => {
+      if (url.includes('/divisi/all')) {
+        return Promise.reject(new Error("Failed to load divisions"));
+      }
+      if (url === `${process.env.NEXT_PUBLIC_API_URL}/user/1`) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({
+            nokar: "12345",
+            fullname: "Test User",
+            username: "testuser",
+            divisiId: "1",
+            role: "1",
+            waNumber: "08123456789",
+            createdOn: "2025-02-12T00:00:00.000Z",
+          }),
+        });
+      }
+      return Promise.reject(new Error("Failed to fetch"));
+    });
+
+    await act(async () => {
+      render(<UserEdit />);
+    });
+
+    // Wait for the error modal to appear
+    await waitFor(() => {
+      expect(screen.getByText("Failed to load parent divisions.")).toBeInTheDocument();
+    });
+
+    // Click the close button in the error modal
+    fireEvent.click(screen.getByTitle("Close"));
+
+    // Verify that the error modal is closed (text no longer visible)
+    await waitFor(() => {
+      expect(screen.queryByText("Failed to load parent divisions.")).not.toBeInTheDocument();
+    });
   });
 });
