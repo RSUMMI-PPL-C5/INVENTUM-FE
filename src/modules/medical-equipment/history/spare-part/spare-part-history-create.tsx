@@ -135,7 +135,7 @@ export default function PartsHistoryCreate() {
 
       console.log(payload)
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/parts-history`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/medical-equipment/${medicalEquipmentId}/parts-history`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
