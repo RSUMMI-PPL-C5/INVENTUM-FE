@@ -96,7 +96,7 @@ export default function MaintenanceHistoryCreate() {
         maintenanceDate: data.maintenanceDate.toISOString(),
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/maintenance-history`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/medical-equipment/${medicalEquipmentId}/maintenance-history`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
