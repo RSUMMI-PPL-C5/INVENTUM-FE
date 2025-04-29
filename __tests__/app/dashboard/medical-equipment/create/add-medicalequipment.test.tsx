@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import MedicalEquipmentCreate from "../../../../../src/modules/medical-equipment/medical-equipment-create";
+import MedicalEquipmentCreate from "@/app/dashboard/medical-equipment/create/page";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 

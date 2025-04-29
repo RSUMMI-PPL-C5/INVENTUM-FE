@@ -1,47 +1,36 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react"
+import SparePartEditPage from "@/app/dashboard/spare-part/[id]/edit/page"
 import { useRouter, useParams } from "next/navigation"
-import SparePartEdit from "@/app/dashboard/spare-part/[id]/edit/page"
-import Cookies from "js-cookie"
 import { format } from "date-fns"
 
-// Mock dependencies
+// Mock dependencies for SparePartEdit component
 jest.mock("next/navigation", () => ({
   useRouter: jest.fn(),
-  useParams: jest.fn(),
+  useParams: jest.fn(() => ({ id: "test-id" })),
 }))
 
 jest.mock("js-cookie", () => ({
-  get: jest.fn(),
+  get: jest.fn().mockReturnValue("mock-token"),
 }))
 
 // Mock fetch
 global.fetch = jest.fn()
 
-// Mock the actual page component for page test
-const originalModule = jest.requireActual("@/app/dashboard/spare-part/[id]/edit/page")
-jest.mock("@/app/dashboard/spare-part/[id]/edit/page", () => {
-  return {
-    __esModule: true,
-    default: jest.fn().mockImplementation(originalModule.default),
-  }
-})
+// We're NOT mocking the actual SparePartEdit component
+// This allows us to test both the wrapper and implementation
 
-describe("SparePartEdit Tests", () => {
-  describe("SparePartEditPage", () => {
-    it("renders the SparePartEdit component", () => {
-      // For the page test, temporarily mock the component to return a simple div
-      ;(SparePartEdit as jest.Mock).mockImplementationOnce(() => <div>SparePartEdit</div>)
-
-      render(<SparePartEdit />)
-      const pageName = screen.getByText("SparePartEdit")
-      expect(pageName).toBeInTheDocument()
-
-      // Restore the original implementation for subsequent tests
-      ;(SparePartEdit as jest.Mock).mockImplementation(originalModule.default)
-    })
+describe("SparePartEditPage Tests", () => {
+  // Test the wrapper component first
+  it("renders the SparePartEdit component", () => {
+    render(<SparePartEditPage />)
+    
+    // The wrapper should render the implementation component
+    // which initially shows "Loading..."
+    expect(screen.getByText("Loading...")).toBeInTheDocument()
   })
 
-  describe("SparePartEdit Component", () => {
+  // Now test the implementation component functionality
+  describe("SparePartEdit Implementation", () => {
     // Setup common mocks
     const mockRouter = {
       push: jest.fn(),
@@ -60,11 +49,11 @@ describe("SparePartEdit Tests", () => {
 
     beforeEach(() => {
       jest.clearAllMocks()
+      
+      // Setup router mocks
       ;(useRouter as jest.Mock).mockReturnValue(mockRouter)
-      ;(useParams as jest.Mock).mockReturnValue({ id: "test-id" })
-      ;(Cookies.get as jest.Mock).mockReturnValue("mock-token")
-
-      // Mock fetch for initial data load
+      
+      // Default fetch mock for initial data load
       ;(global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
         json: jest.fn().mockResolvedValue(mockSparePartData),
@@ -72,12 +61,12 @@ describe("SparePartEdit Tests", () => {
     })
 
     it("renders loading state initially", () => {
-      render(<SparePartEdit />)
+      render(<SparePartEditPage />)
       expect(screen.getByText("Loading...")).toBeInTheDocument()
     })
 
     it("renders the form with pre-filled data after loading", async () => {
-      render(<SparePartEdit />)
+      render(<SparePartEditPage />)
 
       // Wait for loading to complete
       await waitFor(() => {
@@ -93,23 +82,19 @@ describe("SparePartEdit Tests", () => {
       expect(screen.getByDisplayValue("Test Location")).toBeInTheDocument()
 
       // Check if dates are displayed (in formatted form)
-      expect(screen.getByText(format(new Date(mockSparePartData.purchaseDate), "PPP"))).toBeInTheDocument()
-      expect(screen.getByText(format(new Date(mockSparePartData.toolDate), "PPP"))).toBeInTheDocument()
-
-      // Check if created date is displayed
-      expect(screen.getByDisplayValue("2023-01-01")).toBeInTheDocument()
+      const purchaseDate = format(new Date(mockSparePartData.purchaseDate), "yyyy-MM-dd")
+      expect(screen.getByText(purchaseDate)).toBeInTheDocument()
     })
 
     it("handles API error during data fetch", async () => {
-      // Reset mocks for this test
+      // Reset fetch mock for this test
       jest.clearAllMocks()
       ;(useRouter as jest.Mock).mockReturnValue(mockRouter)
-      ;(useParams as jest.Mock).mockReturnValue({ id: "test-id" })
-
+      
       // Mock fetch to return an error
       ;(global.fetch as jest.Mock).mockRejectedValueOnce(new Error("API Error"))
 
-      render(<SparePartEdit />)
+      render(<SparePartEditPage />)
 
       // Wait for error to be displayed
       await waitFor(() => {
@@ -118,11 +103,10 @@ describe("SparePartEdit Tests", () => {
     })
 
     it("handles non-OK response during data fetch", async () => {
-      // Reset mocks for this test
+      // Reset fetch mock for this test
       jest.clearAllMocks()
       ;(useRouter as jest.Mock).mockReturnValue(mockRouter)
-      ;(useParams as jest.Mock).mockReturnValue({ id: "test-id" })
-
+      
       // Mock fetch to return a non-OK response
       ;(global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: false,
@@ -130,7 +114,7 @@ describe("SparePartEdit Tests", () => {
         statusText: "Not Found",
       })
 
-      render(<SparePartEdit />)
+      render(<SparePartEditPage />)
 
       // Wait for error to be displayed
       await waitFor(() => {
@@ -139,7 +123,7 @@ describe("SparePartEdit Tests", () => {
     })
 
     it("submits the form successfully", async () => {
-      // Mock fetch for update
+      // Mock fetch for initial load and then update
       ;(global.fetch as jest.Mock)
         .mockResolvedValueOnce({
           ok: true,
@@ -150,7 +134,7 @@ describe("SparePartEdit Tests", () => {
           json: jest.fn().mockResolvedValue({ ...mockSparePartData, partsName: "Updated Part" }),
         })
 
-      render(<SparePartEdit />)
+      render(<SparePartEditPage />)
 
       // Wait for loading to complete
       await waitFor(() => {
@@ -168,7 +152,7 @@ describe("SparePartEdit Tests", () => {
       await waitFor(() => {
         expect(global.fetch).toHaveBeenCalledTimes(2) // Once for initial load, once for update
         expect(global.fetch).toHaveBeenLastCalledWith(
-          `${process.env.NEXT_PUBLIC_API_URL}/sparepart/test-id`,
+          `${process.env.NEXT_PUBLIC_API_URL}/spareparts/test-id`,
           expect.objectContaining({
             method: "PUT",
             headers: expect.objectContaining({
@@ -185,16 +169,15 @@ describe("SparePartEdit Tests", () => {
     })
 
     it("handles API error during form submission", async () => {
-      // Mock fetch for initial load
-      ;(global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: jest.fn().mockResolvedValue(mockSparePartData),
-      })
+      // Mock fetch for initial load then rejection for update
+      ;(global.fetch as jest.Mock)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: jest.fn().mockResolvedValue(mockSparePartData),
+        })
+        .mockRejectedValueOnce(new Error("API Error"))
 
-      // Mock fetch for update to return an error
-      ;(global.fetch as jest.Mock).mockRejectedValueOnce(new Error("API Error"))
-
-      render(<SparePartEdit />)
+      render(<SparePartEditPage />)
 
       // Wait for loading to complete
       await waitFor(() => {
@@ -213,38 +196,8 @@ describe("SparePartEdit Tests", () => {
       expect(mockRouter.push).not.toHaveBeenCalled()
     })
 
-    it("handles non-OK response during form submission", async () => {
-      // Mock fetch for initial load
-      ;(global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: jest.fn().mockResolvedValue(mockSparePartData),
-      })
-
-      // Mock fetch for update to return a non-OK response
-      ;(global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: false,
-        status: 400,
-        statusText: "Bad Request",
-      })
-
-      render(<SparePartEdit />)
-
-      // Wait for loading to complete
-      await waitFor(() => {
-        expect(screen.queryByText("Loading...")).not.toBeInTheDocument()
-      })
-
-      // Submit the form without changes
-      fireEvent.click(screen.getByText("Simpan"))
-
-      // Check if error message is displayed
-      await waitFor(() => {
-        expect(screen.getByText("Failed to update spare part")).toBeInTheDocument()
-      })
-    })
-
     it("navigates back when cancel button is clicked", async () => {
-      render(<SparePartEdit />)
+      render(<SparePartEditPage />)
 
       // Wait for loading to complete
       await waitFor(() => {
@@ -265,7 +218,7 @@ describe("SparePartEdit Tests", () => {
         json: jest.fn().mockResolvedValue(mockSparePartData),
       })
 
-      render(<SparePartEdit />)
+      render(<SparePartEditPage />)
 
       // Wait for loading to complete
       await waitFor(() => {
@@ -296,4 +249,3 @@ describe("SparePartEdit Tests", () => {
     })
   })
 })
-

@@ -1,8 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { useRouter } from 'next/navigation';
-import SparePartCreate from '@/app/dashboard/spare-part/create/page';
-import Cookies from 'js-cookie';
+import SparePartCreatePage from '@/app/dashboard/spare-part/create/page';
 
 // Mock dependencies
 jest.mock('next/navigation', () => ({
@@ -10,37 +9,26 @@ jest.mock('next/navigation', () => ({
 }));
 
 jest.mock('js-cookie', () => ({
-  get: jest.fn(),
+  get: jest.fn().mockReturnValue('mock-token'),
 }));
 
 // Mock fetch
 global.fetch = jest.fn();
 
-// Mock the actual page component for page test
-const originalModule = jest.requireActual('@/app/dashboard/spare-part/create/page');
-jest.mock('@/app/dashboard/spare-part/create/page', () => {
-  return {
-    __esModule: true,
-    default: jest.fn().mockImplementation(originalModule.default),
-  };
-});
+// We're NOT mocking SparePartCreatePage or SparePartCreate
+// This allows us to test both the wrapper and implementation
 
-describe('SparePartCreate Tests', () => {
-  describe('SparePartCreatePage', () => {
-    it('renders the SparePartCreate component', () => {
-      // For the page test, temporarily mock the component to return a simple div
-      (SparePartCreate as jest.Mock).mockImplementationOnce(() => <div>SparePartCreate</div>);
-      
-      render(<SparePartCreate />);
-      const pageName = screen.getByText('SparePartCreate');
-      expect(pageName).toBeInTheDocument();
-      
-      // Restore the original implementation for subsequent tests
-      (SparePartCreate as jest.Mock).mockImplementation(originalModule.default);
-    });
+describe('SparePartCreatePage Tests', () => {
+  // Test the wrapper component first
+  it('renders the SparePartCreate component', () => {
+    render(<SparePartCreatePage />);
+    
+    // Check if the implementation component is rendered through the wrapper
+    expect(screen.getByText('Tambah Spare Part')).toBeInTheDocument();
   });
 
-  describe('SparePartCreate Component', () => {
+  // Now test the implementation component functionality
+  describe('SparePartCreate Implementation', () => {
     // Setup common mocks
     const mockRouter = {
       push: jest.fn(),
@@ -50,7 +38,6 @@ describe('SparePartCreate Tests', () => {
     beforeEach(() => {
       jest.clearAllMocks();
       (useRouter as jest.Mock).mockReturnValue(mockRouter);
-      (Cookies.get as jest.Mock).mockReturnValue('mock-token');
       (global.fetch as jest.Mock).mockResolvedValue({
         ok: true,
         json: jest.fn().mockResolvedValue({ id: 'new-id' }),
@@ -58,7 +45,7 @@ describe('SparePartCreate Tests', () => {
     });
 
     it('renders the form correctly', () => {
-      render(<SparePartCreate />);
+      render(<SparePartCreatePage />);
       
       // Check if the title is rendered
       expect(screen.getByText('Tambah Spare Part')).toBeInTheDocument();
@@ -76,7 +63,7 @@ describe('SparePartCreate Tests', () => {
     });
 
     it('validates required fields', async () => {
-      render(<SparePartCreate />);
+      render(<SparePartCreatePage />);
       
       // Submit the form without filling any fields
       fireEvent.click(screen.getByText('Simpan'));
@@ -92,7 +79,7 @@ describe('SparePartCreate Tests', () => {
     });
 
     it('submits the form successfully', async () => {
-      render(<SparePartCreate />);
+      render(<SparePartCreatePage />);
       
       // Fill in the form
       fireEvent.change(screen.getByLabelText(/Nama Spare Part/i), { target: { value: 'Test Part' } });
@@ -116,7 +103,7 @@ describe('SparePartCreate Tests', () => {
       await waitFor(() => {
         expect(global.fetch).toHaveBeenCalledTimes(1);
         expect(global.fetch).toHaveBeenCalledWith(
-          `${process.env.NEXT_PUBLIC_API_URL}/sparepart/`,
+          `${process.env.NEXT_PUBLIC_API_URL}/spareparts/`,
           expect.objectContaining({
             method: 'POST',
             headers: expect.objectContaining({
@@ -136,7 +123,7 @@ describe('SparePartCreate Tests', () => {
       // Mock fetch to return an error
       (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('API Error'));
       
-      render(<SparePartCreate />);
+      render(<SparePartCreatePage />);
       
       // Fill in the form with minimal required data
       fireEvent.change(screen.getByLabelText(/Nama Spare Part/i), { target: { value: 'Test Part' } });
@@ -171,7 +158,7 @@ describe('SparePartCreate Tests', () => {
         statusText: 'Bad Request',
       });
       
-      render(<SparePartCreate />);
+      render(<SparePartCreatePage />);
       
       // Fill in the form with minimal required data
       fireEvent.change(screen.getByLabelText(/Nama Spare Part/i), { target: { value: 'Test Part' } });
@@ -196,7 +183,7 @@ describe('SparePartCreate Tests', () => {
     });
 
     it('navigates back when cancel button is clicked', async () => {
-      render(<SparePartCreate />);
+      render(<SparePartCreatePage />);
       
       // Click the cancel button
       fireEvent.click(screen.getByText('Batalkan'));
@@ -218,7 +205,7 @@ describe('SparePartCreate Tests', () => {
         });
       });
       
-      render(<SparePartCreate />);
+      render(<SparePartCreatePage />);
       
       // Fill in the form with minimal required data
       fireEvent.change(screen.getByLabelText(/Nama Spare Part/i), { target: { value: 'Test Part' } });

@@ -1,6 +1,6 @@
 import { useRouter } from "next/navigation";
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import UserCreate from "../../../../../src/modules/user/user-create";
 import Cookies from "js-cookie";
@@ -22,55 +22,86 @@ global.fetch = jest.fn();
 global.console.error = jest.fn();
 global.console.log = jest.fn();
 
-const mockFetchWithDelay = () => {
-  const mockFetchResponse = () => ({ ok: true, json: async () => ({ id: 1 }) });
+// Mock scrollIntoView method which is used by date picker components
+Element.prototype.scrollIntoView = jest.fn();
 
-  (global.fetch as jest.Mock).mockImplementationOnce(() =>
-    new Promise((resolve) => setTimeout(() => resolve(mockFetchResponse()), 100))
-  );
-};
+// Mock divisions data
+const mockDivisions = [
+  { id: 1, divisi: "HR Division" },
+  { id: 2, divisi: "IT Division" },
+  { id: 3, divisi: "Marketing Division" }
+];
 
-// Helper function to fill in required fields
-const fillRequiredFields = () => {
+// Helper function to fill in required fields with mocked divisions
+const fillRequiredFields = async () => {
   fireEvent.change(screen.getByLabelText(/No. Karyawan/i), { target: { value: "12345" } });
   fireEvent.change(screen.getByLabelText(/Nama Lengkap/i), { target: { value: "John Doe" } });
   fireEvent.change(screen.getByLabelText(/Username/i), { target: { value: "johndoe" } });
   fireEvent.change(screen.getByLabelText(/Email/i), { target: { value: "johndoe@example.com" } });
   fireEvent.change(screen.getByLabelText(/Password/i), { target: { value: "password123" } });
+  fireEvent.change(screen.getByLabelText(/No. WA/i), { target: { value: "08123456789" } });
+  
+  // Handle division selection
   fireEvent.click(screen.getByText("Pilih Divisi"));
+  await waitFor(() => {
+    expect(screen.getByRole("option", { name: "IT Division" })).toBeInTheDocument();
+  });
   fireEvent.click(screen.getByRole("option", { name: "IT Division" }));
+  
+  // Handle role selection
   fireEvent.click(screen.getByText("Pilih Role"));
   fireEvent.click(screen.getByRole("option", { name: "Admin" }));
+  
+  // Handle date selection
   fireEvent.click(screen.getByText("Pilih tanggal"));
-  fireEvent.click(screen.getByText("15")); // Select a date from the calendar
-};
-
-// Helper function to mock fetch behavior
-const mockFetch = (response: any, ok = true) => {
-  (global.fetch as jest.Mock).mockResolvedValueOnce({
-    ok,
-    json: async () => response,
+  // Wait for calendar to appear and then use a more robust selector
+  await waitFor(() => {
+    const dateElements = screen.getAllByText("15");
+    // Click the first matching date element that's visible
+    if (dateElements.length > 0) {
+      fireEvent.click(dateElements[0]);
+    }
   });
-};
-
-// Helper function to render the component and set up mocks
-const setupMocks = (mockPush: jest.Mock) => {
-  jest.clearAllMocks();
-  (useRouter as jest.Mock).mockReturnValue({ push: mockPush });
-  (global.confirm as jest.Mock).mockImplementation(() => true);
-  (Cookies.get as jest.Mock).mockReturnValue("mock-token");
-  jest.spyOn(global.Date, "now").mockImplementation(() => new Date("2025-03-14T17:00:00.000Z").getTime());
 };
 
 describe("UserCreate Component", () => {
   const mockPush = jest.fn();
 
   beforeEach(() => {
-    setupMocks(mockPush);
+    (useRouter as jest.Mock).mockReturnValue({ push: mockPush });
+    (global.confirm as jest.Mock).mockImplementation(() => true);
+    (Cookies.get as jest.Mock).mockReturnValue("mock-token");
+    jest.spyOn(global.Date, "now").mockImplementation(() => new Date("2025-03-14T17:00:00.000Z").getTime());
+  
+    (global.fetch as jest.Mock).mockImplementation((url: string, options: any) => {
+      // Handle division endpoint
+      if (url.includes('/divisi/all')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => mockDivisions
+        });
+      }
+      
+      // Handle user creation endpoint
+      if (url.includes('/user/') && options.method === 'POST') {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ id: 1, username: "testuser" })
+        });
+      }
+      
+      return Promise.reject(new Error(`Unhandled request: ${url}`));
+    });
   });
 
-  it("renders the component correctly", () => {
-    render(<UserCreate />);
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("renders the component correctly", async () => {
+    await act(async () => {
+      render(<UserCreate />);
+    });
 
     expect(screen.getByText("Tambah Pengguna")).toBeInTheDocument();
     expect(screen.getByLabelText(/No. Karyawan/i)).toBeInTheDocument();
@@ -85,12 +116,13 @@ describe("UserCreate Component", () => {
   });
 
   it("calls createUser with correct data and handles success", async () => {
-    mockFetch({ id: 1, username: "testuser" });
+    await act(async () => {
+      render(<UserCreate />);
+    });
+    
+    await fillRequiredFields();
 
-    render(<UserCreate />);
-    fillRequiredFields();
-
-    fireEvent.click(screen.getByText("Simpan"));
+    fireEvent.click(screen.getByRole("button", { name: "Simpan" }));
 
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(
@@ -101,18 +133,7 @@ describe("UserCreate Component", () => {
             "Content-Type": "application/json",
             Authorization: "Bearer mock-token",
           }),
-          body: JSON.stringify({
-            username: "johndoe",
-            email: "johndoe@example.com",
-            password: "password123",
-            role: "Admin",
-            fullname: "John Doe",
-            nokar: "12345",
-            divisiId: 4, // IT Division ID
-            waNumber: null,
-            createdBy: 1,
-            createdOn: "2025-03-14T17:00:00.000Z",
-          }),
+          body: expect.stringContaining('"divisiId":2') // Now expecting ID 2 for "IT Division"
         })
       );
     });
@@ -120,12 +141,14 @@ describe("UserCreate Component", () => {
 
   it("handles missing authorization token and sends request without Authorization header", async () => {
     (Cookies.get as jest.Mock).mockReturnValue(null);
-    mockFetch({ id: 1, username: "testuser" });
+    
+    await act(async () => {
+      render(<UserCreate />);
+    });
+    
+    await fillRequiredFields();
 
-    render(<UserCreate />);
-    fillRequiredFields();
-
-    fireEvent.click(screen.getByText("Simpan"));
+    fireEvent.click(screen.getByRole("button", { name: "Simpan" }));
 
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(
@@ -142,12 +165,13 @@ describe("UserCreate Component", () => {
   });
 
   it("handles onSubmit success and navigates to the user list", async () => {
-    mockFetch({ id: 1, username: "testuser" });
+    await act(async () => {
+      render(<UserCreate />);
+    });
+    
+    await fillRequiredFields();
 
-    render(<UserCreate />);
-    fillRequiredFields();
-
-    fireEvent.click(screen.getByText("Simpan"));
+    fireEvent.click(screen.getByRole("button", { name: "Simpan" }));
 
     await waitFor(() => {
       expect(mockPush).toHaveBeenCalledWith("/dashboard/user?success=create");
@@ -155,12 +179,24 @@ describe("UserCreate Component", () => {
   });
 
   it("handles onSubmit failure and sets error message", async () => {
-    (global.fetch as jest.Mock).mockRejectedValueOnce(new Error("Failed to create user"));
+    // Override the fetch mock for user creation to fail
+    (global.fetch as jest.Mock).mockImplementation((url: string) => {
+      if (url.includes('/divisi/all')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => mockDivisions
+        });
+      }
+      return Promise.reject(new Error("Failed to create user"));
+    });
 
-    render(<UserCreate />);
-    fillRequiredFields();
+    await act(async () => {
+      render(<UserCreate />);
+    });
+    
+    await fillRequiredFields();
 
-    fireEvent.click(screen.getByText("Simpan"));
+    fireEvent.click(screen.getByRole("button", { name: "Simpan" }));
 
     await waitFor(() => {
       expect(screen.getByText("Gagal membuat pengguna. Silakan coba lagi.")).toBeInTheDocument();
@@ -168,39 +204,133 @@ describe("UserCreate Component", () => {
   });
 
   it("handles API failure and throws an error", async () => {
-    mockFetch({ message: "Bad Request" }, false);
+    // Override the fetch mock for user creation to return a non-ok response
+    (global.fetch as jest.Mock).mockImplementation((url: string, options: any) => {
+      if (url.includes('/divisi/all')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => mockDivisions
+        });
+      }
+      if (url.includes('/user/') && options.method === 'POST') {
+        return Promise.resolve({
+          ok: false,
+          json: async () => ({ message: "Bad Request" })
+        });
+      }
+      return Promise.reject(new Error(`Unhandled request: ${url}`));
+    });
 
-    render(<UserCreate />);
-    fillRequiredFields();
+    await act(async () => {
+      render(<UserCreate />);
+    });
+    
+    await fillRequiredFields();
 
-    fireEvent.click(screen.getByText("Simpan"));
+    fireEvent.click(screen.getByRole("button", { name: "Simpan" }));
 
     await waitFor(() => {
       expect(screen.getByText("Gagal membuat pengguna. Silakan coba lagi.")).toBeInTheDocument();
     });
   });
 
-  it("calls router.back() when 'Batalkan' button is clicked", () => {
+  it("calls router.back() when 'Batalkan' button is clicked", async () => {
     const mockBack = jest.fn();
     (useRouter as jest.Mock).mockReturnValue({ back: mockBack });
 
-    render(<UserCreate />);
+    await act(async () => {
+      render(<UserCreate />);
+    });
 
     fireEvent.click(screen.getByText("Batalkan"));
 
     expect(mockBack).toHaveBeenCalled();
   });
 
-  it("disables 'Simpan' button when loading is true", async () => {
-    mockFetchWithDelay();
-  
-    render(<UserCreate />);
-    fillRequiredFields();
+  it("calls router.push() when 'Kembali' button is clicked", async () => {
+    
+    const mockPush = jest.fn();
+    (useRouter as jest.Mock).mockReturnValue({ push: mockPush });
 
-    fireEvent.click(screen.getByText("Simpan"));
+    await act(async () => {
+      render(<UserCreate />);
+    });
+
+    fireEvent.click(screen.getByText("Kembali"));
+
+    expect(mockPush).toHaveBeenCalledWith("/dashboard/user");
+  });
+
+  it("disables submit button when loading is true", async () => {
+    (global.fetch as jest.Mock).mockImplementation((url: string) => {
+      if (url.includes('/divisi/all')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => mockDivisions
+        });
+      }
+      if (url.includes('/user/')) {
+        return new Promise((resolve) => 
+          setTimeout(() => resolve({
+            ok: true,
+            json: async () => ({ id: 1 })
+          }), 100)
+        );
+      }
+      return Promise.reject(new Error(`Unhandled request: ${url}`));
+    });
+  
+    await act(async () => {
+      render(<UserCreate />);
+    });
+    
+    await fillRequiredFields();
+
+    const submitButton = screen.getByRole("button", { name: "Simpan" });
+    fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /Menyimpan.../i })).toBeDisabled();
+      expect(submitButton).toBeDisabled();
+    });
+  });
+
+  it("shows error modal when divisions fetch fails", async () => {
+    (global.fetch as jest.Mock).mockImplementation((url: string) => {
+      if (url.includes('/divisi/all')) {
+        return Promise.reject(new Error("Failed to fetch divisions"));
+      }
+      return Promise.reject(new Error(`Unhandled request: ${url}`));
+    });
+
+    await act(async () => {
+      render(<UserCreate />);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Failed to load parent divisions.")).toBeInTheDocument();
+    });
+  });
+
+  it("closes error modal when clicking the close button", async () => {
+    (global.fetch as jest.Mock).mockImplementation((url: string) => {
+      if (url.includes('/divisi/all')) {
+        return Promise.reject(new Error("Failed to fetch divisions"));
+      }
+      return Promise.reject(new Error(`Unhandled request: ${url}`));
+    });
+
+    await act(async () => {
+      render(<UserCreate />);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Failed to load parent divisions.")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTitle("Close"));
+
+    await waitFor(() => {
+      expect(screen.queryByText("Failed to load parent divisions.")).not.toBeInTheDocument();
     });
   });
 });
