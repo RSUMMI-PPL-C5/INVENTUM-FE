@@ -52,14 +52,8 @@ export default function MaintenanceRequestDisplay() {
     try {
       setLoading(true);
       const token = Cookies.get("token");
-      console.log("Token exists:", !!token); // Cek apakah token adaconsole
       const queryParams = buildQueryParams(filters);
       let url = `${process.env.NEXT_PUBLIC_API_URL}/request/maintenance`;
-
-
-      // Tambahkan debugging untuk memeriksa nilai URL
-      console.log("API URL:", process.env.NEXT_PUBLIC_API_URL);
-      console.log("Full Request URL:", `${process.env.NEXT_PUBLIC_API_URL}/request/maintenance`);
 
       if (queryParams || search) {
         const searchParam = search ? `search=${search}` : "";
@@ -80,7 +74,6 @@ export default function MaintenanceRequestDisplay() {
       }
 
       const data = await response.json();
-      console.log("API responses: ", data);
       setMaintenanceRequests(data.data);
     } catch (err) {
       console.error("Error fetching maintenance requests:", err);
