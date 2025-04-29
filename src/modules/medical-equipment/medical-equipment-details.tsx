@@ -1,316 +1,271 @@
-//medical-equipment-details.tsx
-
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Edit, Trash2 } from "lucide-react";
+import { ArrowLeft, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
+import { PaginationControls } from "@/components/ui/pagination-control";
 import Cookies from "js-cookie";
+import { toast } from "sonner";
 
 type MedicalEquipment = {
-	id: string;
-	inventorisId: string;
-	name: string;
-	brandName: string | null;
-	modelName: string | null;
-	purchaseDate: string | null;
-	purchasePrice: number | null;
-	status: string;
-	vendor: string | null;
-	createdOn: string | null;
-	modifiedOn: string;
+  id: string;
+  inventorisId: string;
+  name: string;
+  brandName: string | null;
+  modelName: string | null;
+  purchaseDate: string | null;
+  purchasePrice: number | null;
+  status: string;
+  vendor: string | null;
+  createdOn: string | null;
+  modifiedOn: string;
+};
+
+type MaintenanceHistory = {
+  id: string;
+  medicalEquipmentId: string;
+  actionPerformed: string;
+  technician: string;
+  result: string;
+  maintenanceDate: string;
+  createdBy: string;
+  createdOn: string;
+};
+
+type CalibrationHistory = {
+  id: string;
+  medicalEquipmentId: string;
+  actionPerformed: string;
+  technician: string;
+  result: string;
+  calibrationDate: string;
+  calibrationMethod: string;
+  nextCalibrationDue?: string | null;
+  createdBy: string;
+  createdOn: string;
 };
 
 export default function MedicalEquipmentDetails() {
-	const router = useRouter();
-	const params = useParams();
-	const equipmentId = params.id as string;
+  const router = useRouter();
+  const params = useParams();
+  const equipmentId = params.id as string;
 
-	const [equipment, setEquipment] = useState<MedicalEquipment | null>(null);
-	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null);
+  const [equipment, setEquipment] = useState<MedicalEquipment | null>(null);
+  const [maintenanceHistories, setMaintenanceHistories] = useState<MaintenanceHistory[]>([]);
+  const [calibrationHistories, setCalibrationHistories] = useState<CalibrationHistory[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingHistories, setLoadingHistories] = useState(true);
+  const [activeTab, setActiveTab] = useState<'maintenance' | 'kalibrasi' | 'ganti_suku_cadang'>('maintenance');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
-	const fetchEquipment = useCallback(async () => {
-		if (!equipmentId) return;
+  const fetchEquipment = useCallback(async () => {
+    try {
+      setLoading(true);
+      const token = Cookies.get("accessToken");
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/medical-equipment/${equipmentId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      setEquipment(data.data);
+    } catch {
+      toast.error("Gagal memuat alat medis");
+    } finally {
+      setLoading(false);
+    }
+  }, [equipmentId]);
 
-		setLoading(true);
+  const fetchHistories = useCallback(async () => {
+    try {
+      setLoadingHistories(true);
+      const token = Cookies.get("accessToken");
+      const [maintenanceRes, calibrationRes] = await Promise.all([
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/medical-equipment/${equipmentId}/maintenance-history`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/medical-equipment/${equipmentId}/calibration-history`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+      ]);
+      const maintenanceData = await maintenanceRes.json();
+      const calibrationData = await calibrationRes.json();
+      setMaintenanceHistories(maintenanceData.data || []);
+      setCalibrationHistories(calibrationData.data || []);
+    } catch {
+      toast.error("Gagal memuat histori");
+    } finally {
+      setLoadingHistories(false);
+    }
+  }, [equipmentId]);
 
-		try {
-			const token = Cookies.get("accessToken");
+  useEffect(() => {
+    fetchEquipment();
+    fetchHistories();
+  }, [fetchEquipment, fetchHistories]);
 
-			const response = await fetch(
-				`${process.env.NEXT_PUBLIC_API_URL}/medical-equipment/${equipmentId}`,
-				{
-					headers: {
-						Authorization: token ? `Bearer ${token}` : "",
-						"Content-Type": "application/json",
-					},
-				}
-			);
+  const handleGoBack = () => router.back();
 
-			if (!response.ok) {
-				toast.error("Alat medis tidak ditemukan");
-				throw new Error("Alat medis tidak ditemukan");
-			}
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return "-";
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat("id-ID", { day: "2-digit", month: "short", year: "numeric" }).format(date);
+  };
 
-			const data = await response.json();
-			setEquipment(data.data);
-		} catch (err) {
-			setError(err instanceof Error ? err.message : "Terjadi kesalahan");
-		} finally {
-			setLoading(false);
-		}
-	}, [equipmentId]);
+  const formatPrice = (price: number | null) => {
+    if (price == null) return "-";
+    return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(price);
+  };
 
-	useEffect(() => {
-		fetchEquipment();
-	}, [fetchEquipment]);
+  const paginatedData = activeTab === "maintenance"
+    ? maintenanceHistories.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+    : calibrationHistories.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-	const handleGoBack = () => {
-		router.push("/dashboard/medical-equipment");
-	};
+  return (
+    <div className="space-y-6">
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-2">
+        <Button variant="outline" size="sm" onClick={handleGoBack}>
+          <ArrowLeft className="h-4 w-4 mr-1" /> Kembali
+        </Button>
+        <span className="text-muted-foreground">{">"}</span>
+        <span className="text-sm font-medium">{equipment?.name || "Loading..."}</span>
+      </div>
 
-	const handleEdit = () => {
-		router.push(`/dashboard/medical-equipment/${equipmentId}/edit`);
-	};
+      {/* Main Layout */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Left: Detail */}
+        <div className="col-span-1 bg-blue-50 p-6 rounded-lg space-y-4">
+          {loading ? (
+            <div className="h-6 bg-muted animate-pulse w-1/2 rounded" />
+          ) : equipment ? (
+            <>
+              <h1 className="text-xl font-bold">{equipment.name}</h1>
+              <p className="text-muted-foreground">{equipment.brandName ?? "-"}</p>
 
-	const handleDelete = async () => {
-		if (!confirm("Apakah Anda yakin ingin menghapus alat medis ini?")) {
-			return;
-		}
+              {/* Detail Box */}
+              <div className="grid grid-cols-2 gap-4 text-sm mt-4">
+                <DetailItem label="Kode Inventaris" value={equipment.inventorisId} />
+                <DetailItem label="Model" value={equipment.modelName} />
+                <DetailItem label="Status" value={equipment.status} />
+                <DetailItem label="Tanggal Pembelian" value={formatDate(equipment.purchaseDate)} />
+                <DetailItem label="Harga Pembelian" value={formatPrice(equipment.purchasePrice)} />
+                <DetailItem label="Vendor" value={equipment.vendor} />
+                <DetailItem label="Dibuat Pada" value={formatDate(equipment.createdOn)} />
+                <DetailItem label="Diperbarui Pada" value={formatDate(equipment.modifiedOn)} />
+              </div>
 
-		try {
-			const token = Cookies.get("accessToken");
+              {/* Action */}
+              <div className="flex flex-col gap-2 pt-6">
+                <Button size="sm" className="gap-1 w-full">
+                  <PlusCircle className="h-4 w-4" /> Minta Maintenance
+                </Button>
+                <Button size="sm" variant="outline" className="gap-1 w-full">
+                  <PlusCircle className="h-4 w-4" /> Minta Kalibrasi
+                </Button>
+              </div>
 
-			const response = await fetch(
-				`${process.env.NEXT_PUBLIC_API_URL}/medical-equipment/${equipmentId}`,
-				{
-					method: "DELETE",
-					headers: {
-						Authorization: token ? `Bearer ${token}` : "",
-						"Content-Type": "application/json",
-					},
-				}
-			);
+              {/* Info */}
+              <div className="space-y-2 pt-4">
+                <AlertBox type="warning" message="Terdapat permintaan maintenance dalam proses." />
+                <AlertBox type="error" message="Terdapat permintaan kalibrasi belum diproses." />
+              </div>
+            </>
+          ) : (
+            <p className="text-muted-foreground">Alat tidak ditemukan.</p>
+          )}
+        </div>
 
-			if (!response.ok) {
-				throw new Error("Gagal menghapus alat medis");
-			}
+        {/* Right: History */}
+        <div className="col-span-2 bg-white border rounded-lg shadow-sm">
+          {/* Tabs */}
+          <div className="flex border-b">
+            {["maintenance", "kalibrasi", "ganti_suku_cadang"].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => { setActiveTab(tab as any); setCurrentPage(1); }}
+                className={`py-4 px-6 text-sm font-medium transition-colors ${activeTab === tab
+                  ? 'border-b-2 border-primary text-primary'
+                  : 'text-muted-foreground hover:text-primary/80'}`}
+              >
+                {tab === "maintenance"
+                  ? "Maintenance"
+                  : tab === "kalibrasi"
+                    ? "Kalibrasi"
+                    : "Ganti Suku Cadang"}
+              </button>
+            ))}
+          </div>
 
-			router.push("/dashboard/medical-equipment?success=delete");
-		} catch {
-			toast.error("Gagal menghapus alat medis");
-		}
-	};
+          {/* Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="bg-muted/50">
+                  <th className="text-left py-3 px-4 font-medium text-muted-foreground border-b">Kode Inventaris</th>
+                  <th className="text-left py-3 px-4 font-medium text-muted-foreground border-b">Nama Alat</th>
+                  <th className="text-left py-3 px-4 font-medium text-muted-foreground border-b">Merek</th>
+                  <th className="text-left py-3 px-4 font-medium text-muted-foreground border-b">Model</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loadingHistories ? (
+                  <tr><td colSpan={4} className="py-4 text-center">Loading...</td></tr>
+                ) : paginatedData.length > 0 ? (
+                  paginatedData.map((item) => (
+                    <tr key={item.id} className="hover:bg-muted/30 border-b">
+                      <td className="py-3 px-4">{equipment?.inventorisId || "-"}</td>
+                      <td className="py-3 px-4">{equipment?.name || "-"}</td>
+                      <td className="py-3 px-4">{equipment?.brandName || "-"}</td>
+                      <td className="py-3 px-4">{equipment?.modelName || "-"}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={4} className="py-8 text-center">
+                      <div className="text-amber-600 font-medium">Tidak ada data.</div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
 
-	const formatDate = (dateString: string | null) => {
-		if (!dateString) return "Tidak ada";
-		try {
-			const date = new Date(dateString);
-			return new Intl.DateTimeFormat("id-ID", {
-				day: "2-digit",
-				month: "short",
-				year: "numeric",
-				hour: "2-digit",
-				minute: "2-digit",
-			}).format(date);
-		} catch (error) {
-			console.error(error);
-		}
-	};
+          {/* Pagination */}
+          <div className="p-4 flex justify-center">
+            <PaginationControls
+              currentPage={currentPage}
+              totalPages={Math.max(1, Math.ceil(
+                (activeTab === 'maintenance' ? maintenanceHistories.length : calibrationHistories.length) / itemsPerPage
+              ))}
+              onPageChange={(page) => setCurrentPage(page)}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
-	const formatPrice = (price: number | null) => {
-		if (price === null) return "Tidak ada";
-		return new Intl.NumberFormat("id-ID", {
-			style: "currency",
-			currency: "IDR",
-			minimumFractionDigits: 0,
-		}).format(price);
-	};
+function DetailItem({ label, value }: { label: string; value: string | null }) {
+  return (
+    <div className="space-y-1">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="font-medium">{value || "-"}</p>
+    </div>
+  );
+}
 
-	const getStatusClass = (status: string) => {
-		switch (status.toLowerCase()) {
-			case "active":
-				return "bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium";
-			case "inactive":
-				return "bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs font-medium";
-			case "maintenance":
-				return "bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-medium";
-			default:
-				return "bg-gray-100 text-gray-800 px-2 py-1 rounded-full text-xs font-medium";
-		}
-	};
-
-	// Loading state
-	if (loading) {
-		return (
-			<div className="space-y-6" data-testid="loading-state">
-				<Button
-					variant="outline"
-					onClick={handleGoBack}
-					className="mb-6"
-				>
-					<ArrowLeft className="mr-2 h-4 w-4" /> Kembali
-				</Button>
-
-				<div className="border rounded-lg p-6 shadow-sm">
-					<div className="h-8 w-1/3 bg-muted animate-pulse rounded mb-6"></div>
-
-					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-						{Array.from({ length: 8 }).map((_, index) => (
-							<div key={index} className="space-y-2">
-								<div className="h-4 w-20 bg-muted animate-pulse rounded"></div>
-								<div className="h-5 w-40 bg-muted animate-pulse rounded"></div>
-							</div>
-						))}
-					</div>
-				</div>
-			</div>
-		);
-	}
-
-	// Error state
-	if (error || !equipment) {
-		return (
-			<div className="p-6 space-y-4" data-testid="error-state">
-				<Button
-					variant="outline"
-					onClick={handleGoBack}
-					data-testid="back-button"
-				>
-					<ArrowLeft className="mr-2 h-4 w-4" /> Kembali
-				</Button>
-			</div>
-		);
-	}
-
-	// Success state with equipment details
-	return (
-		<div className="space-y-6" data-testid="equipment-detail">
-			{/* Back button */}
-			<Button
-				variant="outline"
-				onClick={handleGoBack}
-				data-testid="back-button"
-			>
-				<ArrowLeft className="mr-2 h-4 w-4" /> Kembali
-			</Button>
-
-			{/* Equipment details */}
-			<div className="border rounded-lg p-6 shadow-sm">
-				<h1
-					className="text-header-h6 font-bold mb-6"
-					data-testid="equipment-name"
-				>
-					{equipment.name}
-				</h1>
-
-				<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-					<div className="space-y-1">
-						<h3 className="text-sm font-medium text-muted-foreground">
-							Nomor Inventaris
-						</h3>
-						<p
-							className="text-sm"
-							data-testid="equipment-inventoris-id"
-						>
-							{equipment.inventorisId}
-						</p>
-					</div>
-
-					<div className="space-y-1">
-						<h3 className="text-sm font-medium text-muted-foreground">
-							Status
-						</h3>
-						<p data-testid="equipment-status">
-							<span className={getStatusClass(equipment.status)}>
-								{equipment.status}
-							</span>
-						</p>
-					</div>
-
-					<div className="space-y-1">
-						<h3 className="text-sm font-medium text-muted-foreground">
-							Merk
-						</h3>
-						<p className="text-sm" data-testid="equipment-brand">
-							{equipment.brandName ?? "Tidak ada"}
-						</p>
-					</div>
-
-					<div className="space-y-1">
-						<h3 className="text-sm font-medium text-muted-foreground">
-							Model
-						</h3>
-						<p className="text-sm" data-testid="equipment-model">
-							{equipment.modelName ?? "Tidak ada"}
-						</p>
-					</div>
-
-					<div className="space-y-1">
-						<h3 className="text-sm font-medium text-muted-foreground">
-							Harga
-						</h3>
-						<p className="text-sm" data-testid="equipment-price">
-							{formatPrice(equipment.purchasePrice)}
-						</p>
-					</div>
-
-					<div className="space-y-1">
-						<h3 className="text-sm font-medium text-muted-foreground">
-							Vendor
-						</h3>
-						<p className="text-sm" data-testid="equipment-vendor">
-							{equipment.vendor ?? "Tidak ada"}
-						</p>
-					</div>
-
-					<div className="space-y-1">
-						<h3 className="text-sm font-medium text-muted-foreground">
-							Tanggal Pembelian
-						</h3>
-						<p
-							className="text-sm"
-							data-testid="equipment-purchase-date"
-						>
-							{formatDate(equipment.purchaseDate)}
-						</p>
-					</div>
-
-					<div className="space-y-1">
-						<h3 className="text-sm font-medium text-muted-foreground">
-							Dibuat Pada
-						</h3>
-						<p className="text-sm" data-testid="equipment-created">
-							{formatDate(equipment.createdOn)}
-						</p>
-					</div>
-
-					<div className="space-y-1">
-						<h3 className="text-sm font-medium text-muted-foreground">
-							Dimodifikasi Pada
-						</h3>
-						<p className="text-sm" data-testid="equipment-modified">
-							{formatDate(equipment.modifiedOn)}
-						</p>
-					</div>
-				</div>
-
-				<div className="flex justify-end gap-4 pt-6 mt-6">
-					<Button onClick={handleEdit} data-testid="edit-button">
-						<Edit className="mr-2 h-4 w-4" /> Edit
-					</Button>
-					<Button
-						variant="destructive"
-						onClick={handleDelete}
-						data-testid="delete-button"
-					>
-						<Trash2 className="mr-2 h-4 w-4" /> Hapus
-					</Button>
-				</div>
-			</div>
-		</div>
-	);
+function AlertBox({ type, message }: { type: 'warning' | 'error'; message: string }) {
+  const color = type === "warning" ? "bg-amber-50 text-amber-800" : "bg-red-50 text-red-800";
+  return (
+    <div className={`flex items-center gap-2 p-3 rounded ${color}`}>
+      <svg width="20" height="20" fill="none" viewBox="0 0 20 20" className="shrink-0" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10 6V10M10 14H10.01M19 10C19 14.9706 14.9706 19 10 19C5.02944 19 1 14.9706 1 10C1 5.02944 5.02944 1 10 1C14.9706 1 19 5.02944 19 10Z"
+          stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+      <span className="text-sm">{message}</span>
+    </div>
+  );
 }
