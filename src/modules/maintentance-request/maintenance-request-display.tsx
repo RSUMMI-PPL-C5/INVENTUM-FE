@@ -81,7 +81,7 @@ export default function MaintenanceRequestDisplay() {
 
       const data = await response.json();
       console.log("API responses: ", data);
-      setMaintenanceRequests(data);
+      setMaintenanceRequests(data.data);
     } catch (err) {
       console.error("Error fetching maintenance requests:", err);
       toast.error("Gagal memuat permintaan pemeliharaan");
