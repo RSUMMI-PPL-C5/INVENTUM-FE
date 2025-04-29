@@ -8,373 +8,470 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
 } from "@/components/ui/table";
 import MedicalEquipmentFilterModal, {
-  type MedicalEquipmentFilters as Filters,
+	type MedicalEquipmentFilters as Filters,
 } from "@/components/general/medicalequipment-filter-modal";
 import { toast } from "sonner";
 import Cookies from "js-cookie";
+import { PaginationControls } from "@/components/ui/pagination-control";
 
 type MedicalEquipment = {
-  id: string;
-  inventorisId: string;
-  name: string;
-  brandName: string | null;
-  modelName: string | null;
-  purchaseDate: string | null;
-  purchasePrice: number | null;
-  status: string;
-  vendor: string | null;
-  createdOn: string | null;
-  modifiedOn: string;
+	id: string;
+	inventorisId: string;
+	name: string;
+	brandName: string | null;
+	modelName: string | null;
+	purchaseDate: string | null;
+	purchasePrice: number | null;
+	status: string;
+	vendor: string | null;
+	createdOn: string | null;
+	modifiedOn: string;
 };
 
+interface PaginationMeta {
+	total: number;
+	page: number;
+	limit: number;
+	totalPages: number;
+}
+
+interface MedicalEquipmentResponse {
+	data: MedicalEquipment[];
+	meta: PaginationMeta;
+}
 
 export default function MedicalEquipmentPage() {
-  const [medicalEquipments, setMedicalEquipments] = useState<MedicalEquipment[]>([]);
-  const [search, setSearch] = useState("");
-  const [showFilterModal, setShowFilterModal] = useState(false);
-  const [filters, setFilters] = useState<Filters>({
-    status: [],
-    createdOnStart: null,
-    createdOnEnd: null,
-    modifiedOnStart: null,
-    modifiedOnEnd: null,
-  });
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
-  const params = new URLSearchParams();
-  const searchParams = useSearchParams();
+	const [medicalEquipments, setMedicalEquipments] = useState<
+		MedicalEquipment[]
+	>([]);
+	const [paginationMeta, setPaginationMeta] = useState<PaginationMeta>({
+		total: 0,
+		page: 1,
+		limit: 10,
+		totalPages: 1,
+	});
+	const [search, setSearch] = useState("");
+	const [showFilterModal, setShowFilterModal] = useState(false);
+	const [filters, setFilters] = useState<Filters>({
+		status: [],
+		createdOnStart: null,
+		createdOnEnd: null,
+		modifiedOnStart: null,
+		modifiedOnEnd: null,
+	});
+	const [loading, setLoading] = useState(true);
+	const router = useRouter();
+	const searchParams = useSearchParams();
 
-  const fetchMedicalEquipments = async () => {
-    try {
-      setLoading(true);
-      const token = Cookies.get("token");
-      const queryParams = buildQueryParams(filters);
-      let url = `${process.env.NEXT_PUBLIC_API_URL}/medical-equipment`;
+	const fetchMedicalEquipments = async () => {
+		try {
+			setLoading(true);
+			const token = Cookies.get("accessToken");
 
-      if (queryParams || search) {
-        const searchParam = search ? `search=${search}` : "";
-        url += `?${[queryParams, searchParam].filter(Boolean).join("&")}`;
-      }
+			// Create a new URLSearchParams object for the API request
+			const apiParams = new URLSearchParams();
 
-      const response = await fetch(url, {
-        headers: {
-          Authorization: token ? `Bearer ${token}` : "",
-          "Content-Type": "application/json",
-        },
-      });
+			// Add pagination parameters
+			const currentPage = searchParams.get("page")
+				? Number.parseInt(searchParams.get("page") as string)
+				: 1;
+			apiParams.set("page", currentPage.toString());
+			apiParams.set("limit", paginationMeta.limit.toString());
 
-      if (!response.ok) {
-        const res = await response.json();
-        console.log(res);
-        throw new Error("Failed to fetch medical equipments");
-      }
+			// Add search parameter if exists
+			if (search) {
+				apiParams.set("search", search);
+			}
 
-      const data = await response.json();
-      setMedicalEquipments(data);
-    } catch (err) {
-      console.error("Error fetching medical equipments:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+			// Add filter parameters
+			if (filters.status.length > 0) {
+				filters.status.forEach((status) => {
+					apiParams.append("status", status);
+				});
+			}
 
-  const buildQueryParams = (filters: Filters): string => {
-    filters.status.forEach((status) => {
-        params.append("status", status);
-    });
+			if (filters.createdOnStart) {
+				apiParams.set(
+					"createdOnStart",
+					format(filters.createdOnStart, "yyyy-MM-dd")
+				);
+			}
 
-    if (filters.createdOnStart) {
-      params.append(
-        "createdOnStart",
-        format(filters.createdOnStart, "yyyy-MM-dd")
-      );
-    }
-    if (filters.createdOnEnd) {
-      params.append(
-        "createdOnEnd",
-        format(filters.createdOnEnd, "yyyy-MM-dd")
-      );
-    }
+			if (filters.createdOnEnd) {
+				apiParams.set(
+					"createdOnEnd",
+					format(filters.createdOnEnd, "yyyy-MM-dd")
+				);
+			}
 
-    if (filters.modifiedOnStart) {
-      params.append(
-        "modifiedOnStart",
-        format(filters.modifiedOnStart, "yyyy-MM-dd")
-      );
-    }
-    if (filters.modifiedOnEnd) {
-      params.append(
-        "modifiedOnEnd",
-        format(filters.modifiedOnEnd, "yyyy-MM-dd")
-      );
-    }
+			if (filters.modifiedOnStart) {
+				apiParams.set(
+					"modifiedOnStart",
+					format(filters.modifiedOnStart, "yyyy-MM-dd")
+				);
+			}
 
-    return params.toString();
-  };
+			if (filters.modifiedOnEnd) {
+				apiParams.set(
+					"modifiedOnEnd",
+					format(filters.modifiedOnEnd, "yyyy-MM-dd")
+				);
+			}
 
-  const handleDelete = async (equipmentId: string) => {
-    if (!confirm("Apakah Anda yakin ingin menghapus alat medis ini?")) {
-      return;
-    }
+			const url = `${
+				process.env.NEXT_PUBLIC_API_URL
+			}/medical-equipment?${apiParams.toString()}`;
 
-    try {
-      const token = Cookies.get("token");
+			console.log("Fetching medical equipment with URL:", url);
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/medical-equipment/${equipmentId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: token ? `Bearer ${token}` : "",
-          "Content-Type": "application/json",
-        },
-      });
+			const response = await fetch(url, {
+				headers: {
+					Authorization: token ? `Bearer ${token}` : "",
+					"Content-Type": "application/json",
+				},
+			});
 
-      if (!response.ok) {
-        throw new Error("Gagal menghapus alat medis");
-      }
+			if (!response.ok) {
+				const res = await response.json();
+				console.log(res);
+				throw new Error("Failed to fetch medical equipments");
+			}
 
-      fetchMedicalEquipments();
-      toast.info("Alat medis berhasil dihapus");
-    } catch {
-      toast.error("Gagal menghapus alat medis");
-    }
-  };
+			const responseData = await response.json();
+			console.log("API Response:", responseData);
 
-  useEffect(() => {
-    fetchMedicalEquipments();
-  }, [search, filters]);
+			// Check if the response has the expected structure
+			if (responseData.data && Array.isArray(responseData.data)) {
+				setMedicalEquipments(responseData.data);
 
-  const hasRun = useRef(false);
+				// Make sure we're correctly handling the pagination metadata
+				if (responseData.meta) {
+					setPaginationMeta(responseData.meta);
+				}
+			} else {
+				// If the API returns data directly without the expected structure
+				setMedicalEquipments(
+					Array.isArray(responseData) ? responseData : []
+				);
+				console.warn(
+					"API response doesn't have the expected structure with data and meta fields"
+				);
+			}
+		} catch (err) {
+			console.error("Error fetching medical equipments:", err);
+			toast.error("Failed to fetch medical equipments");
+		} finally {
+			setLoading(false);
+		}
+	};
 
-  useEffect(() => {
-    if (hasRun.current) return;
+	const handleDelete = async (equipmentId: string) => {
+		if (!confirm("Apakah Anda yakin ingin menghapus alat medis ini?")) {
+			return;
+		}
 
-    const success = searchParams.get("success");
+		try {
+			const token = Cookies.get("accessToken");
 
-    if (success === "create") {
-      setTimeout(() => toast.info("Alat medis berhasil dibuat"), 100);
-    }
-    if (success === "delete") {
-      setTimeout(() => toast.info("Alat medis berhasil dihapus"), 100);
-    }
-    hasRun.current = true;
-  }, [searchParams]);
+			const response = await fetch(
+				`${process.env.NEXT_PUBLIC_API_URL}/medical-equipment/${equipmentId}`,
+				{
+					method: "DELETE",
+					headers: {
+						Authorization: token ? `Bearer ${token}` : "",
+						"Content-Type": "application/json",
+					},
+				}
+			);
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return "-";
-    try {
-      return format(new Date(dateString), "dd MMM yyyy");
-    } catch (_error) {
-      console.error("Error formatting date:", _error);
-      return dateString;
-    }
-  };
+			if (!response.ok) {
+				throw new Error("Gagal menghapus alat medis");
+			}
 
-  const formatPrice = (price: number | null) => {
-    if (price === null) return "-";
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-    }).format(price);
-  };
+			fetchMedicalEquipments();
+			toast.info("Alat medis berhasil dihapus");
+		} catch {
+			toast.error("Gagal menghapus alat medis");
+		}
+	};
 
-  const getStatusClass = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "active":
-        return "bg-green-100 text-green-800";
-      case "inactive":
-        return "bg-red-100 text-red-800";
-      case "maintenance":
-        return "bg-yellow-100 text-yellow-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
+	useEffect(() => {
+		fetchMedicalEquipments();
+	}, [search, filters, searchParams]);
 
-  const navigateToEquipmentEdit = (equipmentId: string) => {
-    router.push(`/dashboard/medical-equipment/${equipmentId}/edit`);
-  };
+	const hasRun = useRef(false);
 
-  const navigateToEquipmentDetail = (equipmentId: string) => {
-    router.push(`/dashboard/medical-equipment/${equipmentId}`);
-  };
+	useEffect(() => {
+		if (hasRun.current) return;
 
-  const navigateToEquipmentCreate = () => {
-    router.push(`/dashboard/medical-equipment/create`);
-  };
+		const success = searchParams.get("success");
 
-  return (
-    <div className="space-y-6 font-plus-jakarta-sans">
-      <h1 className="text-header-h5 font-bold font-poppins">Alat Medis</h1>
+		if (success === "create") {
+			setTimeout(() => toast.info("Alat medis berhasil dibuat"), 100);
+		}
+		if (success === "delete") {
+			setTimeout(() => toast.info("Alat medis berhasil dihapus"), 100);
+		}
+		hasRun.current = true;
+	}, [searchParams]);
 
-      {/* Header Section */}
-      <div className="bg-primary-solid items-center p-2 flex gap-3 h-fit text-white rounded-lg overflow-hidden">
-        <div className="flex items-center justify-center w-[264px] h-[224px] border border-primary-super-light rounded-lg">
-          illustration
-        </div>
+	const formatDate = (dateString: string | null) => {
+		if (!dateString) return "-";
+		try {
+			return format(new Date(dateString), "dd MMM yyyy");
+		} catch (_error) {
+			console.error("Error formatting date:", _error);
+			return dateString;
+		}
+	};
 
-        <div className="flex flex-col gap-6 py-6 px-6">
-          <div className="space-y-2">
-            <h2 className="text-header-h6 font-bold font-poppins">
-              Alat Medis
-            </h2>
-            <p className="text-s-medium">
-              Kelola, pantau, dan atur semua alat medis dalam
-              sistem, termasuk penambahan, pembaruan, penghapusan,
-              serta pengelolaan status alat medis.
-            </p>
-          </div>
-          <Button
-            variant="ghost"
-            className="w-fit"
-            onClick={() => navigateToEquipmentCreate()}
-          >
-            <Plus className="mr-2 h-4 w-4" /> Tambah Alat Medis
-          </Button>
-        </div>
-      </div>
+	const formatPrice = (price: number | null) => {
+		if (price === null) return "-";
+		return new Intl.NumberFormat("id-ID", {
+			style: "currency",
+			currency: "IDR",
+			minimumFractionDigits: 0,
+		}).format(price);
+	};
 
-      {/* Search & Filter */}
-      <div className="flex flex-col sm:flex-row items-center gap-4">
-        <div className="relative w-full">
-          <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-            <Search className="h-4 w-4 text-gray-400" />
-          </div>
-          <Input
-            type="text"
-            placeholder="Cari alat medis ..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10"
-            data-testid="search-input"
-          />
-        </div>
-        <Button
-          variant="outline"
-          onClick={() => setShowFilterModal(true)}
-          className="w-full sm:w-auto"
-        >
-          <Filter className="mr-2 h-4 w-4" /> Filter
-        </Button>
-      </div>
+	const getStatusClass = (status: string) => {
+		switch (status.toLowerCase()) {
+			case "active":
+				return "bg-green-100 text-green-800";
+			case "inactive":
+				return "bg-red-100 text-red-800";
+			case "maintenance":
+				return "bg-yellow-100 text-yellow-800";
+			default:
+				return "bg-gray-100 text-gray-800";
+		}
+	};
 
-      {/* Loading State */}
-      {loading && (
-        <div className="flex justify-center p-8">
-          <div className="animate-pulse text-center">
-            Memuat Alat Medis...
-          </div>
-        </div>
-      )}
+	const navigateToEquipmentEdit = (equipmentId: string) => {
+		router.push(`/dashboard/medical-equipment/${equipmentId}/edit`);
+	};
 
-      {/* Medical Equipment Table */}
-      {!loading && (
-        <div className="border rounded-lg overflow-hidden">
-          <Table data-testid="medical-equipments-table">
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nomor Inventaris</TableHead>
-                <TableHead>Nama</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Harga</TableHead>
-                <TableHead>Tanggal Pembelian</TableHead>
-                <TableHead className="text-center">
-                  Aksi
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {medicalEquipments.length > 0 ? (
-                medicalEquipments.map((equipment) => (
-                  <TableRow
-                    key={equipment.id}
-                    className="cursor-pointer"
-                    onClick={() =>
-                      navigateToEquipmentDetail(equipment.id)
-                    }
-                    data-testid={`equipment-row-${equipment.id}`}
-                  >
-                    <TableCell>{equipment.inventorisId}</TableCell>
-                    <TableCell>{equipment.name}</TableCell>
-                    <TableCell>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusClass(equipment.status)}`}>
-                        {equipment.status}
-                      </span>
-                    </TableCell>
-                    <TableCell>{formatPrice(equipment.purchasePrice)}</TableCell>
-                    <TableCell>
-                      {formatDate(equipment.purchaseDate)}
-                    </TableCell>
-                    <TableCell
-                      className="text-right"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          size="icon"
-                          variant="outline"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigateToEquipmentEdit(
-                              equipment.id
-                            );
-                          }}
-                          data-testid={`edit-button-${equipment.id}`}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="destructive"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete(equipment.id);
-                          }}
-                          data-testid={`delete-button-${equipment.id}`}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell
-                    colSpan={6}
-                    className="text-center"
-                  >
-                    {search
-                      ? "Tidak ada alat medis yang cocok dengan pencarian Anda"
-                      : "Tidak ada alat medis yang ditemukan"}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+	const navigateToEquipmentDetail = (equipmentId: string) => {
+		router.push(`/dashboard/medical-equipment/${equipmentId}`);
+	};
 
-      {/* Filter Modal */}
-      {showFilterModal && (
-        <MedicalEquipmentFilterModal
-          isOpen={showFilterModal}
-          filters={filters}
-          onConfirm={(newFilters) => {
-            setFilters(newFilters);
-            setShowFilterModal(false);
-          }}
-          onCancel={() => setShowFilterModal(false)}
-        />
-      )}
-    </div>
-  );
+	const navigateToEquipmentCreate = () => {
+		router.push(`/dashboard/medical-equipment/create`);
+	};
+
+	const handlePageChange = (page: number) => {
+		// Create a new URLSearchParams object from the current URL
+		const params = new URLSearchParams(searchParams.toString());
+
+		// Update the page parameter
+		params.set("page", page.toString());
+
+		// Navigate to the new URL
+		router.push(`/dashboard/medical-equipment?${params.toString()}`);
+	};
+
+	return (
+		<div className="space-y-6 font-plus-jakarta-sans">
+			<h1 className="text-header-h5 font-bold font-poppins">
+				Alat Medis
+			</h1>
+
+			{/* Header Section */}
+			<div className="bg-primary-solid items-center p-2 flex gap-3 h-fit text-white rounded-lg overflow-hidden">
+				<div className="flex items-center justify-center w-[264px] h-[224px] border border-primary-super-light rounded-lg">
+					illustration
+				</div>
+
+				<div className="flex flex-col gap-6 py-6 px-6">
+					<div className="space-y-2">
+						<h2 className="text-header-h6 font-bold font-poppins">
+							Alat Medis
+						</h2>
+						<p className="text-s-medium">
+							Kelola, pantau, dan atur semua alat medis dalam
+							sistem, termasuk penambahan, pembaruan, penghapusan,
+							serta pengelolaan status alat medis.
+						</p>
+					</div>
+					<Button
+						variant="ghost"
+						className="w-fit"
+						onClick={() => navigateToEquipmentCreate()}
+					>
+						<Plus className="mr-2 h-4 w-4" /> Tambah Alat Medis
+					</Button>
+				</div>
+			</div>
+
+			{/* Search & Filter */}
+			<div className="flex flex-col sm:flex-row items-center gap-4">
+				<div className="relative w-full">
+					<div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+						<Search className="h-4 w-4 text-gray-400" />
+					</div>
+					<Input
+						type="text"
+						placeholder="Cari alat medis ..."
+						value={search}
+						onChange={(e) => setSearch(e.target.value)}
+						className="w-full pl-10"
+						data-testid="search-input"
+					/>
+				</div>
+				<Button
+					variant="outline"
+					onClick={() => setShowFilterModal(true)}
+					className="w-full sm:w-auto"
+				>
+					<Filter className="mr-2 h-4 w-4" /> Filter
+				</Button>
+			</div>
+
+			{/* Loading State */}
+			{loading && (
+				<div className="flex justify-center p-8">
+					<div className="animate-pulse text-center">
+						Memuat Alat Medis...
+					</div>
+				</div>
+			)}
+
+			{/* Medical Equipment Table */}
+			{!loading && (
+				<>
+					<div className="border rounded-lg overflow-hidden">
+						<Table data-testid="medical-equipments-table">
+							<TableHeader>
+								<TableRow>
+									<TableHead>Nomor Inventaris</TableHead>
+									<TableHead>Nama</TableHead>
+									<TableHead>Status</TableHead>
+									<TableHead>Harga</TableHead>
+									<TableHead>Tanggal Pembelian</TableHead>
+									<TableHead className="text-center">
+										Aksi
+									</TableHead>
+								</TableRow>
+							</TableHeader>
+							<TableBody>
+								{medicalEquipments.length > 0 ? (
+									medicalEquipments.map((equipment) => (
+										<TableRow
+											key={equipment.id}
+											className="cursor-pointer"
+											onClick={() =>
+												navigateToEquipmentDetail(
+													equipment.id
+												)
+											}
+											data-testid={`equipment-row-${equipment.id}`}
+										>
+											<TableCell>
+												{equipment.inventorisId}
+											</TableCell>
+											<TableCell>
+												{equipment.name}
+											</TableCell>
+											<TableCell>
+												<span
+													className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusClass(
+														equipment.status
+													)}`}
+												>
+													{equipment.status}
+												</span>
+											</TableCell>
+											<TableCell>
+												{formatPrice(
+													equipment.purchasePrice
+												)}
+											</TableCell>
+											<TableCell>
+												{formatDate(
+													equipment.purchaseDate
+												)}
+											</TableCell>
+											<TableCell
+												className="text-right"
+												onClick={(e) =>
+													e.stopPropagation()
+												}
+											>
+												<div className="flex justify-end gap-2">
+													<Button
+														size="icon"
+														variant="outline"
+														onClick={(e) => {
+															e.stopPropagation();
+															navigateToEquipmentEdit(
+																equipment.id
+															);
+														}}
+														data-testid={`edit-button-${equipment.id}`}
+													>
+														<Edit className="h-4 w-4" />
+													</Button>
+													<Button
+														size="icon"
+														variant="destructive"
+														onClick={(e) => {
+															e.stopPropagation();
+															handleDelete(
+																equipment.id
+															);
+														}}
+														data-testid={`delete-button-${equipment.id}`}
+													>
+														<Trash2 className="h-4 w-4" />
+													</Button>
+												</div>
+											</TableCell>
+										</TableRow>
+									))
+								) : (
+									<TableRow>
+										<TableCell
+											colSpan={6}
+											className="text-center"
+										>
+											{search
+												? "Tidak ada alat medis yang cocok dengan pencarian Anda"
+												: "Tidak ada alat medis yang ditemukan"}
+										</TableCell>
+									</TableRow>
+								)}
+							</TableBody>
+						</Table>
+					</div>
+
+					<PaginationControls
+						currentPage={paginationMeta.page}
+						totalPages={paginationMeta.totalPages}
+						onPageChange={handlePageChange}
+					/>
+				</>
+			)}
+
+			{/* Filter Modal */}
+			{showFilterModal && (
+				<MedicalEquipmentFilterModal
+					isOpen={showFilterModal}
+					filters={filters}
+					onConfirm={(newFilters) => {
+						setFilters(newFilters);
+						setShowFilterModal(false);
+					}}
+					onCancel={() => setShowFilterModal(false)}
+				/>
+			)}
+		</div>
+	);
 }

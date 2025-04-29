@@ -5,13 +5,13 @@ import Cookies from "js-cookie";
 import { toast } from "sonner";
 
 jest.mock("next/navigation", () => ({
-    useRouter: jest.fn(() => ({
-      push: jest.fn(),
-    })),
-    useSearchParams: jest.fn(() => ({
-      get: jest.fn().mockReturnValue(null),
-    })),
-  }));
+	useRouter: jest.fn(() => ({
+		push: jest.fn(),
+	})),
+	useSearchParams: jest.fn(() => ({
+		get: jest.fn().mockReturnValue(null),
+	})),
+}));
 
 jest.mock("js-cookie", () => ({
 	set: jest.fn(),
@@ -56,7 +56,9 @@ describe("LoginModule - Integration Tests", () => {
 		const loginButton = screen.getByRole("button", { name: /masuk/i });
 
 		fireEvent.change(usernameInput, { target: { value: "correctuser" } });
-		fireEvent.change(passwordInput, { target: { value: "correctpassword" } });
+		fireEvent.change(passwordInput, {
+			target: { value: "correctpassword" },
+		});
 
 		fireEvent.click(loginButton);
 
@@ -77,9 +79,13 @@ describe("LoginModule - Integration Tests", () => {
 		});
 
 		await waitFor(() => {
-			expect(Cookies.set).toHaveBeenCalledWith("token", "mock-token", {
-				expires: 7,
-			});
+			expect(Cookies.set).toHaveBeenCalledWith(
+				"accessToken",
+				"mock-token",
+				{
+					expires: 7,
+				}
+			);
 		});
 
 		await waitFor(() => {
@@ -90,7 +96,7 @@ describe("LoginModule - Integration Tests", () => {
 	});
 
 	// Negative Cases
-    it("displays error message on failed login", async () => {
+	it("displays error message on failed login", async () => {
 		(global.fetch as jest.Mock).mockImplementationOnce(() =>
 			Promise.resolve({
 				ok: false,
@@ -139,5 +145,4 @@ describe("LoginModule - Integration Tests", () => {
 			);
 		});
 	});
-
 });

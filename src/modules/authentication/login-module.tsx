@@ -58,10 +58,10 @@ export default function LoginModule() {
         throw new Error(errorData.message || 'An error occurred during login');
       }
 
-      const data = await response.json();
+      const { data } = await response.json();
 
-      if (data.token) {
-        Cookies.set('token', data.token, { expires: 7 });
+      if (data.user.token) {
+        Cookies.set('accessToken', data.user.token, { expires: 7 });
       }
 
       router.push('/dashboard/user');
