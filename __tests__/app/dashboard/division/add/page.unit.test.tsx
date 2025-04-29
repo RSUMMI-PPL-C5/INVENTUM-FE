@@ -27,6 +27,7 @@ global.fetch = jest.fn();
 
 describe("AddDivisi Component", () => {
   const mockPush = jest.fn();
+  const mockBack = jest.fn();
   const mockToast = jest.fn();
 
   const mockDivisions = [
@@ -57,6 +58,7 @@ describe("AddDivisi Component", () => {
     // Mock router
     (useRouter as jest.Mock).mockReturnValue({
       push: mockPush,
+      back: mockBack,
     });
 
     // Mock cookies
@@ -81,14 +83,40 @@ describe("AddDivisi Component", () => {
     // Wait for the loading state to disappear
     await waitFor(() => {
       expect(screen.queryByText("Loading parent divisions...")).not.toBeInTheDocument();
+      expect(screen.getByText("Tambah Divisi")).toBeInTheDocument();
+      expect(screen.getByText("Nama Divisi")).toBeInTheDocument();
+      expect(screen.getByText("Parent Divisi")).toBeInTheDocument();
+      expect(screen.getByPlaceholderText("Masukkan nama divisi")).toBeInTheDocument();
+      expect(screen.getByText("Simpan")).toBeInTheDocument();
     });
-  
-    // Assert that the form elements are rendered
-    expect(screen.getByText("Tambah Divisi Baru")).toBeInTheDocument();
-    expect(screen.getByText("Nama Divisi")).toBeInTheDocument();
-    expect(screen.getByText("Parent Divisi")).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("Masukkan nama divisi")).toBeInTheDocument();
-    expect(screen.getByText("Simpan Divisi")).toBeInTheDocument();
+  });
+
+  it("displays loading state while fetching parent divisions", async () => {
+    // Create a delayed promise to control fetch timing
+    let resolveFetch: (value: any) => void;
+    const fetchPromise = new Promise(resolve => {
+      resolveFetch = resolve;
+    });
+    
+    // Mock fetch to use our controlled promise
+    (global.fetch as jest.Mock).mockReturnValueOnce(fetchPromise);
+    
+    render(<AddDivisi />);
+    
+    // Verify the loading state is shown initially
+    expect(screen.getByText("Loading parent divisions...")).toBeInTheDocument(); // The loading indicator
+    
+    // Now resolve the fetch
+    resolveFetch!({
+      ok: true,
+      json: jest.fn().mockResolvedValue(mockDivisions)
+    });
+    
+    // Wait for loading state to disappear
+    // Wait for loading state to disappear
+    await waitFor(() => {
+      expect(screen.queryByText("Loading parent divisions...")).not.toBeInTheDocument();
+    });
   });
 
   it("fetches parent divisions on load", async () => {
@@ -135,7 +163,8 @@ describe("AddDivisi Component", () => {
     render(<AddDivisi />);
   
     await waitFor(() => {
-      expect(screen.queryByText("Loading parent divisions...")).not.toBeInTheDocument();
+      expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
+      expect(screen.getByPlaceholderText("Masukkan nama divisi")).toBeInTheDocument();
     });
   
     // Fill in the form
@@ -151,7 +180,7 @@ describe("AddDivisi Component", () => {
     fireEvent.click(options.find((option) => option.tagName === "SPAN")!);
   
     // Submit the form
-    fireEvent.click(screen.getByText("Simpan Divisi"));
+    fireEvent.click(screen.getByText("Simpan"));
   
     // Wait for the success toast
     await waitFor(() => {
@@ -177,12 +206,13 @@ describe("AddDivisi Component", () => {
 
     await waitFor(() => {
       expect(screen.queryByText("Loading parent divisions...")).not.toBeInTheDocument();
+      expect(screen.getByPlaceholderText("Masukkan nama divisi")).toBeInTheDocument();
     });
 
     fireEvent.change(screen.getByPlaceholderText("Masukkan nama divisi"), {
       target: { value: "New Division" },
     });
-    fireEvent.click(screen.getByText("Simpan Divisi"));
+    fireEvent.click(screen.getByText("Simpan"));
 
     await waitFor(() => {
       expect(mockToast).toHaveBeenCalledWith({
@@ -222,12 +252,13 @@ describe("AddDivisi Component", () => {
 
     await waitFor(() => {
       expect(screen.queryByText("Loading parent divisions...")).not.toBeInTheDocument();
+      expect(screen.getByPlaceholderText("Masukkan nama divisi")).toBeInTheDocument();
     });
 
     fireEvent.change(screen.getByPlaceholderText("Masukkan nama divisi"), {
       target: { value: "New Division" },
     });
-    fireEvent.click(screen.getByText("Simpan Divisi"));
+    fireEvent.click(screen.getByText("Simpan"));
 
     await waitFor(() => {
       expect(screen.getByText("Gagal membuat divisi, Silahkan cek kembali nama divisi dan parent divisi yang dipilih.")).toBeInTheDocument();
@@ -268,6 +299,7 @@ describe("AddDivisi Component", () => {
   
     await waitFor(() => {
       expect(screen.queryByText("Loading parent divisions...")).not.toBeInTheDocument();
+      expect(screen.getByPlaceholderText("Masukkan nama divisi")).toBeInTheDocument();
     });
 
     // Fill in the form to pass client-side validation
@@ -276,7 +308,7 @@ describe("AddDivisi Component", () => {
     });
     
     // Submit the form (which will trigger the mocked failed API response)
-    fireEvent.click(screen.getByText("Simpan Divisi"));
+    fireEvent.click(screen.getByText("Simpan"));
     
     // Wait for the error modal to appear
     await waitFor(() => {
@@ -309,13 +341,14 @@ describe("AddDivisi Component", () => {
     // Wait for the loading state to disappear
     await waitFor(() => {
       expect(screen.queryByText("Loading parent divisions...")).not.toBeInTheDocument();
+      expect(screen.getByPlaceholderText("Masukkan nama divisi")).toBeInTheDocument();
     });
   
     // Interact with the form
     fireEvent.change(screen.getByPlaceholderText("Masukkan nama divisi"), {
       target: { value: "New Division" },
     });
-    fireEvent.click(screen.getByText("Simpan Divisi"));
+    fireEvent.click(screen.getByText("Simpan"));
   
     // Assert that the loading state is displayed
     await waitFor(() => {
@@ -330,9 +363,25 @@ describe("AddDivisi Component", () => {
     });
   });
 
-  it("navigates back when the back button is clicked", () => {
+  it('navigates back when the Kembali button is clicked', async () => {
     render(<AddDivisi />);
-    fireEvent.click(screen.getByText("Back"));
+  
+    await waitFor(() => {
+      expect(screen.getByText("Kembali")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText("Kembali"));
     expect(mockPush).toHaveBeenCalledWith("/dashboard/division");
+  });
+
+  it("navigates back when the Batalkan button is clicked", async () => {
+    render(<AddDivisi />);
+    
+    await waitFor(() => {
+      expect(screen.getByText("Batalkan")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText("Batalkan"));
+    expect(mockBack).toHaveBeenCalled();;
   });
 });

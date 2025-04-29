@@ -107,14 +107,12 @@ export default function AddDivisi() {
 	// Function to flatten the division hierarchy
 	function flattenDivisions(divisions: Division[]): Division[] {
 		let result: Division[] = [];
-
 		for (const division of divisions) {
 			result.push(division);
 			if (division.children && division.children.length > 0) {
 				result = [...result, ...flattenDivisions(division.children)];
 			}
 		}
-
 		return result;
 	}
 
@@ -160,10 +158,6 @@ export default function AddDivisi() {
 		} finally {
 			setLoading(false);
 		}
-	}
-
-	if (loadingParents) {
-		return <div>Loading...</div>;
 	}
 
 	return (

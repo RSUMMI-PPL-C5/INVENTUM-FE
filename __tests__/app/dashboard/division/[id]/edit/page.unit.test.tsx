@@ -25,8 +25,12 @@ jest.mock("@/hooks/use-toast", () => ({
 // Mock fetch
 global.fetch = jest.fn();
 
+// Mock scrollIntoView
+window.HTMLElement.prototype.scrollIntoView = jest.fn();
+
 describe("EditDivisi Component", () => {
 	const mockPush = jest.fn();
+	const mockBack = jest.fn();
 	const mockToast = jest.fn();
 
 	const mockDivision = {
@@ -56,6 +60,7 @@ describe("EditDivisi Component", () => {
 		// Mock router
 		(useRouter as jest.Mock).mockReturnValue({
 			push: mockPush,
+			back: mockBack,
 		});
 
 		// Mock cookies
@@ -91,7 +96,7 @@ describe("EditDivisi Component", () => {
 		// Wait for the loading state to disappear
 		await waitFor(() => {
 			expect(
-				screen.queryByText("Loading division data...")
+				screen.queryByText("Loading divisions data...")
 			).not.toBeInTheDocument();
 		});
 
@@ -102,7 +107,7 @@ describe("EditDivisi Component", () => {
 		expect(
 			screen.getByPlaceholderText("Masukkan nama divisi")
 		).toBeInTheDocument();
-		expect(screen.getByText("Simpan Perubahan")).toBeInTheDocument();
+		expect(screen.getByText("Simpan")).toBeInTheDocument();
 	});
 
 	it("fetches division and parent divisions on load", async () => {
@@ -111,7 +116,7 @@ describe("EditDivisi Component", () => {
 		// Wait for the loading state to disappear
 		await waitFor(() => {
 			expect(
-				screen.queryByText("Loading division data...")
+				screen.queryByText("Loading divisions data...")
 			).not.toBeInTheDocument();
 		});
 
@@ -151,14 +156,14 @@ describe("EditDivisi Component", () => {
 
 		await waitFor(() => {
 			expect(
-				screen.queryByText("Loading division data...")
+				screen.queryByText("Loading divisions data...")
 			).not.toBeInTheDocument();
 		});
 
 		fireEvent.change(screen.getByPlaceholderText("Masukkan nama divisi"), {
 			target: { value: "Updated Division" },
 		});
-		fireEvent.click(screen.getByText("Simpan Perubahan"));
+		fireEvent.click(screen.getByText("Simpan"));
 
 		await waitFor(() => {
 			expect(mockToast).toHaveBeenCalledWith({
@@ -166,6 +171,89 @@ describe("EditDivisi Component", () => {
 				description: "Division updated successfully",
 			});
 			expect(mockPush).toHaveBeenCalledWith("/dashboard/division");
+		});
+	});
+
+	it("submits form with parentId as a number when a parent is selected", async () => {
+		// Mock fetch to spy on the request payload
+		(global.fetch as jest.Mock).mockImplementation((url: string, options?: any) => {
+			if (options?.method === "PUT") {
+				// Extract and verify payload
+				const payload = JSON.parse(options.body);
+				// Check that parseInt successfully converted the string to a number
+				expect(payload.parentId).toBe(2); // Integer 2, not string "2"
+				expect(typeof payload.parentId).toBe("number");
+				return Promise.resolve({ ok: true });
+			}
+			return Promise.resolve({
+				ok: true,
+				json: jest.fn().mockResolvedValue(
+					url.includes("/divisi/1") ? mockDivision : mockDivisions
+				),
+			});
+		});
+		
+		render(<EditDivisi id={1} />);
+		
+		// Wait for form to load
+		await waitFor(() => {
+			expect(screen.queryByText("Loading divisions data...")).not.toBeInTheDocument();
+		});
+		
+		// Select a parent division from the dropdown (Operations has id=2)
+		fireEvent.click(screen.getByRole("combobox"));
+		fireEvent.click(screen.getAllByText("Operations")[1]);
+		
+		// Submit the form
+		fireEvent.click(screen.getByText("Simpan"));
+		
+		// Wait for form submission to complete
+		await waitFor(() => {
+			expect(mockToast).toHaveBeenCalled();
+		});
+	});
+
+	it("displays 'Menyimpan...' text when form is being submitted", async () => {
+		// Create a delayed promise to control fetch timing
+		let resolveFetch: (value: any) => void;
+		const fetchPromise = new Promise(resolve => {
+			resolveFetch = resolve;
+		});
+		
+		// Mock fetch to use our delayed promise for PUT requests
+		(global.fetch as jest.Mock).mockImplementation((url: string, options?: any) => {
+			if (options?.method === "PUT") {
+				return fetchPromise;
+			}
+			return Promise.resolve({
+				ok: true,
+				json: jest.fn().mockResolvedValue(
+					url.includes("/divisi/1") ? mockDivision : mockDivisions
+				),
+			});
+		});
+		
+		render(<EditDivisi id={1} />);
+		
+		// Wait for form to load
+		await waitFor(() => {
+			expect(screen.queryByText("Loading divisions data...")).not.toBeInTheDocument();
+		});
+		
+		// Submit the form
+		fireEvent.click(screen.getByText("Simpan"));
+		
+		// Verify the button shows the loading text
+		await waitFor(() => {
+			expect(screen.getByText("Menyimpan...")).toBeInTheDocument();
+		});
+		
+		// Now resolve the fetch to complete the test
+		resolveFetch!({ ok: true });
+		
+		// Wait for loading state to disappear
+		await waitFor(() => {
+			expect(screen.queryByText("Menyimpan...")).not.toBeInTheDocument();
 		});
 	});
 
@@ -216,14 +304,14 @@ describe("EditDivisi Component", () => {
 
 		await waitFor(() => {
 			expect(
-				screen.queryByText("Loading division data...")
+				screen.queryByText("Loading divisions data...")
 			).not.toBeInTheDocument();
-		});
 
-		// Assert that the name field has the correct value
-		expect(screen.getByPlaceholderText("Masukkan nama divisi")).toHaveValue(
-			"Test Division"
-		);
+			// Assert that the name field has the correct value
+			expect(screen.getByPlaceholderText("Masukkan nama divisi")).toHaveValue(
+				"Test Division"
+			);
+		});
 
 		// For testing the select component, check what is displayed in the trigger element
 		const selectTrigger = screen.getByRole("combobox");
@@ -260,14 +348,14 @@ describe("EditDivisi Component", () => {
 
 		await waitFor(() => {
 			expect(
-				screen.queryByText("Loading division data...")
+				screen.queryByText("Loading divisions data...")
 			).not.toBeInTheDocument();
-		});
 
-		// Assert that the name field has the correct value
-		expect(screen.getByPlaceholderText("Masukkan nama divisi")).toHaveValue(
-			"Test Division"
-		);
+			// Assert that the name field has the correct value
+			expect(screen.getByPlaceholderText("Masukkan nama divisi")).toHaveValue(
+				"Test Division"
+			);
+		});
 
 		// For testing the select component, check what is displayed in the trigger element
 		const selectTrigger = screen.getByRole("combobox");
@@ -325,7 +413,7 @@ describe("EditDivisi Component", () => {
 
 		await waitFor(() => {
 			expect(
-				screen.queryByText("Loading division data...")
+				screen.queryByText("Loading divisions data...")
 			).not.toBeInTheDocument();
 		});
 
@@ -338,6 +426,89 @@ describe("EditDivisi Component", () => {
 
 		// Assert that independent divisions are still present
 		expect(screen.getByText("Independent Division")).toBeInTheDocument();
+	});
+
+	it("recursively flattens and filters deeply nested divisions", async () => {
+		// Create a complex nested division structure
+		const complexNestedDivisions = [
+			{
+				id: 1, // Division being edited
+				divisi: "Root Division",
+				parentId: null,
+				children: [
+					{
+						id: 2,
+						divisi: "Child Division 1",
+						parentId: 1,
+						children: [
+							{
+								id: 3,
+								divisi: "Grandchild Division 1",
+								parentId: 2,
+								children: [],
+							}
+						],
+					}
+				],
+			},
+			{
+				id: 4,
+				divisi: "Root Division 2",
+				parentId: null,
+				children: [
+					{
+						id: 5,
+						divisi: "Child Division 2",
+						parentId: 4,
+						children: [
+							{
+								id: 6,
+								divisi: "Grandchild Division 2",
+								parentId: 5,
+								children: [],
+							}
+						],
+					}
+				],
+			},
+		];
+
+		(global.fetch as jest.Mock).mockImplementation((url: string) => {
+			if (url.includes("/divisi/all")) {
+				return Promise.resolve({
+					ok: true,
+					json: jest.fn().mockResolvedValue(complexNestedDivisions),
+				});
+			}
+			return Promise.resolve({
+				ok: true,
+				json: jest.fn().mockResolvedValue(mockDivision),
+			});
+		});
+
+		render(<EditDivisi id={1} />);
+
+		await waitFor(() => {
+			expect(screen.queryByText("Loading divisions data...")).not.toBeInTheDocument();
+		});
+
+		// Verify that Root Division 1 and its descendants are filtered out
+		expect(screen.queryByText("Root Division")).not.toBeInTheDocument();
+		expect(screen.queryByText("Child Division 1")).not.toBeInTheDocument();
+		expect(screen.queryByText("Grandchild Division 1")).not.toBeInTheDocument();
+		
+		// Verify that Root Division 2 and its descendants are included
+		expect(screen.getByText("Root Division 2")).toBeInTheDocument();
+		expect(screen.getByText("Child Division 2")).toBeInTheDocument();
+		expect(screen.getByText("Grandchild Division 2")).toBeInTheDocument();
+		
+		// Open the dropdown first to make the options visible in the DOM
+		const selectTrigger = screen.getByRole("combobox");
+		fireEvent.click(selectTrigger);
+		
+		// Now check the options that should be rendered
+		const selectItems = document.querySelectorAll('[role="option"]');
+		expect(selectItems.length).toBe(4); // "Tidak Ada Parent" + 3 divisions
 	});
 
 	it("closes error modal when Tutup button is clicked", async () => {
@@ -440,7 +611,7 @@ describe("EditDivisi Component", () => {
 		render(<EditDivisi id={1} />);
 
 		expect(
-			screen.getByText("Loading division data...")
+			screen.getByText("Loading divisions data...")
 		).toBeInTheDocument();
 	});
 
@@ -461,14 +632,14 @@ describe("EditDivisi Component", () => {
 
 		await waitFor(() => {
 			expect(
-				screen.queryByText("Loading division data...")
+				screen.queryByText("Loading divisions data...")
 			).not.toBeInTheDocument();
 		});
 
 		fireEvent.change(screen.getByPlaceholderText("Masukkan nama divisi"), {
 			target: { value: "Updated Division" },
 		});
-		fireEvent.click(screen.getByText("Simpan Perubahan"));
+		fireEvent.click(screen.getByText("Simpan"));
 
 		await waitFor(() => {
 			expect(
@@ -479,18 +650,28 @@ describe("EditDivisi Component", () => {
 		});
 	});
 
-	it("navigates back to division list when 'Back' button is clicked", async () => {
+	it("navigates back to division list when Kembali button is clicked", async () => {
 		render(<EditDivisi id={1} />);
 
 		await waitFor(() => {
-			expect(
-				screen.queryByText("Loading division data...")
-			).not.toBeInTheDocument();
+			expect(screen.getByText("Kembali")).toBeInTheDocument();
 		});
 
-		fireEvent.click(screen.getByText("Back"));
+		fireEvent.click(screen.getByText("Kembali"));
 
 		expect(mockPush).toHaveBeenCalledWith("/dashboard/division");
+	});
+	
+	it("navigates back to division list when Batalkan button is clicked", async () => {
+		render(<EditDivisi id={1} />);
+
+		await waitFor(() => {
+			expect(screen.getByText("Batalkan")).toBeInTheDocument();
+		});
+
+		fireEvent.click(screen.getByText("Batalkan"));
+
+		expect(mockBack).toHaveBeenCalled();
 	});
 
 	it("handles API error when fetching division", async () => {
@@ -510,6 +691,87 @@ describe("EditDivisi Component", () => {
 			expect(
 				screen.getByText("Failed to load division data.")
 			).toBeInTheDocument();
+		});
+	});
+
+	it("handles missing token when fetching division data", async () => {
+		// Mock Cookies.get to return undefined
+		(Cookies.get as jest.Mock).mockReturnValue(undefined);
+		
+		(global.fetch as jest.Mock).mockResolvedValue({
+			ok: true,
+			json: jest.fn().mockResolvedValue(mockDivision),
+		});
+		
+		render(<EditDivisi id={1} />);
+		
+		await waitFor(() => {
+			expect(global.fetch).toHaveBeenCalledWith(
+				"http://localhost:8000/divisi/1",
+				expect.objectContaining({
+					headers: expect.objectContaining({
+						Authorization: "", // Empty Authorization header
+					}),
+				})
+			);
+		});
+	});
+
+	it("handles missing token when fetching all divisions", async () => {
+		// Mock Cookies.get to return undefined
+		(Cookies.get as jest.Mock).mockReturnValue(undefined);
+		
+		(global.fetch as jest.Mock).mockResolvedValue({
+			ok: true,
+			json: jest.fn().mockResolvedValue(mockDivisions),
+		});
+		
+		render(<EditDivisi id={1} />);
+		
+		await waitFor(() => {
+			expect(global.fetch).toHaveBeenCalledWith(
+				"http://localhost:8000/divisi/all",
+				expect.objectContaining({
+					headers: expect.objectContaining({
+						Authorization: "", // Empty Authorization header
+					}),
+				})
+			);
+		});
+	});
+
+	it("handles missing token when submitting the form", async () => {
+		// Mock Cookies.get to return null
+		(Cookies.get as jest.Mock).mockReturnValue(null);
+		
+		// Mock successful responses for initial data loading
+		(global.fetch as jest.Mock).mockImplementation((url: string, options?: any) => {
+			if (options?.method === "PUT") {
+				// Capture and verify the PUT request
+				expect(options.headers.Authorization).toBe("");
+				return Promise.resolve({ ok: true });
+			}
+			return Promise.resolve({
+				ok: true,
+				json: jest.fn().mockResolvedValue(
+					url.includes("/divisi/1") ? mockDivision : mockDivisions
+				),
+			});
+		});
+		
+		render(<EditDivisi id={1} />);
+		
+		// Wait for form to load
+		await waitFor(() => {
+			expect(screen.queryByText("Loading divisions data...")).not.toBeInTheDocument();
+		});
+		
+		// Submit the form
+		fireEvent.click(screen.getByText("Simpan"));
+		
+		await waitFor(() => {
+			// Verify the expected behavior after submission
+			expect(mockToast).toHaveBeenCalled();
 		});
 	});
 });

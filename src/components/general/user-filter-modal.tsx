@@ -17,10 +17,11 @@ import { CalendarIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 export type Filters = {
   role: string[]
-  division: string[]
+  division: string
   createdOnStart: Date | null
   createdOnEnd: Date | null
   modifiedOnStart: Date | null
@@ -30,46 +31,46 @@ export type Filters = {
 type UserFilterModalProps = {
   isOpen: boolean
   filters: Filters
+  divisions: Division[]
   onConfirm: (filters: Filters) => void
   onCancel: () => void
 }
 
-const roles = ["Admin", "User", "Fasum"]
-const divisions = ["Divisi A", "Divisi B", "Divisi C"]
+interface Division {
+  id: number;
+  divisi: string;
+}
 
-export default function UserFilterModal({ isOpen, filters, onConfirm, onCancel }: UserFilterModalProps) {
+const roles = [
+  { id: "1", name: "User" },
+  { id: "2", name: "Fasum" },
+  { id: "3", name: "Admin" },
+]
+
+export default function UserFilterModal({ isOpen, filters, divisions, onConfirm, onCancel }: UserFilterModalProps) {
   const [localFilters, setLocalFilters] = useState<Filters>({ ...filters })
 
-  const handleRoleToggle = (role: string) => {
+  const handleRoleToggle = (roleName: string) => {
     setLocalFilters((prev) => {
-      if (prev.role.includes(role)) {
+      if (prev.role.includes(roleName)) {
         return {
           ...prev,
-          role: prev.role.filter((r) => r !== role),
+          role: prev.role.filter((r) => r !== roleName),
         }
       } else {
         return {
           ...prev,
-          role: [...prev.role, role],
+          role: [...prev.role, roleName],
         }
       }
     })
   }
 
-  const handleDivisionToggle = (division: string) => {
-    setLocalFilters((prev) => {
-      if (prev.division.includes(division)) {
-        return {
-          ...prev,
-          division: prev.division.filter((d) => d !== division),
-        }
-      } else {
-        return {
-          ...prev,
-          division: [...prev.division, division],
-        }
-      }
-    })
+  const handleDivisionChange = (divisionId: string) => {
+    setLocalFilters((prev) => ({
+      ...prev,
+      division: divisionId
+    }))
   }
 
   const handleDateChange = (type: "createdOnStart" | "createdOnEnd" | "modifiedOnStart" | "modifiedOnEnd", date: Date | undefined) => {
@@ -95,7 +96,7 @@ export default function UserFilterModal({ isOpen, filters, onConfirm, onCancel }
   const resetFilters = () => {
     setLocalFilters({
       role: [],
-      division: [],
+      division: "all",
       createdOnStart: null,
       createdOnEnd: null,
       modifiedOnStart: null,
@@ -120,13 +121,13 @@ export default function UserFilterModal({ isOpen, filters, onConfirm, onCancel }
                     <h3 className="font-medium">Role</h3>
                     <div className="flex flex-col gap-4">
                     {roles.map((role) => (
-                        <div key={role} className="flex items-center space-x-2">
+                        <div key={role.id} className="flex items-center space-x-2">
                         <Checkbox
-                            id={`role-${role}`}
-                            checked={localFilters.role.includes(role)}
-                            onCheckedChange={() => handleRoleToggle(role)}
+                            id={`role-${role.name}`}
+                            checked={localFilters.role.includes(role.name)}
+                            onCheckedChange={() => handleRoleToggle(role.name)}
                         />
-                        <Label htmlFor={`role-${role}`}>{role}</Label>
+                        <Label htmlFor={`role-${role.name}`}>{role.name}</Label>
                         </div>
                     ))}
                     </div>
@@ -135,18 +136,19 @@ export default function UserFilterModal({ isOpen, filters, onConfirm, onCancel }
                 {/* Division Filter */}
                 <div className="space-y-2">
                     <h3 className="font-medium">Divisi</h3>
-                    <div className="flex flex-col gap-4">
-                    {divisions.map((division) => (
-                        <div key={division} className="flex items-center space-x-2">
-                        <Checkbox
-                            id={`division-${division}`}
-                            checked={localFilters.division.includes(division)}
-                            onCheckedChange={() => handleDivisionToggle(division)}
-                        />
-                        <Label htmlFor={`division-${division}`}>{division}</Label>
-                        </div>
-                    ))}
-                    </div>
+                    <Select onValueChange={handleDivisionChange} value={localFilters.division}>
+                      <SelectTrigger className="w-[200px]">
+                        <SelectValue placeholder="Pilih Divisi" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Semua Divisi</SelectItem>
+                        {divisions.map((division) => (
+                          <SelectItem key={division.id} value={division.id.toString()}>
+                            {division.divisi}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                 </div>
             </div>
             

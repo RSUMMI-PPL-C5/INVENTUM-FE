@@ -9,7 +9,7 @@ jest.mock("next/navigation", () => ({
 }))
 
 // Mock the EditDivisi component
-jest.mock("@/modules/division/edit-divisi", () => {
+jest.mock("@/modules/division/divisi-edit", () => {
   return jest.fn(({ id }: { id: number }) => (
     <div data-testid="edit-divisi">EditDivisi Component with ID: {id}</div>
   ))

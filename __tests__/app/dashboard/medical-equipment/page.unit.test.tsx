@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import MedicalEquipmentPage from "@/modules/medical-equipment/medical-equipment-display";
+import MedicalEquipmentPage from "@/app/dashboard/medical-equipment/page";
 import { toast } from "sonner";
 import Cookies from "js-cookie";
 
