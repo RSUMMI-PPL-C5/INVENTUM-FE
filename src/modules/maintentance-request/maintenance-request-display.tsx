@@ -21,11 +21,6 @@ import MaintenanceRequestFilterModal, {
 import { toast } from "sonner";
 import Cookies from "js-cookie";
 
-enum RequestType {
-  MAINTENANCE = "MAINTENANCE",
-  CALIBRATION = "CALIBRATION"
-}
-
 type MaintenanceRequest = {
   id: string;
   userId: string;
@@ -33,11 +28,8 @@ type MaintenanceRequest = {
   complaint: string | null; 
   submissionDate: string;
   status: string;
-  createdBy: number;
   createdOn: string | null;
-  modifiedBy?: number;
   modifiedOn: string;
-  requestType: RequestType;
 };
 
 export default function MaintenanceRequestDisplay() {
@@ -193,7 +185,7 @@ export default function MaintenanceRequestDisplay() {
   };
 
   const navigateToRequestEdit = (requestId: string) => {
-    router.push(`/dashboard/maintenance-requests/${requestId}/edit`);
+    router.push(`/dashboard/requests/all/${requestId}/edit`);
   };
 
   const navigateToRequestDetail = (requestId: string) => {

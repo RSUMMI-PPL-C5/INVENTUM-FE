@@ -96,8 +96,8 @@ export default function MaintenanceRequestFilterModal({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onCancel()}>
       <DialogContent className="w-fit">
         <DialogHeader>
-          <DialogTitle>Filter Alat Medis</DialogTitle>
-          <DialogDescription>Pilih filter untuk menyaring daftar alat medis</DialogDescription>
+          <DialogTitle>Filter Request</DialogTitle>
+          <DialogDescription>Pilih filter untuk menyaring request</DialogDescription>
         </DialogHeader>
 
         <div className="flex gap-12 py-4">
