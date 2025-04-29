@@ -58,17 +58,25 @@ export default function LoginModule() {
         throw new Error(errorData.message || 'An error occurred during login');
       }
 
-      const { data } = await response.json();
+      const responseData = await response.json();
+      console.log('Login response:', responseData); // Debug line to see response structure
 
-      if (data.user.token) {
-        Cookies.set('accessToken', data.user.token, { expires: 7 });
+      // Use optional chaining and handle different possible response structures
+      if (responseData.data?.token) {
+        Cookies.set('accessToken', responseData.data.token, { expires: 7 });
+      } else if (responseData.data?.user?.token) {
+        Cookies.set('accessToken', responseData.data.user.token, { expires: 7 });
+      } else if (responseData.token) {
+        Cookies.set('accessToken', responseData.token, { expires: 7 });
+      } else {
+        throw new Error('Token not found in response');
       }
 
       router.push('/dashboard/user');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'An error occurred during login');
     } finally {
-        setIsLoading(false)
+      setIsLoading(false)
     }
   };
 
