@@ -1,7 +1,7 @@
 /* eslint-disable */
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Edit, Trash2, Filter, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -33,8 +33,9 @@ type User = {
 	waNumber: string | null;
 	createdOn: string | null;
 	modifiedOn: string;
-	divisi?: {
-		name: string;
+	divisi: {
+		id: string;
+		divisi: string;
 	};
 };
 
@@ -45,96 +46,81 @@ type PaginationMeta = {
 	totalPages: number;
 };
 
-type UserResponse = {
-	data: User[];
-	meta: PaginationMeta;
-};
-
-const divisionMapping: Record<string, number> = {
-	"Divisi A": 1,
-	"Divisi B": 2,
-	"Divisi C": 3,
-};
-
 export default function UsersPage() {
+	const router = useRouter();
+	const searchParams = useSearchParams();
+	
+	// Initialize state from URL params
 	const [users, setUsers] = useState<User[]>([]);
 	const [paginationMeta, setPaginationMeta] = useState<PaginationMeta>({
 		total: 0,
-		page: 1,
+		page: searchParams.get("page") ? parseInt(searchParams.get("page") as string) : 1,
 		limit: 10,
 		totalPages: 1,
 	});
-	const [search, setSearch] = useState("");
+	const [search, setSearch] = useState(searchParams.get("search") || "");
 	const [showFilterModal, setShowFilterModal] = useState(false);
-	const [filters, setFilters] = useState<Filters>({
-		role: [],
-		division: [],
-		createdOnStart: null,
-		createdOnEnd: null,
-		modifiedOnStart: null,
-		modifiedOnEnd: null,
-	});
 	const [loading, setLoading] = useState(true);
-	const router = useRouter();
-	const params = new URLSearchParams();
-	const searchParams = useSearchParams();
+	
+	// Initialize filters from URL params
+	const [filters, setFilters] = useState<Filters>(() => {
+		const initialFilters: Filters = {
+			role: searchParams.getAll("role"),
+			division: searchParams.get("divisiId") || "",
+			createdOnStart: searchParams.get("createdOnStart") 
+				? new Date(searchParams.get("createdOnStart") as string) 
+				: null,
+			createdOnEnd: searchParams.get("createdOnEnd") 
+				? new Date(searchParams.get("createdOnEnd") as string) 
+				: null,
+			modifiedOnStart: searchParams.get("modifiedOnStart") 
+				? new Date(searchParams.get("modifiedOnStart") as string) 
+				: null,
+			modifiedOnEnd: searchParams.get("modifiedOnEnd") 
+				? new Date(searchParams.get("modifiedOnEnd") as string) 
+				: null,
+		};
+		return initialFilters;
+	});
 
-	const fetchUsers = async () => {
-		try {
-			setLoading(true);
-			const token = Cookies.get("accessToken");
-			const queryParams = buildQueryParams(filters);
+	// Function to update URL with current filters, search and pagination
+	const updateURLParams = (newParams: Record<string, string | string[] | null | undefined>) => {
+		const params = new URLSearchParams(searchParams.toString());
+		
+		// Clear existing filter params to avoid duplicates
+		["search", "page", "role", "divisiId", "createdOnStart", "createdOnEnd", "modifiedOnStart", "modifiedOnEnd"].forEach(param => {
+			params.delete(param);
+		});
 
-			// Get the current page from URL or use default
-			const currentPage = searchParams.get("page")
-				? Number.parseInt(searchParams.get("page") as string)
-				: 1;
-
-			let url = `${process.env.NEXT_PUBLIC_API_URL}/user`;
-
-			// Add pagination parameters
-			const paginationParams = `page=${currentPage}&limit=${paginationMeta.limit}`;
-
-			if (queryParams || search || paginationParams) {
-				const searchParam = search ? `search=${search}` : "";
-				url += `?${[queryParams, searchParam, paginationParams]
-					.filter(Boolean)
-					.join("&")}`;
+		// Add new params
+		Object.entries(newParams).forEach(([key, value]) => {
+			if (value === null || value === undefined || value === "") {
+				return;
 			}
-
-			const response = await fetch(url, {
-				headers: {
-					Authorization: token ? `Bearer ${token}` : "",
-					"Content-Type": "application/json",
-				},
-			});
-
-			if (!response.ok) {
-				const res = await response.json();
-				throw new Error("Failed to fetch users");
+			
+			if (Array.isArray(value)) {
+				value.forEach(val => {
+					if (val) params.append(key, val);
+				});
+			} else {
+				params.set(key, value);
 			}
+		});
 
-			const responseData: UserResponse = await response.json();
-			setUsers(responseData.data);
-			setPaginationMeta(responseData.meta);
-		} catch (err) {
-			console.error("Error fetching users:", err);
-		} finally {
-			setLoading(false);
-		}
+		// Update URL without refreshing page
+		router.push(`/dashboard/user?${params.toString()}`, { scroll: false });
 	};
 
 	const buildQueryParams = (filters: Filters): string => {
+		const params = new URLSearchParams();
+		
 		filters.role.forEach((role) => {
 			params.append("role", role);
 		});
 
-		filters.division.forEach((div) => {
-			const id = divisionMapping[div];
-			if (id) {
-				params.append("divisiId", id.toString());
-			}
-		});
+        if (filters.division) {
+			params.append("divisiId", filters.division);
+		}
 
 		if (filters.createdOnStart) {
 			params.append(
@@ -155,6 +141,7 @@ export default function UsersPage() {
 				format(filters.modifiedOnStart, "yyyy-MM-dd")
 			);
 		}
+
 		if (filters.modifiedOnEnd) {
 			params.append(
 				"modifiedOnEnd",
@@ -163,6 +150,52 @@ export default function UsersPage() {
 		}
 
 		return params.toString();
+	};
+
+	const fetchUsers = async () => {
+		try {
+			setLoading(true);
+			const token = Cookies.get("accessToken");
+			const queryParams = buildQueryParams(filters);
+
+			const currentPage = searchParams.get("page")
+				? Number.parseInt(searchParams.get("page") as string)
+				: 1;
+
+			let url = `${process.env.NEXT_PUBLIC_API_URL}/user`;
+
+			const paginationParams = `page=${currentPage}&limit=${paginationMeta.limit}`;
+
+			if (queryParams || search || paginationParams) {
+				const searchParam = search ? `search=${search}` : "";
+				url += `?${[queryParams, searchParam, paginationParams]
+					.filter(Boolean)
+					.join("&")}`;
+			}
+
+			const response = await fetch(url, {
+				headers: {
+					"Content-Type": "application/json",
+                    Authorization: token ? `Bearer ${token}` : "",
+				},
+			});
+
+			const result = await response.json();
+
+            if (!response.ok) {
+                toast.error(<>Error fetching users:<br />{result.message}</>);                
+                return;
+            }
+
+			setUsers(result.data);
+			setPaginationMeta(result.meta);
+
+		} catch (error) {
+			console.error("Error fetching users:", error);
+            toast.error(error instanceof Error ? error.message : 'Error fetching users');
+		} finally {
+			setLoading(false);
+		}
 	};
 
 	const handleDelete = async (userId: string) => {
@@ -184,35 +217,52 @@ export default function UsersPage() {
 				}
 			);
 
+            const result = await response.json();
+
 			if (!response.ok) {
-				throw new Error("Gagal menghapus pengguna");
+				toast.error(<>Error deleting user:<br />{result.message}</>);                
+                return;
 			}
 
 			fetchUsers();
 			toast.info("Pengguna berhasil dihapus");
-		} catch {
-			toast.error("Gagal menghapus pengguna");
+		} catch (error) {
+			console.error("Error deleting user:", error);
+            toast.error(error instanceof Error ? error.message : 'Error deleting user');
 		}
+	};
+
+	const handleSearchChange = (value: string) => {
+		setSearch(value);
+		updateURLParams({
+			search: value || null,
+			page: "1"
+		});
+	};
+
+	const handleFilterApply = (newFilters: Filters) => {
+		setFilters(newFilters);
+		setShowFilterModal(false);
+		
+		updateURLParams({
+			role: newFilters.role,
+			divisiId: newFilters.division || null,
+			createdOnStart: newFilters.createdOnStart ? format(newFilters.createdOnStart, "yyyy-MM-dd") : null,
+			createdOnEnd: newFilters.createdOnEnd ? format(newFilters.createdOnEnd, "yyyy-MM-dd") : null,
+			modifiedOnStart: newFilters.modifiedOnStart ? format(newFilters.modifiedOnStart, "yyyy-MM-dd") : null,
+			modifiedOnEnd: newFilters.modifiedOnEnd ? format(newFilters.modifiedOnEnd, "yyyy-MM-dd") : null,
+			page: "1", 
+		});
+	};
+
+	const handlePageChange = (page: number) => {
+		updateURLParams({
+			page: page.toString(),
+		});
 	};
 
 	useEffect(() => {
 		fetchUsers();
-	}, [search, filters, searchParams]);
-
-	const hasRun = useRef(false);
-
-	useEffect(() => {
-		if (hasRun.current) return;
-
-		const success = searchParams.get("success");
-
-		if (success === "create") {
-			setTimeout(() => toast.info("Pengguna berhasil dibuat"), 100);
-		}
-		if (success === "delete") {
-			setTimeout(() => toast.info("Pengguna berhasil dihapus"), 100);
-		}
-		hasRun.current = true;
 	}, [searchParams]);
 
 	const formatDate = (dateString: string | null) => {
@@ -235,12 +285,6 @@ export default function UsersPage() {
 
 	const navigateToUserCreate = () => {
 		router.push(`/dashboard/user/create`);
-	};
-
-	const handlePageChange = (page: number) => {
-		const params = new URLSearchParams(searchParams.toString());
-		params.set("page", page.toString());
-		router.push(`/dashboard/user?${params.toString()}`);
 	};
 
 	return (
@@ -285,8 +329,8 @@ export default function UsersPage() {
 						type="text"
 						placeholder="Cari pengguna ..."
 						value={search}
-						onChange={(e) => setSearch(e.target.value)}
-						className="w-full pl-10" // Added left padding to make room for the icon
+						onChange={(e) => handleSearchChange(e.target.value)}
+						className="w-full pl-10"
 						data-testid="search-input"
 					/>
 				</div>
@@ -340,7 +384,7 @@ export default function UsersPage() {
 												{user.fullname ?? user.username}
 											</TableCell>
 											<TableCell>
-												{user.divisi?.name ?? `-`}
+												{user.divisi?.divisi ?? `-`}
 											</TableCell>
 											<TableCell>
 												{formatDate(user.createdOn)}
@@ -411,10 +455,7 @@ export default function UsersPage() {
 				<UserFilterModal
 					isOpen={showFilterModal}
 					filters={filters}
-					onConfirm={(newFilters) => {
-						setFilters(newFilters);
-						setShowFilterModal(false);
-					}}
+					onConfirm={handleFilterApply}
 					onCancel={() => setShowFilterModal(false)}
 				/>
 			)}
