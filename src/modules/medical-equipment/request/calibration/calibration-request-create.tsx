@@ -22,7 +22,6 @@ import Cookies from "js-cookie";
 const formSchema = z.object({
 	medicalEquipment: z.string().min(1),
 	complaint: z.string().optional(),
-	submissionDate: z.string(),
 });
 
 export default function CalibrationRequestCreate() {
@@ -38,7 +37,6 @@ export default function CalibrationRequestCreate() {
 		defaultValues: {
 			medicalEquipment: "",
 			complaint: "",
-			submissionDate: "",
 		},
 	});
 
@@ -113,8 +111,7 @@ export default function CalibrationRequestCreate() {
 		setError(null);
 
 		try {
-			const submissionDate = new Date().toISOString();
-			await createCalibrationRequest({ ...data, submissionDate });
+			await createCalibrationRequest({ ...data });
 			router.push(
 				`/dashboard/medical-equipment/${equipmentId}?success=true`
 			);

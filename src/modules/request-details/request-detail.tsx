@@ -27,7 +27,6 @@ interface Request {
   userId: string;
   medicalEquipment: string;
   complaint: string;
-  submissionDate: string;
   status: string;
   createdBy: string;
   createdOn: string;
@@ -265,7 +264,7 @@ export default function RequestDetail({ id, requestType }: {
             <div>
               <p className="text-sm text-muted-foreground">Submission Date</p>
               <p className="font-medium" data-testid="request-date">
-                {formatDate(request.submissionDate)}
+                {formatDate(request.createdOn)}
               </p>
             </div>
             <div>

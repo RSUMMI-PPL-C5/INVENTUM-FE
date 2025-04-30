@@ -28,7 +28,6 @@ type CalibrationRequest = {
 	userId: string;
 	medicalEquipment: string;
 	complaint: string | null;
-	submissionDate: string;
 	status: string;
 	createdOn: string | null;
 	modifiedOn: string;
