@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import Cookies from "js-cookie";
+import { toast } from "sonner";
 
 const formSchema = z.object({
 	inventorisId: z.string().min(1, { message: "Inventoris ID wajib diisi" }),
@@ -67,7 +68,6 @@ const equipmentStatus = [
 export default function MedicalEquipmentCreate() {
 	const router = useRouter();
 	const [loading, setLoading] = useState(false);
-	const [error, setError] = useState<string | null>(null);
 
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
@@ -84,56 +84,54 @@ export default function MedicalEquipmentCreate() {
 	});
 
 	async function createMedicalEquipment(data: z.infer<typeof formSchema>) {
-		try {
-			const token = Cookies.get("accessToken");
+		const token = Cookies.get("accessToken");
 
-			const response = await fetch(
-				`${process.env.NEXT_PUBLIC_API_URL}/medical-equipment/`,
-				{
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-						Authorization: token ? `Bearer ${token}` : "",
-					},
-					body: JSON.stringify({
-						inventorisId: data.inventorisId,
-						name: data.name,
-						brandName: data.brandName ?? null,
-						modelName: data.modelName ?? null,
-						purchaseDate: data.purchaseDate
-							? data.purchaseDate.toISOString()
-							: null,
-						purchasePrice: data.purchasePrice
-							? Number(data.purchasePrice)
-							: null,
-						status: data.status,
-						vendor: data.vendor ?? null,
-						createdBy: 1, // Default user ID
-					}),
-				}
-			);
-
-			if (!response.ok) {
-				throw new Error("Gagal menambahkan alat medis");
+		const response = await fetch(
+			`${process.env.NEXT_PUBLIC_API_URL}/medical-equipment/`,
+			{
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: token ? `Bearer ${token}` : "",
+				},
+				body: JSON.stringify({
+					inventorisId: data.inventorisId,
+					name: data.name,
+					brandName: data.brandName ?? null,
+					modelName: data.modelName ?? null,
+					purchaseDate: data.purchaseDate
+						? data.purchaseDate.toISOString()
+						: null,
+					purchasePrice: data.purchasePrice
+						? Number(data.purchasePrice)
+						: null,
+					status: data.status,
+					vendor: data.vendor ?? null,
+					createdBy: 1, // Default user ID
+				}),
 			}
+		);
 
-			const result = await response.json();
-			return result;
-		} catch (error) {
-			console.error("Error creating medical equipment:", error);
-			throw error;
+		const result = await response.json();
+
+		if (!response.ok) {
+			toast.error(<>Error membuat alat medis:<br />{result.message}</>);
+			return;
 		}
+
+		toast.success("Alat medis berhasil ditambahkan");
+        router.push("/dashboard/medical-equipment");
+		return result;
 	}
 
 	async function onSubmit(values: z.infer<typeof formSchema>) {
 		setLoading(true);
-		setError(null);
 
 		try {
 			await createMedicalEquipment(values);
-			router.push("/dashboard/medical-equipment?success=create");
 		} catch (error) {
-			setError("Gagal menambahkan alat medis" + error);
+			console.error("Error creating medical equipment:", error);
+			toast.error(error instanceof Error ? <>Error membuat alat medis:<br />{error.message}</> : 'Error membuat alat medis');
 		} finally {
 			setLoading(false);
 		}
@@ -154,8 +152,6 @@ export default function MedicalEquipmentCreate() {
 					Tambah Alat Medis
 				</span>
 			</div>
-
-			{error && <div className="text-red-500 mt-2">{error}</div>}
 
 			<Form {...form}>
 				<form

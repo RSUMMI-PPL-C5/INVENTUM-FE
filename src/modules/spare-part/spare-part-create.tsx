@@ -14,7 +14,7 @@ import {
 	FormLabel,
 	FormMessage,
 } from "@/components/ui/form";
-import { CalendarIcon } from "lucide-react";
+import { ArrowLeft, CalendarIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
@@ -55,10 +55,7 @@ const formSchema = z.object({
 export default function SparePartCreate() {
 	const router = useRouter();
 	const [loading, setLoading] = useState(false);
-	const [error, setError] = useState<string | null>(null);
 	const [locations, setLocations] = useState<Location[]>([]);
-	const [errorMessage, setErrorMessage] = useState("");
-	const [errorModalOpen, setErrorModalOpen] = useState(false);
 
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
@@ -89,60 +86,65 @@ export default function SparePartCreate() {
 				}
 			);
 
-			const data = await response.json();
-			setLocations(data);
-		} catch (err) {
-			console.error("Error fetching locations:", err);
-			setErrorMessage("Failed to load parent divisions.");
-			setErrorModalOpen(true);
+			const result = await response.json();
+
+			if (!response.ok) {
+				toast.error(<>Error fetching locations:<br />{result.message}</>);
+				return;
+			}
+
+			setLocations(result);
+		} catch (error) {
+			console.error("Error fetching locations:", error);
+			toast.error(error instanceof Error ? error.message : 'Error fetching locations');
 		}
 	}
 
 	async function createSparePart(data: z.infer<typeof formSchema>) {
-		try {
-			const token = Cookies.get("accessToken");
+		const token = Cookies.get("accessToken");
 
-			const response = await fetch(
-				`${process.env.NEXT_PUBLIC_API_URL}/spareparts/`,
-				{
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-						Authorization: token ? `Bearer ${token}` : "",
-					},
-					body: JSON.stringify({
-						partsName: data.partsName,
-						purchaseDate: data.purchaseDate.toISOString(),
-						price: Number.parseFloat(data.price),
-						toolLocation: data.toolLocation,
-						toolDate: data.toolDate, // Format as string in yyyy-MM-dd format
-						createdBy: 1, // Assuming current user ID
-					}),
-				}
-			);
-
-			if (!response.ok) {
-				throw new Error("Failed to create spare part");
+		const response = await fetch(
+			`${process.env.NEXT_PUBLIC_API_URL}/spareparts/`,
+			{
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: token ? `Bearer ${token}` : "",
+				},
+				body: JSON.stringify({
+					partsName: data.partsName,
+					purchaseDate: data.purchaseDate.toISOString(),
+					price: Number.parseFloat(data.price),
+					toolLocation: data.toolLocation,
+					toolDate: data.toolDate.toISOString(),
+					createdBy: 1, // Assuming current user ID
+				}),
 			}
+		);
 
-			const result = await response.json();
-			return result;
-		} catch (error) {
-			console.error("Error creating spare part:", error);
-			throw error;
+		const result = await response.json();
+
+		if (!response.ok) {
+			toast.error(<>Error creating spare part:<br />{result.message}</>);
+			return;
 		}
+
+		toast.info("Spare part berhasil dibuat");
+		router.push("/dashboard/spare-part");
 	}
 
 	async function onSubmit(values: z.infer<typeof formSchema>) {
 		setLoading(true);
-		setError(null);
 
 		try {
 			await createSparePart(values);
-			router.push("/dashboard/spare-part?success=create");
 		} catch (error) {
-			console.error("Failed to create spare part:", error);
-			setError("Gagal membuat spare part. Silakan coba lagi.");
+			console.error("Error creating spare part:", error);
+			toast.error(
+				error instanceof Error ? 
+				<>Error creating spare part:<br />{error.message}</> : 
+				'Error creating spare part'
+			);
 		} finally {
 			setLoading(false);
 		}
@@ -150,30 +152,20 @@ export default function SparePartCreate() {
 
 	return (
 		<>
-			<span className="text-header-h5 font-bold font-poppins">
-				Tambah Spare Part
-			</span>
+			<div className="flex flex-col items-start gap-4">
+				<Button
+					variant="outline"
+					onClick={() => router.push("/dashboard/spare-part")}
+					className="mr-4"
+				>
+					<ArrowLeft className="mr-2 h-4 w-4" />
+					Kembali
+				</Button>
+				<span className="text-header-h5 font-bold font-poppins">
+					Tambah Spare Part
+				</span>
+			</div>
 
-			{error && <div className="text-red-500 mt-2">{error}</div>}
-			{errorModalOpen && (
-				<div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
-					<span className="block sm:inline">{errorMessage}</span>
-					<span
-						className="absolute top-0 bottom-0 right-0 px-4 py-3"
-						onClick={() => setErrorModalOpen(false)}
-					>
-						<svg
-							className="fill-current h-6 w-6 text-red-500"
-							role="button"
-							xmlns="http://www.w3.org/2000/svg"
-							viewBox="0 0 20 20"
-						>
-							<title>Close</title>
-							<path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z" />
-						</svg>
-					</span>
-				</div>
-			)}
 			<Form {...form}>
 				<form
 					onSubmit={form.handleSubmit(onSubmit)}

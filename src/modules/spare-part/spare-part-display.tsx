@@ -1,8 +1,6 @@
 /* eslint-disable */
 "use client";
 
-import type React from "react";
-
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Filter, Plus, Edit, Search, Trash2 } from "lucide-react";
@@ -19,6 +17,7 @@ import {
 import { toast } from "sonner";
 import Cookies from "js-cookie";
 import { PaginationControls } from "@/components/ui/pagination-control";
+import DeleteDialog from "@/components/general/delete-dialog";
 
 interface Sparepart {
 	id: string;
@@ -35,23 +34,53 @@ interface PaginationMeta {
 	totalPages: number;
 }
 
-interface SparepartResponse {
-	data: Sparepart[];
-	meta: PaginationMeta;
-}
-
 export default function SparepartDisplay() {
+	const router = useRouter();
+	const searchParams = useSearchParams();
+
+	// Initialize state from URL params
 	const [spareparts, setSpareparts] = useState<Sparepart[]>([]);
 	const [paginationMeta, setPaginationMeta] = useState<PaginationMeta>({
 		total: 0,
-		page: 1,
+		page: searchParams.get("page") ? parseInt(searchParams.get("page") as string) : 1,
 		limit: 10,
 		totalPages: 1,
 	});
 	const [loading, setLoading] = useState(true);
-	const [search, setSearch] = useState("");
-	const router = useRouter();
-	const searchParams = useSearchParams();
+	const [search, setSearch] = useState(searchParams.get("search") || "");
+	
+	// Delete dialog state
+	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+	const [sparepartToDelete, setSparepartToDelete] = useState<string | null>(null);
+	const [isDeleting, setIsDeleting] = useState(false);
+
+	// Function to update URL with current search and pagination
+	const updateURLParams = (newParams: Record<string, string | string[] | null | undefined>) => {
+		const params = new URLSearchParams(searchParams.toString());
+		
+		// Clear existing params to avoid duplicates
+		["search", "page", "partsName"].forEach(param => {
+			params.delete(param);
+		});
+
+		// Add new params
+		Object.entries(newParams).forEach(([key, value]) => {
+			if (value === null || value === undefined || value === "") {
+				return;
+			}
+			
+			if (Array.isArray(value)) {
+				value.forEach(val => {
+					if (val) params.append(key, val);
+				});
+			} else {
+				params.set(key, value);
+			}
+		});
+
+		// Update URL without refreshing page
+		router.push(`/dashboard/spare-part?${params.toString()}`, { scroll: false });
+	};
 
 	useEffect(() => {
 		fetchSpareparts();
@@ -78,8 +107,9 @@ export default function SparepartDisplay() {
 			apiParams.set("limit", paginationMeta.limit.toString());
 
 			// Add search param if provided
-			if (search) {
-				apiParams.set("partsName", search);
+			const searchParam = searchParams.get("search");
+			if (searchParam) {
+				apiParams.set("partsName", searchParam);
 			}
 
 			const url = `${
@@ -125,16 +155,20 @@ export default function SparepartDisplay() {
 		}
 	};
 
-	const handleDelete = async (id: string) => {
-		if (!confirm("Apakah Anda yakin ingin menghapus suku cadang ini?")) {
-			return;
-		}
+	const confirmDelete = (id: string) => {
+		setSparepartToDelete(id);
+		setShowDeleteDialog(true);
+	};
 
+	const handleDelete = async () => {
+		if (!sparepartToDelete) return;
+
+		setIsDeleting(true);
 		try {
 			const token = Cookies.get("accessToken");
 
 			const response = await fetch(
-				`${process.env.NEXT_PUBLIC_API_URL}/spareparts/${id}`,
+				`${process.env.NEXT_PUBLIC_API_URL}/spareparts/${sparepartToDelete}`,
 				{
 					method: "DELETE",
 					headers: {
@@ -145,15 +179,36 @@ export default function SparepartDisplay() {
 			);
 
 			if (!response.ok) {
-				throw new Error("Gagal menghapus suku cadang");
+				const errorData = await response.json();
+				toast.error(<>Error deleting spare part:<br />{errorData.message || "Unknown error"}</>);
+				return;
 			}
 
 			// Refresh the list
 			fetchSpareparts();
 			toast.success("Suku cadang berhasil dihapus");
 		} catch (error) {
-			toast.error((error as Error).message);
+			console.error("Error deleting spare part:", error);
+			toast.error(error instanceof Error ? error.message : "Error deleting spare part");
+		} finally {
+			setIsDeleting(false);
+			setShowDeleteDialog(false);
+			setSparepartToDelete(null);
 		}
+	};
+
+	const handleSearchChange = (value: string) => {
+		setSearch(value);
+		updateURLParams({
+			search: value || null,
+			page: "1"
+		});
+	};
+
+	const handlePageChange = (page: number) => {
+		updateURLParams({
+			page: page.toString(),
+		});
 	};
 
 	const formatCurrency = (value: number) => {
@@ -188,22 +243,6 @@ export default function SparepartDisplay() {
 
 	const navigateToCreate = () => {
 		router.push("/dashboard/spare-part/create");
-	};
-
-	const handleSearchSubmit = (e: React.FormEvent) => {
-		e.preventDefault();
-		fetchSpareparts();
-	};
-
-	const handlePageChange = (page: number) => {
-		// Create a new URLSearchParams object from the current URL
-		const params = new URLSearchParams(searchParams.toString());
-
-		// Update the page parameter
-		params.set("page", page.toString());
-
-		// Navigate to the new URL
-		router.push(`/dashboard/spare-part?${params.toString()}`);
 	};
 
 	return (
@@ -248,11 +287,13 @@ export default function SparepartDisplay() {
 						type="text"
 						placeholder="Cari suku cadang..."
 						value={search}
-						onChange={(e) => setSearch(e.target.value)}
+						onChange={(e) => handleSearchChange(e.target.value)}
 						className="w-full pl-10"
+						data-testid="search-input"
 					/>
 				</div>
 				<Button
+					type="button"
 					variant="outline"
 					onClick={() =>
 						toast.error("Filter functionality coming soon")
@@ -264,11 +305,16 @@ export default function SparepartDisplay() {
 			</div>
 
 			{/* Loading State */}
-			{loading ? (
+			{loading && (
 				<div className="flex justify-center p-8">
-					<p>Loading...</p>
+					<div className="animate-pulse text-center">
+						Memuat Suku Cadang...
+					</div>
 				</div>
-			) : (
+			)}
+
+			{/* Spareparts Table */}
+			{!loading && (
 				<>
 					<div className="border rounded-lg overflow-hidden">
 						<Table>
@@ -337,7 +383,7 @@ export default function SparepartDisplay() {
 														variant="destructive"
 														onClick={(e) => {
 															e.stopPropagation();
-															handleDelete(
+															confirmDelete(
 																sparepart.id
 															);
 														}}
@@ -372,6 +418,18 @@ export default function SparepartDisplay() {
 					/>
 				</>
 			)}
+
+			{/* Delete Confirmation Dialog */}
+			<DeleteDialog
+				open={showDeleteDialog}
+				onOpenChange={setShowDeleteDialog}
+				title="Hapus Suku Cadang"
+				description="Apakah Anda yakin ingin menghapus suku cadang ini? Tindakan ini tidak dapat dibatalkan."
+				onConfirm={handleDelete}
+				isDeleting={isDeleting}
+				deleteButtonText="Hapus"
+				cancelButtonText="Batal"
+			/>
 		</div>
 	);
 }

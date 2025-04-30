@@ -21,6 +21,7 @@ import MedicalEquipmentFilterModal, {
 import { toast } from "sonner";
 import Cookies from "js-cookie";
 import { PaginationControls } from "@/components/ui/pagination-control";
+import DeleteDialog from "@/components/general/delete-dialog";
 
 type MedicalEquipment = {
 	id: string;
@@ -43,165 +44,230 @@ interface PaginationMeta {
 	totalPages: number;
 }
 
-interface MedicalEquipmentResponse {
-	data: MedicalEquipment[];
-	meta: PaginationMeta;
-}
-
 export default function MedicalEquipmentPage() {
-	const [medicalEquipments, setMedicalEquipments] = useState<
-		MedicalEquipment[]
-	>([]);
+	const router = useRouter();
+	const searchParams = useSearchParams();
+
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+    const [equipmentToDelete, setEquipmentToDelete] = useState<string | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+	
+	// Initialize state from URL params
+	const [medicalEquipments, setMedicalEquipments] = useState<MedicalEquipment[]>([]);
 	const [paginationMeta, setPaginationMeta] = useState<PaginationMeta>({
 		total: 0,
-		page: 1,
+		page: searchParams.get("page") ? parseInt(searchParams.get("page") as string) : 1,
 		limit: 10,
 		totalPages: 1,
 	});
-	const [search, setSearch] = useState("");
+	const [search, setSearch] = useState(searchParams.get("search") || "");
 	const [showFilterModal, setShowFilterModal] = useState(false);
-	const [filters, setFilters] = useState<Filters>({
-		status: [],
-		createdOnStart: null,
-		createdOnEnd: null,
-		modifiedOnStart: null,
-		modifiedOnEnd: null,
-	});
 	const [loading, setLoading] = useState(true);
-	const router = useRouter();
-	const searchParams = useSearchParams();
+	
+	// Initialize filters from URL params
+	const [filters, setFilters] = useState<Filters>(() => {
+		const initialFilters: Filters = {
+			status: searchParams.getAll("status"),
+			createdOnStart: searchParams.get("createdOnStart") 
+				? new Date(searchParams.get("createdOnStart") as string) 
+				: null,
+			createdOnEnd: searchParams.get("createdOnEnd") 
+				? new Date(searchParams.get("createdOnEnd") as string) 
+				: null,
+			modifiedOnStart: searchParams.get("modifiedOnStart") 
+				? new Date(searchParams.get("modifiedOnStart") as string) 
+				: null,
+			modifiedOnEnd: searchParams.get("modifiedOnEnd") 
+				? new Date(searchParams.get("modifiedOnEnd") as string) 
+				: null,
+		};
+		return initialFilters;
+	});
+
+	// Function to update URL with current filters, search and pagination
+	const updateURLParams = (newParams: Record<string, string | string[] | null | undefined>) => {
+		const params = new URLSearchParams(searchParams.toString());
+		
+		// Clear existing filter params to avoid duplicates
+		["search", "page", "status", "createdOnStart", "createdOnEnd", "modifiedOnStart", "modifiedOnEnd"].forEach(param => {
+			params.delete(param);
+		});
+
+		// Add new params
+		Object.entries(newParams).forEach(([key, value]) => {
+			if (value === null || value === undefined || value === "") {
+				return;
+			}
+			
+			if (Array.isArray(value)) {
+				value.forEach(val => {
+					if (val) params.append(key, val);
+				});
+			} else {
+				params.set(key, value);
+			}
+		});
+
+		// Update URL without refreshing page
+		router.push(`/dashboard/medical-equipment?${params.toString()}`, { scroll: false });
+	};
+
+	const buildQueryParams = (filters: Filters): string => {
+		const params = new URLSearchParams();
+		
+		filters.status.forEach((status) => {
+			params.append("status", status);
+		});
+
+		if (filters.createdOnStart) {
+			params.append(
+				"createdOnStart",
+				format(filters.createdOnStart, "yyyy-MM-dd")
+			);
+		}
+		if (filters.createdOnEnd) {
+			params.append(
+				"createdOnEnd",
+				format(filters.createdOnEnd, "yyyy-MM-dd")
+			);
+		}
+
+		if (filters.modifiedOnStart) {
+			params.append(
+				"modifiedOnStart",
+				format(filters.modifiedOnStart, "yyyy-MM-dd")
+			);
+		}
+
+		if (filters.modifiedOnEnd) {
+			params.append(
+				"modifiedOnEnd",
+				format(filters.modifiedOnEnd, "yyyy-MM-dd")
+			);
+		}
+
+		return params.toString();
+	};
 
 	const fetchMedicalEquipments = async () => {
 		try {
 			setLoading(true);
 			const token = Cookies.get("accessToken");
+			const queryParams = buildQueryParams(filters);
 
-			// Create a new URLSearchParams object for the API request
-			const apiParams = new URLSearchParams();
-
-			// Add pagination parameters
 			const currentPage = searchParams.get("page")
 				? Number.parseInt(searchParams.get("page") as string)
 				: 1;
-			apiParams.set("page", currentPage.toString());
-			apiParams.set("limit", paginationMeta.limit.toString());
 
-			// Add search parameter if exists
-			if (search) {
-				apiParams.set("search", search);
+			let url = `${process.env.NEXT_PUBLIC_API_URL}/medical-equipment`;
+
+			const paginationParams = `page=${currentPage}&limit=${paginationMeta.limit}`;
+
+			if (queryParams || search || paginationParams) {
+				const searchParam = search ? `search=${search}` : "";
+				url += `?${[queryParams, searchParam, paginationParams]
+					.filter(Boolean)
+					.join("&")}`;
 			}
-
-			// Add filter parameters
-			if (filters.status.length > 0) {
-				filters.status.forEach((status) => {
-					apiParams.append("status", status);
-				});
-			}
-
-			if (filters.createdOnStart) {
-				apiParams.set(
-					"createdOnStart",
-					format(filters.createdOnStart, "yyyy-MM-dd")
-				);
-			}
-
-			if (filters.createdOnEnd) {
-				apiParams.set(
-					"createdOnEnd",
-					format(filters.createdOnEnd, "yyyy-MM-dd")
-				);
-			}
-
-			if (filters.modifiedOnStart) {
-				apiParams.set(
-					"modifiedOnStart",
-					format(filters.modifiedOnStart, "yyyy-MM-dd")
-				);
-			}
-
-			if (filters.modifiedOnEnd) {
-				apiParams.set(
-					"modifiedOnEnd",
-					format(filters.modifiedOnEnd, "yyyy-MM-dd")
-				);
-			}
-
-			const url = `${
-				process.env.NEXT_PUBLIC_API_URL
-			}/medical-equipment?${apiParams.toString()}`;
 
 			const response = await fetch(url, {
 				headers: {
-					Authorization: token ? `Bearer ${token}` : "",
 					"Content-Type": "application/json",
+                    Authorization: token ? `Bearer ${token}` : "",
 				},
 			});
 
-			if (!response.ok) {
-				const res = await response.json();
-				throw new Error("Failed to fetch medical equipments");
-			}
+			const result = await response.json();
 
-			const responseData = await response.json();
+            if (!response.ok) {
+                toast.error(<>Error fetching medical equipment:<br />{result.message}</>);                
+                return;
+            }
 
-			// Check if the response has the expected structure
-			if (responseData.data && Array.isArray(responseData.data)) {
-				setMedicalEquipments(responseData.data);
+			setMedicalEquipments(result.data);
+			setPaginationMeta(result.meta);
 
-				// Make sure we're correctly handling the pagination metadata
-				if (responseData.meta) {
-					setPaginationMeta(responseData.meta);
-				}
-			} else {
-				// If the API returns data directly without the expected structure
-				setMedicalEquipments(
-					Array.isArray(responseData) ? responseData : []
-				);
-				console.warn(
-					"API response doesn't have the expected structure with data and meta fields"
-				);
-			}
-		} catch (err) {
-			console.error("Error fetching medical equipments:", err);
-			toast.error("Failed to fetch medical equipments");
+		} catch (error) {
+			console.error("Error fetching medical equipment:", error);
+            toast.error(error instanceof Error ? error.message : 'Error fetching medical equipment');
 		} finally {
 			setLoading(false);
 		}
 	};
 
-	const handleDelete = async (equipmentId: string) => {
-		if (!confirm("Apakah Anda yakin ingin menghapus alat medis ini?")) {
-			return;
-		}
+	const confirmDelete = (equipmentId: string) => {
+        setEquipmentToDelete(equipmentId);
+        setShowDeleteDialog(true);
+    };
+    
+    const handleDelete = async () => {
+        if (!equipmentToDelete) return;
+    
+        setIsDeleting(true); // Start deletion process
+        try {
+            const token = Cookies.get("accessToken");
+    
+            const response = await fetch(
+                `${process.env.NEXT_PUBLIC_API_URL}/medical-equipment/${equipmentToDelete}`,
+                {
+                    method: "DELETE",
+                    headers: {
+                        Authorization: token ? `Bearer ${token}` : "",
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+    
+            const result = await response.json();
+    
+            if (!response.ok) {
+                toast.error(<>Error deleting medical equipment:<br />{result.message}</>);
+                return;
+            }
+    
+            fetchMedicalEquipments();
+            toast.info("Alat medis berhasil dihapus");
+        } catch (error) {
+            console.error("Error deleting medical equipment:", error);
+            toast.error(error instanceof Error ? error.message : "Error deleting medical equipment");
+        } finally {
+            setIsDeleting(false);
+            setShowDeleteDialog(false);
+            setEquipmentToDelete(null);
+        }
+    };
 
-		try {
-			const token = Cookies.get("accessToken");
+	const handleSearchChange = (value: string) => {
+		setSearch(value);
+		updateURLParams({
+			search: value || null,
+			page: "1"
+		});
+	};
 
-			const response = await fetch(
-				`${process.env.NEXT_PUBLIC_API_URL}/medical-equipment/${equipmentId}`,
-				{
-					method: "DELETE",
-					headers: {
-						Authorization: token ? `Bearer ${token}` : "",
-						"Content-Type": "application/json",
-					},
-				}
-			);
+	const handleFilterApply = (newFilters: Filters) => {
+		setFilters(newFilters);
+		setShowFilterModal(false);
+		
+		updateURLParams({
+			status: newFilters.status,
+			createdOnStart: newFilters.createdOnStart ? format(newFilters.createdOnStart, "yyyy-MM-dd") : null,
+			createdOnEnd: newFilters.createdOnEnd ? format(newFilters.createdOnEnd, "yyyy-MM-dd") : null,
+			modifiedOnStart: newFilters.modifiedOnStart ? format(newFilters.modifiedOnStart, "yyyy-MM-dd") : null,
+			modifiedOnEnd: newFilters.modifiedOnEnd ? format(newFilters.modifiedOnEnd, "yyyy-MM-dd") : null,
+			page: "1", 
+		});
+	};
 
-			if (!response.ok) {
-				throw new Error("Gagal menghapus alat medis");
-			}
-
-			fetchMedicalEquipments();
-			toast.info("Alat medis berhasil dihapus");
-		} catch {
-			toast.error("Gagal menghapus alat medis");
-		}
+	const handlePageChange = (page: number) => {
+		updateURLParams({
+			page: page.toString(),
+		});
 	};
 
 	useEffect(() => {
 		fetchMedicalEquipments();
-	}, [search, filters, searchParams]);
+	}, [searchParams]);
 
 	const hasRun = useRef(false);
 
@@ -263,17 +329,6 @@ export default function MedicalEquipmentPage() {
 		router.push(`/dashboard/medical-equipment/create`);
 	};
 
-	const handlePageChange = (page: number) => {
-		// Create a new URLSearchParams object from the current URL
-		const params = new URLSearchParams(searchParams.toString());
-
-		// Update the page parameter
-		params.set("page", page.toString());
-
-		// Navigate to the new URL
-		router.push(`/dashboard/medical-equipment?${params.toString()}`);
-	};
-
 	return (
 		<div className="space-y-6 font-plus-jakarta-sans">
 			<h1 className="text-header-h5 font-bold font-poppins">
@@ -317,7 +372,7 @@ export default function MedicalEquipmentPage() {
 						type="text"
 						placeholder="Cari alat medis ..."
 						value={search}
-						onChange={(e) => setSearch(e.target.value)}
+						onChange={(e) => handleSearchChange(e.target.value)}
 						className="w-full pl-10"
 						data-testid="search-input"
 					/>
@@ -352,7 +407,7 @@ export default function MedicalEquipmentPage() {
 									<TableHead>Status</TableHead>
 									<TableHead>Harga</TableHead>
 									<TableHead>Tanggal Pembelian</TableHead>
-									<TableHead className="text-center">
+									<TableHead className="text-right">
 										Aksi
 									</TableHead>
 								</TableRow>
@@ -420,9 +475,7 @@ export default function MedicalEquipmentPage() {
 														variant="destructive"
 														onClick={(e) => {
 															e.stopPropagation();
-															handleDelete(
-																equipment.id
-															);
+															confirmDelete(equipment.id);
 														}}
 														data-testid={`delete-button-${equipment.id}`}
 													>
@@ -461,13 +514,21 @@ export default function MedicalEquipmentPage() {
 				<MedicalEquipmentFilterModal
 					isOpen={showFilterModal}
 					filters={filters}
-					onConfirm={(newFilters) => {
-						setFilters(newFilters);
-						setShowFilterModal(false);
-					}}
+					onConfirm={handleFilterApply}
 					onCancel={() => setShowFilterModal(false)}
 				/>
 			)}
+
+            <DeleteDialog
+                open={showDeleteDialog}
+                onOpenChange={setShowDeleteDialog}
+                title="Hapus Alat Medis"
+                description="Apakah Anda yakin ingin menghapus alat medis ini? Tindakan ini tidak dapat dibatalkan."
+                onConfirm={handleDelete}
+                isDeleting={isDeleting}
+                deleteButtonText="Hapus"
+                cancelButtonText="Batal"
+            />
 		</div>
 	);
 }

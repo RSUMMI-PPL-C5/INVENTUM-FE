@@ -21,7 +21,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { CalendarIcon } from "lucide-react";
+import { ArrowLeft, CalendarIcon } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
 import { format, isValid, parseISO } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import Cookies from "js-cookie";
+import { toast } from "sonner";
 
 // Schema validasi menggunakan Zod
 const formSchema = z.object({
@@ -72,8 +73,7 @@ export default function MedicalEquipmentEdit() {
 	const router = useRouter();
 	const { id: equipmentId } = useParams();
 	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null);
-	const [updateError, setUpdateError] = useState<string | null>(null);
+	const [submitting, setSubmitting] = useState(false);
 
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
@@ -100,6 +100,8 @@ export default function MedicalEquipmentEdit() {
 				);
 
 				if (!response.ok) {
+					const errorData = await response.json();
+					toast.error(<>Error mengambil data alat medis:<br />{errorData.message || "Gagal mengambil data"}</>);
 					throw new Error("Failed to fetch medical equipment data");
 				}
 
@@ -136,7 +138,7 @@ export default function MedicalEquipmentEdit() {
 				});
 			} catch (error) {
 				console.error("Error fetching medical equipment data:", error);
-				setError("Failed to fetch medical equipment data");
+				toast.error(error instanceof Error ? <>Error mengambil data:<br />{error.message}</> : 'Error mengambil data alat medis');
 			} finally {
 				setLoading(false);
 			}
@@ -146,61 +148,63 @@ export default function MedicalEquipmentEdit() {
 	}, [equipmentId, form]);
 
 	async function updateMedicalEquipment(data: z.infer<typeof formSchema>) {
-		try {
-			const token = Cookies.get("accessToken");
+		const token = Cookies.get("accessToken");
 
-			const headers: Record<string, string> = {
-				"Content-Type": "application/json",
-			};
+		const headers: Record<string, string> = {
+			"Content-Type": "application/json",
+		};
 
-			if (token) {
-				headers.Authorization = `Bearer ${token}`;
-			}
-
-			const response = await fetch(
-				`${process.env.NEXT_PUBLIC_API_URL}/medical-equipment/${equipmentId}`,
-				{
-					method: "PUT",
-					headers,
-					body: JSON.stringify({
-						inventorisId: data.inventorisId,
-						name: data.name,
-						brandName: data.brandName || null,
-						modelName: data.modelName || null,
-						purchaseDate: data.purchaseDate
-							? data.purchaseDate.toISOString()
-							: null,
-						purchasePrice: data.purchasePrice
-							? Number(data.purchasePrice)
-							: null,
-						status: data.status,
-						vendor: data.vendor || null,
-						modifiedBy: 1, // Assuming current user ID
-					}),
-				}
-			);
-
-			if (!response.ok) {
-				throw new Error("Failed to update medical equipment");
-			}
-
-			const result = await response.json();
-			return result;
-		} catch (error) {
-			console.error("Error updating medical equipment:", error);
-			throw error;
+		if (token) {
+			headers.Authorization = `Bearer ${token}`;
 		}
+
+		const response = await fetch(
+			`${process.env.NEXT_PUBLIC_API_URL}/medical-equipment/${equipmentId}`,
+			{
+				method: "PUT",
+				headers,
+				body: JSON.stringify({
+					inventorisId: data.inventorisId,
+					name: data.name,
+					brandName: data.brandName || null,
+					modelName: data.modelName || null,
+					purchaseDate: data.purchaseDate
+						? data.purchaseDate.toISOString()
+						: null,
+					purchasePrice: data.purchasePrice
+						? Number(data.purchasePrice)
+						: null,
+					status: data.status,
+					vendor: data.vendor || null,
+					modifiedBy: 1, // Assuming current user ID
+				}),
+			}
+		);
+
+		const result = await response.json();
+
+		if (!response.ok) {
+			toast.error(<>Error mengubah data alat medis:<br />{result.message || "Gagal mengubah data"}</>);
+			return;
+		}
+
+		toast.success("Data alat medis berhasil diperbarui");
+		return result;
 	}
 
 	async function onSubmit(values: z.infer<typeof formSchema>) {
+		setSubmitting(true);
+		
 		try {
-			await updateMedicalEquipment(values);
-			router.push("/dashboard/medical-equipment?success=update"); // Redirect setelah simpan
+			const result = await updateMedicalEquipment(values);
+			if (result) {
+				router.push("/dashboard/medical-equipment");
+			}
 		} catch (error) {
 			console.error("Failed to update medical equipment:", error);
-			setUpdateError(
-				"Gagal mengubah data alat medis. Silakan coba lagi."
-			);
+			toast.error(error instanceof Error ? <>Error mengubah data:<br />{error.message}</> : 'Error mengubah data alat medis');
+		} finally {
+			setSubmitting(false);
 		}
 	}
 
@@ -208,19 +212,22 @@ export default function MedicalEquipmentEdit() {
 		return <div>Loading...</div>;
 	}
 
-	if (error) {
-		return <div>{error}</div>;
-	}
-
 	return (
 		<>
-			<span className="text-header-h5 font-bold font-poppins">
-				Ubah Alat Medis
-			</span>
+			<div className="flex flex-col items-start gap-4">
+				<Button
+					variant="outline"
+					onClick={() => router.push("/dashboard/medical-equipment")}
+					className="mr-4"
+				>
+					<ArrowLeft className="mr-2 h-4 w-4" />
+					Kembali
+				</Button>
+				<span className="text-header-h5 font-bold font-poppins">
+					Ubah Alat Medis
+				</span>
+			</div>
 
-			{updateError && (
-				<div className="text-red-500 mt-2">{updateError}</div>
-			)}
 			<Form {...form}>
 				<form
 					onSubmit={form.handleSubmit(onSubmit)}
@@ -446,7 +453,9 @@ export default function MedicalEquipmentEdit() {
 						>
 							Batalkan
 						</Button>
-						<Button type="submit">Simpan</Button>
+						<Button type="submit" disabled={submitting}>
+							{submitting ? "Menyimpan..." : "Simpan"}
+						</Button>
 					</div>
 				</form>
 			</Form>

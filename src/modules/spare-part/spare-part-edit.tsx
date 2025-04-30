@@ -14,9 +14,9 @@ import {
 	FormLabel,
 	FormMessage,
 } from "@/components/ui/form";
-import { CalendarIcon } from "lucide-react";
+import { ArrowLeft, CalendarIcon } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
-import { format, isValid } from "date-fns";
+import { format, isValid, parse } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import {
 	Popover,
@@ -25,6 +25,19 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import Cookies from "js-cookie";
+import { toast } from "sonner";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+
+interface Location {
+	id: number;
+	divisi: string;
+}
 
 const formSchema = z.object({
 	partsName: z.string().min(1, { message: "Nama spare part wajib diisi" }),
@@ -43,114 +56,158 @@ export default function SparePartEdit() {
 	const router = useRouter();
 	const { id: sparePartId } = useParams();
 	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null);
-	const [updateError, setUpdateError] = useState<string | null>(null);
+	const [submitting, setSubmitting] = useState(false);
+	const [locations, setLocations] = useState<Location[]>([]);
 
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
+		defaultValues: {
+			partsName: "",
+			price: "",
+			toolLocation: "",
+			createdOn: "",
+		}
 	});
 
 	useEffect(() => {
-		async function fetchSparePart() {
-			try {
-				const token = Cookies.get("accessToken");
-
-				const headers: Record<string, string> = {
-					"Content-Type": "application/json",
-				};
-
-				if (token) {
-					headers.Authorization = `Bearer ${token}`;
-				}
-
-				const response = await fetch(
-					`${process.env.NEXT_PUBLIC_API_URL}/spareparts/${sparePartId}`,
-					{
-						headers,
-					}
-				);
-
-				if (!response.ok) {
-					throw new Error("Failed to fetch spare part data");
-				}
-
-				const { data: sparePartData } = await response.json();
-
-				const createdDate = new Date(sparePartData.createdOn);
-				const formattedDate = isValid(createdDate)
-					? format(createdDate, "dd-MM-yyyy")
-					: "Invalid date";
-
-				form.reset({
-					partsName: sparePartData.partsName,
-					purchaseDate: isValid(sparePartData.purchaseDate)
-						? sparePartData.purchaseDate
-						: undefined,
-					price: sparePartData.price.toString(),
-					toolLocation: sparePartData.toolLocation,
-					toolDate: isValid(sparePartData.toolDate)
-						? sparePartData.toolDate
-						: undefined,
-					createdOn: formattedDate,
-				});
-			} catch (error) {
-				console.error("Error fetching spare part data:", error);
-				setError("Failed to fetch spare part data");
-			} finally {
-				setLoading(false);
-			}
-		}
-
+		fetchAllLocations();
 		fetchSparePart();
-	}, [sparePartId, form]);
+	}, [sparePartId]);
 
-	async function updateSparePart(data: z.infer<typeof formSchema>) {
+	async function fetchAllLocations() {
 		try {
 			const token = Cookies.get("accessToken");
 
-			const headers: Record<string, string> = {
-				"Content-Type": "application/json",
-			};
+			const response = await fetch(
+				`${process.env.NEXT_PUBLIC_API_URL}/divisi/all`,
+				{
+					method: "GET",
+					headers: {
+						"Content-Type": "application/json",
+						Authorization: token ? `Bearer ${token}` : "",
+					},
+				}
+			);
 
-			if (token) {
-				headers.Authorization = `Bearer ${token}`;
+			const result = await response.json();
+
+			if (!response.ok) {
+				toast.error(<>Error fetching locations:<br />{result.message}</>);
+				return;
 			}
+
+			setLocations(result);
+		} catch (error) {
+			console.error("Error fetching locations:", error);
+			toast.error(error instanceof Error ? error.message : 'Error fetching locations');
+		}
+	}
+
+	async function fetchSparePart() {
+		try {
+			const token = Cookies.get("accessToken");
 
 			const response = await fetch(
 				`${process.env.NEXT_PUBLIC_API_URL}/spareparts/${sparePartId}`,
 				{
-					method: "PUT",
-					headers,
-					body: JSON.stringify({
-						partsName: data.partsName,
-						purchaseDate: data.purchaseDate.toISOString(),
-						price: Number.parseFloat(data.price),
-						toolLocation: data.toolLocation,
-						toolDate: format(data.toolDate, "dd-MM-yyy"), // Format as string in dd-MM-yyy format
-						modifiedBy: 1, // Assuming current user ID
-					}),
+					method: "GET",
+					headers: {
+						"Content-Type": "application/json",
+						Authorization: token ? `Bearer ${token}` : "",
+					},
 				}
 			);
 
+			const result = await response.json();
+
 			if (!response.ok) {
-				throw new Error("Failed to update spare part");
+				toast.error(<>Error fetching spare part data:<br />{result.message}</>);
+				setLoading(false);
+				return;
 			}
 
-			const result = await response.json();
-			return result;
+			const { data: sparePartData } = result;
+			console.log("Fetched spare part data:", sparePartData);
+
+			// Parse dates more safely
+			const purchaseDate = new Date(sparePartData.purchaseDate);
+			const toolDate = new Date(sparePartData.toolDate);
+			const createdDate = new Date(sparePartData.createdOn);
+			
+			const formattedCreatedDate = isValid(createdDate)
+				? format(createdDate, "dd-MM-yyyy")
+				: "Invalid date";
+
+			// Set form values with explicit type handling
+			form.reset({
+				partsName: sparePartData.partsName || "",
+				purchaseDate: isValid(purchaseDate) ? purchaseDate : new Date(),
+				price: (sparePartData.price || 0).toString(),
+				toolLocation: sparePartData.toolLocation || "",
+				toolDate: isValid(toolDate) ? toolDate : new Date(),
+				createdOn: formattedCreatedDate,
+			});
+            
+			console.log("Form values after reset:", form.getValues());
 		} catch (error) {
-			console.error("Error updating spare part:", error);
-			throw error;
+			console.error("Error fetching spare part data:", error);
+			toast.error(
+				error instanceof Error ? 
+				<>Error fetching spare part data:<br />{error.message}</> : 
+				'Error fetching spare part data'
+			);
+		} finally {
+			setLoading(false);
 		}
 	}
 
+	async function updateSparePart(data: z.infer<typeof formSchema>) {
+		const token = Cookies.get("accessToken");
+
+		const response = await fetch(
+			`${process.env.NEXT_PUBLIC_API_URL}/spareparts/${sparePartId}`,
+			{
+				method: "PUT",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: token ? `Bearer ${token}` : "",
+				},
+				body: JSON.stringify({
+					partsName: data.partsName,
+					purchaseDate: data.purchaseDate.toISOString(),
+					price: Number.parseFloat(data.price),
+					toolLocation: data.toolLocation,
+					toolDate: data.toolDate.toISOString(),
+					modifiedBy: 1, // Assuming current user ID
+				}),
+			}
+		);
+
+		const result = await response.json();
+
+		if (!response.ok) {
+			toast.error(<>Error updating spare part:<br />{result.message}</>);
+			return;
+		}
+
+		toast.info("Spare part berhasil diperbarui");
+		router.push("/dashboard/spare-part");
+	}
+
 	async function onSubmit(values: z.infer<typeof formSchema>) {
+		setSubmitting(true);
+
 		try {
 			await updateSparePart(values);
-			router.push("/dashboard/spare-part?success=update"); // Redirect setelah simpan
 		} catch (error) {
-			console.error("Failed to update spare part:", error);
-			setUpdateError("Failed to update spare part");
+			console.error("Error updating spare part:", error);
+			toast.error(
+				error instanceof Error ? 
+				<>Error updating spare part:<br />{error.message}</> : 
+				'Error updating spare part'
+			);
+		} finally {
+			setSubmitting(false);
 		}
 	}
 
@@ -158,17 +215,22 @@ export default function SparePartEdit() {
 		return <div>Loading...</div>;
 	}
 
-	if (error) {
-		return <div>{error}</div>;
-	}
-
 	return (
 		<>
-			<span className="text-header-h5 font-bold font-poppins">
-				Ubah Spare Part
-			</span>
+			<div className="flex flex-col items-start gap-4">
+				<Button
+					variant="outline"
+					onClick={() => router.push("/dashboard/spare-part")}
+					className="mr-4"
+				>
+					<ArrowLeft className="mr-2 h-4 w-4" />
+					Kembali
+				</Button>
+				<span className="text-header-h5 font-bold font-poppins">
+					Ubah Spare Part
+				</span>
+			</div>
 
-			{updateError && <div className="text-red-500">{updateError}</div>}
 			<Form {...form}>
 				<form
 					onSubmit={form.handleSubmit(onSubmit)}
@@ -209,10 +271,7 @@ export default function SparePartEdit() {
 												)}
 											>
 												{field.value ? (
-													format(
-														field.value,
-														"yyyy-MM-dd"
-													)
+													format(field.value, "PPP")
 												) : (
 													<span>Pilih tanggal</span>
 												)}
@@ -264,12 +323,27 @@ export default function SparePartEdit() {
 						render={({ field }) => (
 							<FormItem>
 								<FormLabel>Lokasi Alat</FormLabel>
-								<FormControl>
-									<Input
-										{...field}
-										placeholder="Masukkan lokasi alat"
-									/>
-								</FormControl>
+								<Select
+									onValueChange={field.onChange}
+									value={field.value || ""}
+									defaultValue={field.value}
+								>
+									<FormControl>
+										<SelectTrigger>
+											<SelectValue placeholder="Pilih Lokasi Alat" />
+										</SelectTrigger>
+									</FormControl>
+									<SelectContent>
+										{locations.map((location) => (
+											<SelectItem
+												key={location.id}
+												value={location.divisi}
+											>
+												{location.divisi}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
 								<FormMessage />
 							</FormItem>
 						)}
@@ -294,10 +368,7 @@ export default function SparePartEdit() {
 											>
 												{field.value &&
 												isValid(field.value) ? (
-													format(
-														field.value,
-														"yyyy-MM-dd"
-													)
+													format(field.value, "PPP")
 												) : (
 													<span>Pilih tanggal</span>
 												)}
@@ -351,7 +422,9 @@ export default function SparePartEdit() {
 						>
 							Batalkan
 						</Button>
-						<Button type="submit">Simpan</Button>
+						<Button type="submit" disabled={submitting}>
+							{submitting ? "Menyimpan..." : "Simpan"}
+						</Button>
 					</div>
 				</form>
 			</Form>
