@@ -22,6 +22,7 @@ interface MenuItem {
 	label: string;
 	icon: JSX.Element;
 	route: string;
+    role: string[];
 }
 
 interface UserData {
@@ -35,36 +36,43 @@ const menuItems: MenuItem[] = [
 		label: "Pengguna",
 		icon: <TwoUsers set="curved" stroke="bold" filled />,
 		route: "/dashboard/user",
+        role: ["Admin"],
 	},
 	{
 		label: "Divisi",
 		icon: <Graph set="curved" stroke="bold" filled />,
 		route: "/dashboard/division",
+        role: ["Admin"],
 	},
 	{
 		label: "Daftar Alat Medis",
 		icon: <Heart2 set="curved" stroke="bold" filled />,
 		route: "/dashboard/medical-equipment",
+        role: ["Admin", "Fasum", "User"],
 	},
 	{
 		label: "Daftar Suku Cadang",
 		icon: <Category set="curved" stroke="bold" filled />,
 		route: "/dashboard/spare-part",
+        role: ["Admin", "Fasum", "User"],
 	},
 	{
 		label: "Permintaan Maintenance",
 		icon: <Setting set="curved" stroke="bold" filled />,
 		route: "/dashboard/maintenance-request",
+        role: ["Admin", "Fasum", "User"],
 	},
 	{
 		label: "Permintaan Kalibrasi",
 		icon: <Chart set="curved" stroke="bold" filled />,
 		route: "/dashboard/calibration-request",
+        role: ["Admin", "Fasum", "User"],
 	},
 	{
 		label: "Laporan",
 		icon: <Activity set="curved" stroke="bold" filled />,
 		route: "/dashboard/report",
+        role: ["Admin", "Fasum"],
 	},
 ];
 
@@ -72,6 +80,7 @@ export default function SideBar() {
 	const [isHovered, setIsHovered] = useState(false);
 	const [userData, setUserData] = useState<UserData | null>(null);
 	const [loading, setLoading] = useState(true);
+	const [role, setRole] = useState("");
 
 	const router = useRouter();
 	const pathname = usePathname();
@@ -89,6 +98,7 @@ export default function SideBar() {
 
 				const user = decodeToken(token);
 
+
 				Cookies.set("user", JSON.stringify(user));
 
 				if (!user.userId) {
@@ -97,7 +107,6 @@ export default function SideBar() {
 					return;
 				}
 
-                console.log(user)
 				setUserData(user);
 			} catch (error) {
 				console.error("Error fetching user data:", error);
@@ -107,6 +116,14 @@ export default function SideBar() {
 		};
 
 		if (typeof document !== "undefined") {
+
+            const user = Cookies.get("user")
+            
+            if (user) {
+                const { role } = JSON.parse(user)
+                setRole(role);
+            }
+
 			fetchUserData();
 		}
 	}, []);
@@ -131,22 +148,24 @@ export default function SideBar() {
 				</span>
 				<div className="flex flex-col gap-2 items-start text-nowrap">
 					{menuItems.map((item, index) => (
-						<Fragment key={item.route}>
-							<SideBarButton
-								icon={item.icon}
-								isHovered={isHovered}
-								isActive={pathname === item.route}
-								onClick={() => {
-									if (pathname !== item.route)
-										router.push(item.route);
-								}}
-							>
-								{item.label}
-							</SideBarButton>
-							{[1, 3, 5].includes(index) && (
-								<hr className="w-full min-w-[3.5rem] border-1 border-[#C2C2C2]" />
-							)}
-						</Fragment>
+
+                        item.role.includes(role) &&
+                            <Fragment key={item.route}>
+                                <SideBarButton
+                                    icon={item.icon}
+                                    isHovered={isHovered}
+                                    isActive={pathname === item.route}
+                                    onClick={() => {
+                                        if (pathname !== item.route)
+                                            router.push(item.route);
+                                    }}
+                                >
+                                    {item.label}
+                                </SideBarButton>
+                                {[1, 3, 5].includes(index) && (
+                                    <hr className="w-full min-w-[3.5rem] border-1 border-[#C2C2C2]" />
+                                )}
+                            </Fragment>
 					))}
 				</div>
 			</div>

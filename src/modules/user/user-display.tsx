@@ -111,12 +111,10 @@ export default function UsersPage() {
 
 			if (!response.ok) {
 				const res = await response.json();
-				console.log(res);
 				throw new Error("Failed to fetch users");
 			}
 
 			const responseData: UserResponse = await response.json();
-            console.log(responseData)
 			setUsers(responseData.data);
 			setPaginationMeta(responseData.meta);
 		} catch (err) {

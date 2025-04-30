@@ -130,8 +130,6 @@ export default function MedicalEquipmentPage() {
 				process.env.NEXT_PUBLIC_API_URL
 			}/medical-equipment?${apiParams.toString()}`;
 
-			console.log("Fetching medical equipment with URL:", url);
-
 			const response = await fetch(url, {
 				headers: {
 					Authorization: token ? `Bearer ${token}` : "",
@@ -141,12 +139,10 @@ export default function MedicalEquipmentPage() {
 
 			if (!response.ok) {
 				const res = await response.json();
-				console.log(res);
 				throw new Error("Failed to fetch medical equipments");
 			}
 
 			const responseData = await response.json();
-			console.log("API Response:", responseData);
 
 			// Check if the response has the expected structure
 			if (responseData.data && Array.isArray(responseData.data)) {

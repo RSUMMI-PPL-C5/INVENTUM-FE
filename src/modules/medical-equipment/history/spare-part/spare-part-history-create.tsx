@@ -133,8 +133,6 @@ export default function PartsHistoryCreate() {
         replacementDate: data.replacementDate.toISOString(),
       }
 
-      console.log(payload)
-
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/medical-equipment/${medicalEquipmentId}/parts-history`, {
         method: "POST",
         headers: {

@@ -90,7 +90,6 @@ export default function SparePartCreate() {
 			);
 
 			const data = await response.json();
-			console.log(data);
 			setLocations(data);
 		} catch (err) {
 			console.error("Error fetching locations:", err);

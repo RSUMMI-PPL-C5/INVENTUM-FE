@@ -110,7 +110,6 @@ export default function UserEdit() {
 			);
 
 			const data = await response.json();
-			console.log(data);
 			setDivisions(data);
 		} catch (err) {
 			console.error("Error fetching divisions:", err);

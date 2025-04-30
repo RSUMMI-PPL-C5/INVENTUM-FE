@@ -54,7 +54,6 @@ export default function UserDetails() {
 			}
 
 			const userData = await response.json();
-			console.log(userData);
 
 			setUser(userData);
 		} catch (err) {

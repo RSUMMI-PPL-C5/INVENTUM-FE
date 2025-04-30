@@ -102,7 +102,6 @@ export default function SparepartDisplay() {
 			}
 
 			const responseData = await response.json();
-			console.log("API Response:", responseData);
 
 			// Check if the response has the expected structure
 			if (responseData.data && Array.isArray(responseData.data)) {

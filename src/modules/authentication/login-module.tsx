@@ -59,18 +59,7 @@ export default function LoginModule() {
       }
 
       const responseData = await response.json();
-      console.log('Login response:', responseData); // Debug line to see response structure
-
-      // Use optional chaining and handle different possible response structures
-      if (responseData.data?.token) {
-        Cookies.set('accessToken', responseData.data.token, { expires: 7 });
-      } else if (responseData.data?.user?.token) {
-        Cookies.set('accessToken', responseData.data.user.token, { expires: 7 });
-      } else if (responseData.token) {
-        Cookies.set('accessToken', responseData.token, { expires: 7 });
-      } else {
-        throw new Error('Token not found in response');
-      }
+      Cookies.set('accessToken', responseData.data.user.token, { expires: 7 });
 
       router.push('/dashboard/user');
     } catch (error) {

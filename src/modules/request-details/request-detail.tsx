@@ -181,8 +181,6 @@ export default function RequestDetail({ id, requestType }: {
       setNewComment("");
       toast.success("Comment added successfully");
       
-      // Log the updated comments to verify
-      console.log("Updated comments:", [...comments, newCommentData]);
     } catch (err) {
       toast.error("Failed to post comment");
     } finally {
