@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 
-export type MaintenanceRequestFilters = {
+export type RequestFilters = {
   status: string[]
   createdOnStart: Date | null
   createdOnEnd: Date | null
@@ -26,10 +26,10 @@ export type MaintenanceRequestFilters = {
   modifiedOnEnd: Date | null
 }
 
-type MaintenanceRequestFilterModalProps = {
+type RequestFilterModalProps = {
   isOpen: boolean
-  filters: MaintenanceRequestFilters
-  onConfirm: (filters: MaintenanceRequestFilters) => void
+  filters: RequestFilters
+  onConfirm: (filters: RequestFilters) => void
   onCancel: () => void
 }
 
@@ -40,8 +40,8 @@ export default function MaintenanceRequestFilterModal({
   filters, 
   onConfirm, 
   onCancel 
-}: MaintenanceRequestFilterModalProps) {
-  const [localFilters, setLocalFilters] = useState<MaintenanceRequestFilters>({ ...filters })
+}: RequestFilterModalProps) {
+  const [localFilters, setLocalFilters] = useState<RequestFilters>({ ...filters })
 
   const handleStatusToggle = (status: string) => {
     setLocalFilters((prev) => {

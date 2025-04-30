@@ -15,9 +15,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import MaintenanceRequestFilterModal, {
-  type MaintenanceRequestFilters as Filters,
-} from "@/components/general/maintenancerequest-filter-modal";
+import RequestFilterModal, {
+  type RequestFilters as Filters,
+} from "@/components/general/request-filter-modal";
 import { toast } from "sonner";
 import Cookies from "js-cookie";
 
@@ -340,7 +340,7 @@ export default function MaintenanceRequestDisplay() {
 
       {/* Filter Modal */}
       {showFilterModal && (
-        <MaintenanceRequestFilterModal
+        <RequestFilterModal
           isOpen={showFilterModal}
           filters={filters}
           onConfirm={(newFilters) => {
