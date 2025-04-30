@@ -16,6 +16,7 @@ import HistoryFilterBadge from "@/components/general/history-filter-badge"
 import Cookies from "js-cookie"
 import { toast } from "sonner"
 import { format } from "date-fns"
+import HistoryDetailModal from "@/components/general/history-detail-modal"
 
 type MedicalEquipment = {
   id: string
@@ -75,11 +76,8 @@ export default function MedicalEquipmentDetails() {
   const equipmentId = params.id as string
 
   const [equipment, setEquipment] = useState<MedicalEquipment | null>(null)
-  const [maintenanceHistories, setMaintenanceHistories] = useState<MaintenanceHistory[]>([])
   const [filteredMaintenanceHistories, setFilteredMaintenanceHistories] = useState<MaintenanceHistory[]>([])
-  const [calibrationHistories, setCalibrationHistories] = useState<CalibrationHistory[]>([])
   const [filteredCalibrationHistories, setFilteredCalibrationHistories] = useState<CalibrationHistory[]>([])
-  const [sparepartHistories, setSparepartHistories] = useState<SparepartHistory[]>([])
   const [filteredSparepartHistories, setFilteredSparepartHistories] = useState<SparepartHistory[]>([])
 
   const [loading, setLoading] = useState(true)
@@ -154,6 +152,9 @@ export default function MedicalEquipmentDetails() {
     }
     return initialFilters
   })
+
+  const [selectedHistory, setSelectedHistory] = useState<any>(null)
+  const [showHistoryDetailModal, setShowHistoryDetailModal] = useState(false)
 
   // Function to update URL with current filters
   const updateURLParams = (newParams: Record<string, string | null | undefined>) => {
@@ -342,11 +343,8 @@ export default function MedicalEquipmentDetails() {
       const calibrationData = await calibrationRes.json()
       const sparepartData = await sparepartRes.json()
 
-      setMaintenanceHistories(maintenanceData.data || [])
       setFilteredMaintenanceHistories(maintenanceData.data || [])
-      setCalibrationHistories(calibrationData.data || [])
       setFilteredCalibrationHistories(calibrationData.data || [])
-      setSparepartHistories(sparepartData.data || [])
       setFilteredSparepartHistories(sparepartData.data || [])
     } catch {
       toast.error("Gagal memuat histori")
@@ -387,7 +385,6 @@ export default function MedicalEquipmentDetails() {
         return
       }
 
-      setSparepartHistories(result.data || [])
       setFilteredSparepartHistories(result.data || [])
     } catch (error) {
       console.error("Error fetching spare part history:", error)
@@ -429,7 +426,6 @@ export default function MedicalEquipmentDetails() {
         return
       }
 
-      setMaintenanceHistories(result.data || [])
       setFilteredMaintenanceHistories(result.data || [])
     } catch (error) {
       console.error("Error fetching maintenance history:", error)
@@ -471,7 +467,6 @@ export default function MedicalEquipmentDetails() {
         return
       }
 
-      setCalibrationHistories(result.data || [])
       setFilteredCalibrationHistories(result.data || [])
     } catch (error) {
       console.error("Error fetching calibration history:", error)
@@ -504,30 +499,6 @@ export default function MedicalEquipmentDetails() {
     router.push(`/dashboard/medical-equipment/${equipmentId}/maintenance-request`)
   const handleAddCalibrationRequest = () =>
     router.push(`/dashboard/medical-equipment/${equipmentId}/calibration-request`)
-
-  const handleSearchChange = (value: string) => {
-    setSearch(value)
-
-    if (activeTab === "ganti_suku_cadang") {
-      const newFilters = { ...partsFilters, search: value }
-      setPartsFilters(newFilters)
-      updateURLParams({
-        search: value || null,
-      })
-    } else if (activeTab === "maintenance") {
-      const newFilters = { ...maintenanceFilters, search: value }
-      setMaintenanceFilters(newFilters)
-      updateURLParams({
-        search: value || null,
-      })
-    } else if (activeTab === "kalibrasi") {
-      const newFilters = { ...calibrationFilters, search: value }
-      setCalibrationFilters(newFilters)
-      updateURLParams({
-        search: value || null,
-      })
-    }
-  }
 
   const handlePartsFilterApply = (newFilters: PartsHistoryFilters) => {
     setPartsFilters(newFilters)
@@ -629,6 +600,11 @@ export default function MedicalEquipmentDetails() {
       default:
         return "bg-gray-100 text-gray-800"
     }
+  }
+
+  const handleHistoryRowClick = (item: any) => {
+    setSelectedHistory(item)
+    setShowHistoryDetailModal(true)
   }
 
   const paginatedData =
@@ -1009,7 +985,11 @@ export default function MedicalEquipmentDetails() {
                   </tr>
                 ) : paginatedData.length > 0 ? (
                   paginatedData.map((item, index) => (
-                    <tr key={index}>
+                    <tr
+                      key={index}
+                      onClick={() => handleHistoryRowClick(item)}
+                      className="cursor-pointer hover:bg-muted/30 transition-colors"
+                    >
                       <td className="py-3 px-4">{item.actionPerformed}</td>
                       <td className="py-3 px-4">{item.technician}</td>
                       <td className="py-3 px-4">
@@ -1086,6 +1066,15 @@ export default function MedicalEquipmentDetails() {
           filters={partsFilters}
           onConfirm={handlePartsFilterApply}
           onCancel={() => setShowPartsFilterModal(false)}
+        />
+      )}
+
+      {showHistoryDetailModal && (
+        <HistoryDetailModal
+          isOpen={showHistoryDetailModal}
+          onClose={() => setShowHistoryDetailModal(false)}
+          data={selectedHistory}
+          type={activeTab === "maintenance" ? "maintenance" : activeTab === "kalibrasi" ? "calibration" : "sparepart"}
         />
       )}
     </div>
