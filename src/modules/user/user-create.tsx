@@ -141,7 +141,6 @@ export default function UserCreate() {
         const result = await response.json();
 
         if (!response.ok) {
-            console.log(result)
             toast.error(<>Error creating user :<br />{result.message}</>);
             return
         }

@@ -20,6 +20,7 @@ import UserFilterModal, {
 } from "@/components/general/user-filter-modal";
 import { toast } from "sonner";
 import Cookies from "js-cookie";
+import DeleteDialog from "@/components/general/delete-dialog";
 import { PaginationControls } from "@/components/ui/pagination-control";
 
 type User = {
@@ -49,6 +50,10 @@ type PaginationMeta = {
 export default function UsersPage() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
+
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+    const [userToDelete, setUserToDelete] = useState<string | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 	
 	// Initialize state from URL params
 	const [users, setUsers] = useState<User[]>([]);
@@ -198,39 +203,47 @@ export default function UsersPage() {
 		}
 	};
 
-	const handleDelete = async (userId: string) => {
-		if (!confirm("Apakah Anda yakin ingin menghapus pengguna ini?")) {
-			return;
-		}
-
-		try {
-			const token = Cookies.get("accessToken");
-
-			const response = await fetch(
-				`${process.env.NEXT_PUBLIC_API_URL}/user/${userId}`,
-				{
-					method: "DELETE",
-					headers: {
-						Authorization: token ? `Bearer ${token}` : "",
-						"Content-Type": "application/json",
-					},
-				}
-			);
-
+	const confirmDelete = (userId: string) => {
+        setUserToDelete(userId);
+        setShowDeleteDialog(true);
+    };
+    
+    const handleDelete = async () => {
+        if (!userToDelete) return;
+    
+        setIsDeleting(true); // Mulai proses penghapusan
+        try {
+            const token = Cookies.get("accessToken");
+    
+            const response = await fetch(
+                `${process.env.NEXT_PUBLIC_API_URL}/user/${userToDelete}`,
+                {
+                    method: "DELETE",
+                    headers: {
+                        Authorization: token ? `Bearer ${token}` : "",
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+    
             const result = await response.json();
-
-			if (!response.ok) {
-				toast.error(<>Error deleting user:<br />{result.message}</>);                
+    
+            if (!response.ok) {
+                toast.error(<>Error deleting user:<br />{result.message}</>);
                 return;
-			}
-
-			fetchUsers();
-			toast.info("Pengguna berhasil dihapus");
-		} catch (error) {
-			console.error("Error deleting user:", error);
-            toast.error(error instanceof Error ? error.message : 'Error deleting user');
-		}
-	};
+            }
+    
+            fetchUsers();
+            toast.info("Pengguna berhasil dihapus");
+        } catch (error) {
+            console.error("Error deleting user:", error);
+            toast.error(error instanceof Error ? error.message : "Error deleting user");
+        } finally {
+            setIsDeleting(false);
+            setShowDeleteDialog(false);
+            setUserToDelete(null);
+        }
+    };
 
 	const handleSearchChange = (value: string) => {
 		setSearch(value);
@@ -410,18 +423,16 @@ export default function UsersPage() {
 														<Edit className="h-4 w-4" />
 													</Button>
 													<Button
-														size="icon"
-														variant="destructive"
-														onClick={(e) => {
-															e.stopPropagation();
-															handleDelete(
-																user.id
-															);
-														}}
-														data-testid={`delete-button-${user.id}`}
-													>
-														<Trash2 className="h-4 w-4" />
-													</Button>
+                                                        size="icon"
+                                                        variant="destructive"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            confirmDelete(user.id);
+                                                        }}
+                                                        data-testid={`delete-button-${user.id}`}
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
 												</div>
 											</TableCell>
 										</TableRow>
@@ -459,6 +470,17 @@ export default function UsersPage() {
 					onCancel={() => setShowFilterModal(false)}
 				/>
 			)}
+
+            <DeleteDialog
+                open={showDeleteDialog}
+                onOpenChange={setShowDeleteDialog}
+                title="Hapus Pengguna"
+                description="Apakah Anda yakin ingin menghapus pengguna ini? Tindakan ini tidak dapat dibatalkan."
+                onConfirm={handleDelete}
+                isDeleting={isDeleting}
+                deleteButtonText="Hapus"
+                cancelButtonText="Batal"
+            />
 		</div>
 	);
 }

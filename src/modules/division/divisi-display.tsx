@@ -14,16 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import DeleteDialog from "@/components/general/delete-dialog";
 import { useToast } from "@/hooks/use-toast";
 
 interface Division {
@@ -194,7 +185,7 @@ export default function DisplayDivisi() {
 				throw new Error(`Failed to delete division`);
 			}
 
-			// Perbarui state divisions secara rekursif
+			// Update divisions state recursively
 			setDivisions((prevDivisions) =>
 				removeDivisionRecursively(prevDivisions, divisionToDelete.id)
 			);
@@ -301,6 +292,20 @@ export default function DisplayDivisi() {
 		);
 	};
 
+	// Create description content for delete dialog
+	const deleteDescription = (
+		<>
+			Are you sure you want to delete the division &quot;
+			{divisionToDelete?.divisi}&quot;?
+			{divisionToDelete?.children?.length ? (
+				<span className="text-red-500 block mt-2">
+					Warning: This division has sub-divisions
+					that will also be deleted.
+				</span>
+			) : null}
+		</>
+	);
+
 	return (
 		<>
 			<div className="flex justify-between items-center mb-6">
@@ -334,45 +339,17 @@ export default function DisplayDivisi() {
 				</CardContent>
 			</Card>
 
-			<AlertDialog
+			{/* Using the reusable DeleteDialog component */}
+			<DeleteDialog
 				open={deleteDialogOpen}
 				onOpenChange={setDeleteDialogOpen}
-			>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
-						<AlertDialogDescription>
-							Are you sure you want to delete the division &quot;
-							{divisionToDelete?.divisi}&quot;?
-							{divisionToDelete?.children?.length ? (
-								<span className="text-red-500 block mt-2">
-									Warning: This division has sub-divisions
-									that will also be deleted.
-								</span>
-							) : null}
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel disabled={isDeleting}>
-							Cancel
-						</AlertDialogCancel>
-						<AlertDialogAction
-							onClick={confirmDelete}
-							disabled={isDeleting}
-							className="bg-red-600 hover:bg-red-700"
-						>
-							{isDeleting ? (
-								<>
-									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-									Deleting...
-								</>
-							) : (
-								"Delete"
-							)}
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
+				title="Konfirmasi Hapus Divisi"
+				description={deleteDescription}
+				onConfirm={confirmDelete}
+				isDeleting={isDeleting}
+				deleteButtonText="Delete"
+				cancelButtonText="Cancel"
+			/>
 		</>
 	);
 }
