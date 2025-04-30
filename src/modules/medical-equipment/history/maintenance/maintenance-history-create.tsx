@@ -51,7 +51,7 @@ export default function MaintenanceHistoryCreate() {
 
   useEffect(() => {
     fetchMedicalEquipment()
-  }, [medicalEquipmentId])
+  }, [medicalEquipmentId, fetchMedicalEquipment])
 
   async function fetchMedicalEquipment() {
     try {

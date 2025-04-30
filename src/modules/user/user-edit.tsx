@@ -33,6 +33,15 @@ interface Division {
 	divisi: string;
 }
 
+interface UpdatePayload {
+    fullname: string;
+    email: string;
+    role: string;
+    divisiId: number;
+    waNumber: string;
+    password?: string;
+  };
+
 const formSchema = z.object({
 	nokar: z.string().min(1, { message: "No. Kar wajib diisi" }),
 	fullname: z.string().min(3, { message: "Nama lengkap minimal 3 karakter" }),
@@ -81,7 +90,7 @@ export default function UserEdit() {
 	useEffect(() => {
 		fetchAllDivisions();
 		fetchUserData();
-	}, [id]);
+	}, [id, fetchAllDivisions, fetchUserData]);
 
 	async function fetchAllDivisions() {
 		try {
@@ -167,7 +176,7 @@ export default function UserEdit() {
 		try {
 			const token = Cookies.get("accessToken");
 
-			const updatePayload: any = {
+			const updatePayload : UpdatePayload = {
 				fullname: data.fullname,
 				email: data.email,
 				role: data.role,

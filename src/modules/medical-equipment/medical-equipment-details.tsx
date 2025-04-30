@@ -160,6 +160,8 @@ export default function MedicalEquipmentDetails() {
     ? calibrationHistories.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
     : sparepartHistories.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
+  const tabs = ["maintenance", "kalibrasi", "ganti_suku_cadang"] as const;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2">
@@ -220,10 +222,10 @@ export default function MedicalEquipmentDetails() {
 
         <div className="col-span-2 bg-white border rounded-lg shadow-sm">
           <div className="flex border-b justify-center">
-            {["maintenance", "kalibrasi", "ganti_suku_cadang"].map((tab) => (
+            {tabs.map((tab) => (
               <button
                 key={tab}
-                onClick={() => { setActiveTab(tab as any); setCurrentPage(1); }}
+                onClick={() => { setActiveTab(tab); setCurrentPage(1); }}
                 className={`py-4 px-6 text-sm font-medium transition-colors ${
                   activeTab === tab ? 'border-b-2 border-primary-solid text-primary-solid' : 'text-muted-foreground hover:text-primary-solid/80'
                 }`}

@@ -53,7 +53,7 @@ export default function CalibrationHistoryCreate() {
 
   useEffect(() => {
     fetchMedicalEquipment()
-  }, [medicalEquipmentId])
+  }, [medicalEquipmentId, fetchMedicalEquipment])
 
   async function fetchMedicalEquipment() {
     try {

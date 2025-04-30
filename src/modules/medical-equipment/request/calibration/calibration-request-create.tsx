@@ -119,6 +119,7 @@ export default function CalibrationRequestCreate() {
 				`/dashboard/medical-equipment/${equipmentId}?success=true`
 			);
 		} catch (error) {
+            console.error("Failed to create calibration request:", error);
 			setError("Failed to create calibration request");
 			setErrorModalOpen(true);
 		} finally {

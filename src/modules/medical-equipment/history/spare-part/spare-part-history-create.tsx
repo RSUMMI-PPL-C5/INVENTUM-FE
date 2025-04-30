@@ -63,7 +63,7 @@ export default function PartsHistoryCreate() {
   useEffect(() => {
     fetchMedicalEquipment()
     fetchSpareparts()
-  }, [medicalEquipmentId])
+  }, [medicalEquipmentId, fetchMedicalEquipment, fetchSpareparts])
 
   async function fetchMedicalEquipment() {
     try {

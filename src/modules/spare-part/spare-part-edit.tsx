@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/form";
 import { ArrowLeft, CalendarIcon } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
-import { format, isValid, parse } from "date-fns";
+import { format, isValid } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import {
 	Popover,
@@ -72,7 +72,7 @@ export default function SparePartEdit() {
 	useEffect(() => {
 		fetchAllLocations();
 		fetchSparePart();
-	}, [sparePartId]);
+	}, [sparePartId, fetchAllLocations, fetchSparePart]);
 
 	async function fetchAllLocations() {
 		try {

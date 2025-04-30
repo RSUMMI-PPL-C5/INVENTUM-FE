@@ -129,8 +129,9 @@ export default function RequestDetail({ id, requestType }: {
           console.error("Unexpected comment data format:", responseData);
           setComments([]);
         }
-      } catch (err) {
-        toast.error("Failed to load comments");
+      } catch (error) {
+        console.error("Error fetching comments:", error);
+        toast.error("Failed to load comments: " + error);
         setComments([]);
       } finally {
         setLoading(false);
@@ -181,8 +182,9 @@ export default function RequestDetail({ id, requestType }: {
       setNewComment("");
       toast.success("Comment added successfully");
       
-    } catch (err) {
-      toast.error("Failed to post comment");
+    } catch (error) {
+      console.error("Error posting comment:", error);
+      toast.error("Failed to post comment" + error);
     } finally {
       setSubmitting(false);
     }

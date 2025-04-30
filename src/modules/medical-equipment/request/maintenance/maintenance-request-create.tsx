@@ -119,6 +119,7 @@ export default function MaintenanceRequestCreate() {
 				`/dashboard/medical-equipment/${equipmentId}?success=true`
 			);
 		} catch (error) {
+            console.error("Failed to create maintenance request:", error);
 			setError("Failed to create maintenance request");
 			setErrorModalOpen(true);
 		} finally {
