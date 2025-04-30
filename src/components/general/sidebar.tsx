@@ -154,7 +154,7 @@ export default function SideBar() {
                                 <SideBarButton
                                     icon={item.icon}
                                     isHovered={isHovered}
-                                    isActive={pathname === item.route}
+                                    isActive={pathname.startsWith(item.route)}
                                     onClick={() => {
                                         if (pathname !== item.route)
                                             router.push(item.route);

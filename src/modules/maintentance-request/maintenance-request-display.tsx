@@ -120,7 +120,7 @@ export default function MaintenanceRequestDisplay() {
 		});
 
 		// Update URL without refreshing page
-		router.push(`/dashboard/requests/maintenance?${params.toString()}`, {
+		router.push(`/dashboard/maintenance-request/maintenance?${params.toString()}`, {
 			scroll: false,
 		});
 	};
@@ -344,15 +344,16 @@ export default function MaintenanceRequestDisplay() {
 	};
 
 	const navigateToRequestEdit = (requestId: string) => {
-		router.push(`/dashboard/requests/all/${requestId}/edit`);
+		router.push(`/dashboard/maintenance-request/all/${requestId}/edit`);
 	};
 
 	const navigateToRequestDetail = (requestId: string) => {
-		router.push(`/dashboard/request/${requestId}`);
+		router.push(`/dashboard/detail-request?type=maintenance&id=${requestId}`);
 	};
 
 	const navigateToRequestCreate = () => {
-		router.push(`/dashboard/request/create`);
+        toast.info("Pilih alat medis untuk permintaan maintenance");
+		router.push(`/dashboard/medical-equipment`);
 	};
 
 	return (

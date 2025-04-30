@@ -2,9 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, PlusCircle } from "lucide-react";
+import { ArrowLeft, Sliders, Wrench, ClipboardCheck, FileCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { PaginationControls } from "@/components/ui/pagination-control";
 import Cookies from "js-cookie";
 import { toast } from "sonner";
@@ -47,6 +46,17 @@ type CalibrationHistory = {
   createdOn: string;
 };
 
+type SparepartHistory = {
+  id: string;
+  medicalEquipmentId: string;
+  sparepartName: string;
+  replacementDate: string;
+  actionPerformed: string;
+  technician: string;
+  createdBy: string;
+  createdOn: string;
+};
+
 export default function MedicalEquipmentDetails() {
   const router = useRouter();
   const params = useParams();
@@ -55,16 +65,31 @@ export default function MedicalEquipmentDetails() {
   const [equipment, setEquipment] = useState<MedicalEquipment | null>(null);
   const [maintenanceHistories, setMaintenanceHistories] = useState<MaintenanceHistory[]>([]);
   const [calibrationHistories, setCalibrationHistories] = useState<CalibrationHistory[]>([]);
+  const [sparepartHistories, setSparepartHistories] = useState<SparepartHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingHistories, setLoadingHistories] = useState(true);
   const [activeTab, setActiveTab] = useState<'maintenance' | 'kalibrasi' | 'ganti_suku_cadang'>('maintenance');
   const [currentPage, setCurrentPage] = useState(1);
+  const [userRole, setUserRole] = useState<string>("");
   const itemsPerPage = 5;
 
   const fetchEquipment = useCallback(async () => {
     try {
       setLoading(true);
       const token = Cookies.get("accessToken");
+      const user = Cookies.get("user");
+
+      if (user) {
+        const userJSON = JSON.parse(user);
+        setUserRole(userJSON.role);
+      }
+
+      if (!token) {
+        console.error("No token found");
+        setLoading(false);
+        return;
+      }
+
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/medical-equipment/${equipmentId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -81,18 +106,24 @@ export default function MedicalEquipmentDetails() {
     try {
       setLoadingHistories(true);
       const token = Cookies.get("accessToken");
-      const [maintenanceRes, calibrationRes] = await Promise.all([
+      const [maintenanceRes, calibrationRes, sparepartRes] = await Promise.all([
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/medical-equipment/${equipmentId}/maintenance-history`, {
           headers: { Authorization: `Bearer ${token}` }
         }),
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/medical-equipment/${equipmentId}/calibration-history`, {
           headers: { Authorization: `Bearer ${token}` }
         }),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/medical-equipment/${equipmentId}/parts-history`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
       ]);
       const maintenanceData = await maintenanceRes.json();
       const calibrationData = await calibrationRes.json();
+      const sparepartData = await sparepartRes.json();
+
       setMaintenanceHistories(maintenanceData.data || []);
       setCalibrationHistories(calibrationData.data || []);
+      setSparepartHistories(sparepartData.data || []);
     } catch {
       toast.error("Gagal memuat histori");
     } finally {
@@ -106,6 +137,11 @@ export default function MedicalEquipmentDetails() {
   }, [fetchEquipment, fetchHistories]);
 
   const handleGoBack = () => router.back();
+  const handleAddCalibration = () => router.push(`/dashboard/medical-equipment/${equipmentId}/calibration`);
+  const handleAddMaintenance = () => router.push(`/dashboard/medical-equipment/${equipmentId}/maintenance`);
+  const handleAddSparePart = () => router.push(`/dashboard/medical-equipment/${equipmentId}/spare-part`);
+  const handleAddMaintenanceRequest = () => router.push(`/dashboard/medical-equipment/${equipmentId}/maintenance-request`);
+  const handleAddCalibrationRequest = () => router.push(`/dashboard/medical-equipment/${equipmentId}/calibration-request`);
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "-";
@@ -120,31 +156,26 @@ export default function MedicalEquipmentDetails() {
 
   const paginatedData = activeTab === "maintenance"
     ? maintenanceHistories.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-    : calibrationHistories.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+    : activeTab === "kalibrasi"
+    ? calibrationHistories.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+    : sparepartHistories.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
     <div className="space-y-6">
-      {/* Breadcrumb */}
       <div className="flex items-center gap-2">
         <Button variant="outline" size="sm" onClick={handleGoBack}>
           <ArrowLeft className="h-4 w-4 mr-1" /> Kembali
         </Button>
-        <span className="text-muted-foreground">{">"}</span>
-        <span className="text-sm font-medium">{equipment?.name || "Loading..."}</span>
       </div>
 
-      {/* Main Layout */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Left: Detail */}
         <div className="col-span-1 bg-blue-50 p-6 rounded-lg space-y-4">
           {loading ? (
             <div className="h-6 bg-muted animate-pulse w-1/2 rounded" />
           ) : equipment ? (
             <>
-              <h1 className="text-xl font-bold">{equipment.name}</h1>
-              <p className="text-muted-foreground">{equipment.brandName ?? "-"}</p>
-
-              {/* Detail Box */}
+              <h1 className="text-header-h6 font-bold">{equipment.name}</h1>
+              <p className="text-sm text-muted-foreground">{equipment.brandName ?? "-"}</p>
               <div className="grid grid-cols-2 gap-4 text-sm mt-4">
                 <DetailItem label="Kode Inventaris" value={equipment.inventorisId} />
                 <DetailItem label="Model" value={equipment.modelName} />
@@ -156,90 +187,91 @@ export default function MedicalEquipmentDetails() {
                 <DetailItem label="Diperbarui Pada" value={formatDate(equipment.modifiedOn)} />
               </div>
 
-              {/* Action */}
-              <div className="flex flex-col gap-2 pt-6">
-                <Button size="sm" className="gap-1 w-full">
-                  <PlusCircle className="h-4 w-4" /> Minta Maintenance
-                </Button>
-                <Button size="sm" variant="outline" className="gap-1 w-full">
-                  <PlusCircle className="h-4 w-4" /> Minta Kalibrasi
-                </Button>
-              </div>
-
-              {/* Info */}
-              <div className="space-y-2 pt-4">
-                <AlertBox type="warning" message="Terdapat permintaan maintenance dalam proses." />
-                <AlertBox type="error" message="Terdapat permintaan kalibrasi belum diproses." />
+              <div className="flex flex-col gap-3 pt-6">
+                {["Admin", "Fasum"].includes(userRole) && (
+                  <>
+                    <Button size="sm" className="gap-2 w-full" onClick={handleAddMaintenance}>
+                      <Wrench className="h-4 w-4" /> Tambah Riwayat Maintenance
+                    </Button>
+                    <Button size="sm" className="gap-2 w-full" onClick={handleAddCalibration}>
+                      <Sliders className="h-4 w-4" /> Tambah Riwayat Kalibrasi
+                    </Button>
+                    <Button size="sm" className="gap-2 w-full" onClick={handleAddSparePart}>
+                      <Wrench className="h-4 w-4" /> Tambah Pergantian Suku Cadang
+                    </Button>
+                  </>
+                )}
+                {["Admin", "User"].includes(userRole) && (
+                  <>
+                    <Button size="sm" className="gap-2 w-full" onClick={handleAddMaintenanceRequest}>
+                      <ClipboardCheck className="h-4 w-4" /> Buat Permintaan Maintenance
+                    </Button>
+                    <Button size="sm" className="gap-2 w-full" onClick={handleAddCalibrationRequest}>
+                      <FileCheck className="h-4 w-4" /> Buat Permintaan Kalibrasi
+                    </Button>
+                  </>
+                )}
               </div>
             </>
           ) : (
-            <p className="text-muted-foreground">Alat tidak ditemukan.</p>
+            <p className="text-sm text-muted-foreground">Alat tidak ditemukan.</p>
           )}
         </div>
 
-        {/* Right: History */}
         <div className="col-span-2 bg-white border rounded-lg shadow-sm">
-          {/* Tabs */}
-          <div className="flex border-b">
+          <div className="flex border-b justify-center">
             {["maintenance", "kalibrasi", "ganti_suku_cadang"].map((tab) => (
               <button
                 key={tab}
                 onClick={() => { setActiveTab(tab as any); setCurrentPage(1); }}
-                className={`py-4 px-6 text-sm font-medium transition-colors ${activeTab === tab
-                  ? 'border-b-2 border-primary text-primary'
-                  : 'text-muted-foreground hover:text-primary/80'}`}
+                className={`py-4 px-6 text-sm font-medium transition-colors ${
+                  activeTab === tab ? 'border-b-2 border-primary-solid text-primary-solid' : 'text-muted-foreground hover:text-primary-solid/80'
+                }`}
               >
-                {tab === "maintenance"
-                  ? "Maintenance"
-                  : tab === "kalibrasi"
-                    ? "Kalibrasi"
-                    : "Ganti Suku Cadang"}
+                {tab === "maintenance" ? "Riwayat Maintenance" : tab === "kalibrasi" ? "Riwayat Kalibrasi" : "Riwayat Ganti Suku Cadang"}
               </button>
             ))}
           </div>
 
-          {/* Table */}
           <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse">
               <thead>
                 <tr className="bg-muted/50">
-                  <th className="text-left py-3 px-4 font-medium text-muted-foreground border-b">Kode Inventaris</th>
-                  <th className="text-left py-3 px-4 font-medium text-muted-foreground border-b">Nama Alat</th>
-                  <th className="text-left py-3 px-4 font-medium text-muted-foreground border-b">Merek</th>
-                  <th className="text-left py-3 px-4 font-medium text-muted-foreground border-b">Model</th>
+                  <th className="text-left py-3 px-4 font-medium text-muted-foreground border-b">Deskripsi</th>
+                  <th className="text-left py-3 px-4 font-medium text-muted-foreground border-b">Tanggal</th>
                 </tr>
               </thead>
               <tbody>
                 {loadingHistories ? (
-                  <tr><td colSpan={4} className="py-4 text-center">Loading...</td></tr>
+                  <tr><td colSpan={5} className="py-4 text-center">Memuat...</td></tr>
                 ) : paginatedData.length > 0 ? (
-                  paginatedData.map((item) => (
-                    <tr key={item.id} className="hover:bg-muted/30 border-b">
-                      <td className="py-3 px-4">{equipment?.inventorisId || "-"}</td>
-                      <td className="py-3 px-4">{equipment?.name || "-"}</td>
-                      <td className="py-3 px-4">{equipment?.brandName || "-"}</td>
-                      <td className="py-3 px-4">{equipment?.modelName || "-"}</td>
+                  paginatedData.map((item, index) => (
+                    <tr key={index}>
+                      <td className="py-3 px-4">{(item as MaintenanceHistory | CalibrationHistory | SparepartHistory).actionPerformed}</td>
+                      <td className="py-3 px-4">
+                        {formatDate((item as MaintenanceHistory | CalibrationHistory | SparepartHistory).createdOn)}
+                      </td>
                     </tr>
                   ))
                 ) : (
-                  <tr>
-                    <td colSpan={4} className="py-8 text-center">
-                      <div className="text-amber-600 font-medium">Tidak ada data.</div>
-                    </td>
-                  </tr>
+                  <tr><td colSpan={5} className="py-4 text-center">Tidak ada data.</td></tr>
                 )}
               </tbody>
             </table>
           </div>
 
-          {/* Pagination */}
-          <div className="p-4 flex justify-center">
+          <div className="border-t p-4">
             <PaginationControls
               currentPage={currentPage}
               totalPages={Math.max(1, Math.ceil(
-                (activeTab === 'maintenance' ? maintenanceHistories.length : calibrationHistories.length) / itemsPerPage
+                (activeTab === "maintenance"
+                  ? maintenanceHistories.length
+                  : activeTab === "kalibrasi"
+                  ? calibrationHistories.length
+                  : sparepartHistories.length
+                ) / itemsPerPage
               ))}
-              onPageChange={(page) => setCurrentPage(page)}
+              onPageChange={setCurrentPage}
             />
           </div>
         </div>
@@ -250,22 +282,9 @@ export default function MedicalEquipmentDetails() {
 
 function DetailItem({ label, value }: { label: string; value: string | null }) {
   return (
-    <div className="space-y-1">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="font-medium">{value || "-"}</p>
-    </div>
-  );
-}
-
-function AlertBox({ type, message }: { type: 'warning' | 'error'; message: string }) {
-  const color = type === "warning" ? "bg-amber-50 text-amber-800" : "bg-red-50 text-red-800";
-  return (
-    <div className={`flex items-center gap-2 p-3 rounded ${color}`}>
-      <svg width="20" height="20" fill="none" viewBox="0 0 20 20" className="shrink-0" xmlns="http://www.w3.org/2000/svg">
-        <path d="M10 6V10M10 14H10.01M19 10C19 14.9706 14.9706 19 10 19C5.02944 19 1 14.9706 1 10C1 5.02944 5.02944 1 10 1C14.9706 1 19 5.02944 19 10Z"
-          stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-      <span className="text-sm">{message}</span>
+    <div>
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className="font-medium">{value || "-"}</div>
     </div>
   );
 }

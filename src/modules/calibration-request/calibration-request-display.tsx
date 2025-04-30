@@ -120,7 +120,7 @@ export default function CalibrationRequestDisplay() {
 		});
 
 		// Update URL without refreshing page
-		router.push(`/dashboard/requests/calibration?${params.toString()}`, {
+		router.push(`/dashboard/calibration-request/calibration?${params.toString()}`, {
 			scroll: false,
 		});
 	};
@@ -344,15 +344,16 @@ export default function CalibrationRequestDisplay() {
 	};
 
 	const navigateToRequestEdit = (requestId: string) => {
-		router.push(`/dashboard/requests/all/${requestId}/edit`);
+		router.push(`/dashboard/calibration-request/all/${requestId}/edit`);
 	};
 
 	const navigateToRequestDetail = (requestId: string) => {
-		router.push(`/dashboard/request/${requestId}`);
+		router.push(`/dashboard/detail-request?type=calibration&id=${requestId}`);
 	};
 
 	const navigateToRequestCreate = () => {
-		router.push(`/dashboard/request/create`);
+        toast.info("Pilih alat medis untuk permintaan kalibrasi");
+		router.push(`/dashboard/medical-equipment`);
 	};
 
 	return (
