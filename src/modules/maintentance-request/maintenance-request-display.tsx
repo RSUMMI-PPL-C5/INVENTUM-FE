@@ -15,11 +15,13 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import MaintenanceRequestFilterModal, {
-	type MaintenanceRequestFilters as Filters,
-} from "@/components/general/maintenancerequest-filter-modal";
+import RequestFilterModal, {
+	type RequestFilters as Filters,
+} from "@/components/general/request-filter-modal";
 import { toast } from "sonner";
 import Cookies from "js-cookie";
+import DeleteDialog from "@/components/general/delete-dialog";
+import { PaginationControls } from "@/components/ui/pagination-control";
 
 type MaintenanceRequest = {
 	id: string;
@@ -32,61 +34,100 @@ type MaintenanceRequest = {
 	modifiedOn: string;
 };
 
+type PaginationMeta = {
+	total: number;
+	page: number;
+	limit: number;
+	totalPages: number;
+};
+
 export default function MaintenanceRequestDisplay() {
+	const router = useRouter();
+	const searchParams = useSearchParams();
+
+	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+	const [requestToDelete, setRequestToDelete] = useState<string | null>(null);
+	const [isDeleting, setIsDeleting] = useState(false);
+
+	// Initialize state from URL params
 	const [maintenanceRequests, setMaintenanceRequests] = useState<
 		MaintenanceRequest[]
 	>([]);
-	const [search, setSearch] = useState("");
-	const [showFilterModal, setShowFilterModal] = useState(false);
-	const [filters, setFilters] = useState<Filters>({
-		status: [],
-		createdOnStart: null,
-		createdOnEnd: null,
-		modifiedOnStart: null,
-		modifiedOnEnd: null,
+	const [paginationMeta, setPaginationMeta] = useState<PaginationMeta>({
+		total: 0,
+		page: searchParams.get("page")
+			? parseInt(searchParams.get("page") as string)
+			: 1,
+		limit: 10,
+		totalPages: 1,
 	});
+	const [search, setSearch] = useState(searchParams.get("search") || "");
+	const [showFilterModal, setShowFilterModal] = useState(false);
 	const [loading, setLoading] = useState(true);
-	const router = useRouter();
-	const params = new URLSearchParams();
-	const searchParams = useSearchParams();
 
-	const fetchMaintenanceRequests = async () => {
-		try {
-			setLoading(true);
-			const token = Cookies.get("accessToken");
-			const queryParams = buildQueryParams(filters);
-			let url = `${process.env.NEXT_PUBLIC_API_URL}/request/maintenance`;
+	// Initialize filters from URL params
+	const [filters, setFilters] = useState<Filters>(() => {
+		const initialFilters: Filters = {
+			status: searchParams.getAll("status"),
+			createdOnStart: searchParams.get("createdOnStart")
+				? new Date(searchParams.get("createdOnStart") as string)
+				: null,
+			createdOnEnd: searchParams.get("createdOnEnd")
+				? new Date(searchParams.get("createdOnEnd") as string)
+				: null,
+			modifiedOnStart: searchParams.get("modifiedOnStart")
+				? new Date(searchParams.get("modifiedOnStart") as string)
+				: null,
+			modifiedOnEnd: searchParams.get("modifiedOnEnd")
+				? new Date(searchParams.get("modifiedOnEnd") as string)
+				: null,
+		};
+		return initialFilters;
+	});
 
-			if (queryParams || search) {
-				const searchParam = search ? `search=${search}` : "";
-				url += `?${[queryParams, searchParam]
-					.filter(Boolean)
-					.join("&")}`;
+	// Function to update URL with current filters, search and pagination
+	const updateURLParams = (
+		newParams: Record<string, string | string[] | null | undefined>
+	) => {
+		const params = new URLSearchParams(searchParams.toString());
+
+		// Clear existing filter params to avoid duplicates
+		[
+			"search",
+			"page",
+			"status",
+			"createdOnStart",
+			"createdOnEnd",
+			"modifiedOnStart",
+			"modifiedOnEnd",
+		].forEach((param) => {
+			params.delete(param);
+		});
+
+		// Add new params
+		Object.entries(newParams).forEach(([key, value]) => {
+			if (value === null || value === undefined || value === "") {
+				return;
 			}
 
-			const response = await fetch(url, {
-				headers: {
-					Authorization: token ? `Bearer ${token}` : "",
-					"Content-Type": "application/json",
-				},
-			});
-
-			if (!response.ok) {
-				const res = await response.json();
-				throw new Error("Failed to fetch maintenance requests");
+			if (Array.isArray(value)) {
+				value.forEach((val) => {
+					if (val) params.append(key, val);
+				});
+			} else {
+				params.set(key, value);
 			}
+		});
 
-			const data = await response.json();
-			setMaintenanceRequests(data.data);
-		} catch (err) {
-			console.error("Error fetching maintenance requests:", err);
-			toast.error("Gagal memuat permintaan pemeliharaan");
-		} finally {
-			setLoading(false);
-		}
+		// Update URL without refreshing page
+		router.push(`/dashboard/requests/maintenance?${params.toString()}`, {
+			scroll: false,
+		});
 	};
 
 	const buildQueryParams = (filters: Filters): string => {
+		const params = new URLSearchParams();
+
 		filters.status.forEach((status) => {
 			params.append("status", status);
 		});
@@ -120,20 +161,75 @@ export default function MaintenanceRequestDisplay() {
 		return params.toString();
 	};
 
-	const handleDelete = async (requestId: string) => {
-		if (
-			!confirm(
-				"Apakah Anda yakin ingin menghapus permintaan pemeliharaan ini?"
-			)
-		) {
-			return;
-		}
+	const fetchMaintenanceRequests = async () => {
+		try {
+			setLoading(true);
+			const token = Cookies.get("accessToken");
+			const queryParams = buildQueryParams(filters);
 
+			const currentPage = searchParams.get("page")
+				? Number.parseInt(searchParams.get("page") as string)
+				: 1;
+
+			let url = `${process.env.NEXT_PUBLIC_API_URL}/request/maintenance`;
+
+			const paginationParams = `page=${currentPage}&limit=${paginationMeta.limit}`;
+
+			if (queryParams || search || paginationParams) {
+				const searchParam = search ? `search=${search}` : "";
+				url += `?${[queryParams, searchParam, paginationParams]
+					.filter(Boolean)
+					.join("&")}`;
+			}
+
+			const response = await fetch(url, {
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: token ? `Bearer ${token}` : "",
+				},
+			});
+
+			const result = await response.json();
+
+			if (!response.ok) {
+				toast.error(
+					<>
+						Error fetching maintenance requests:
+						<br />
+						{result.message}
+					</>
+				);
+				return;
+			}
+
+			setMaintenanceRequests(result.data);
+			setPaginationMeta(result.meta);
+		} catch (error) {
+			console.error("Error fetching maintenance requests:", error);
+			toast.error(
+				error instanceof Error
+					? error.message
+					: "Error fetching maintenance requests"
+			);
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	const confirmDelete = (requestId: string) => {
+		setRequestToDelete(requestId);
+		setShowDeleteDialog(true);
+	};
+
+	const handleDelete = async () => {
+		if (!requestToDelete) return;
+
+		setIsDeleting(true); // Mulai proses penghapusan
 		try {
 			const token = Cookies.get("accessToken");
 
 			const response = await fetch(
-				`${process.env.NEXT_PUBLIC_API_URL}/request/${requestId}`,
+				`${process.env.NEXT_PUBLIC_API_URL}/request/${requestToDelete}`,
 				{
 					method: "DELETE",
 					headers: {
@@ -143,20 +239,74 @@ export default function MaintenanceRequestDisplay() {
 				}
 			);
 
+			const result = await response.json();
+
 			if (!response.ok) {
-				throw new Error("Gagal menghapus permintaan pemeliharaan");
+				toast.error(
+					<>
+						Error deleting maintenance request:
+						<br />
+						{result.message}
+					</>
+				);
+				return;
 			}
 
 			fetchMaintenanceRequests();
 			toast.info("Permintaan pemeliharaan berhasil dihapus");
-		} catch {
-			toast.error("Gagal menghapus permintaan pemeliharaan");
+		} catch (error) {
+			console.error("Error deleting maintenance request:", error);
+			toast.error(
+				error instanceof Error
+					? error.message
+					: "Error deleting maintenance request"
+			);
+		} finally {
+			setIsDeleting(false);
+			setShowDeleteDialog(false);
+			setRequestToDelete(null);
 		}
+	};
+
+	const handleSearchChange = (value: string) => {
+		setSearch(value);
+		updateURLParams({
+			search: value || null,
+			page: "1",
+		});
+	};
+
+	const handleFilterApply = (newFilters: Filters) => {
+		setFilters(newFilters);
+		setShowFilterModal(false);
+
+		updateURLParams({
+			status: newFilters.status,
+			createdOnStart: newFilters.createdOnStart
+				? format(newFilters.createdOnStart, "yyyy-MM-dd")
+				: null,
+			createdOnEnd: newFilters.createdOnEnd
+				? format(newFilters.createdOnEnd, "yyyy-MM-dd")
+				: null,
+			modifiedOnStart: newFilters.modifiedOnStart
+				? format(newFilters.modifiedOnStart, "yyyy-MM-dd")
+				: null,
+			modifiedOnEnd: newFilters.modifiedOnEnd
+				? format(newFilters.modifiedOnEnd, "yyyy-MM-dd")
+				: null,
+			page: "1",
+		});
+	};
+
+	const handlePageChange = (page: number) => {
+		updateURLParams({
+			page: page.toString(),
+		});
 	};
 
 	useEffect(() => {
 		fetchMaintenanceRequests();
-	}, [search, filters]);
+	}, [searchParams]);
 
 	const hasRun = useRef(false);
 
@@ -248,7 +398,7 @@ export default function MaintenanceRequestDisplay() {
 						type="text"
 						placeholder="Cari permintaan pemeliharaan..."
 						value={search}
-						onChange={(e) => setSearch(e.target.value)}
+						onChange={(e) => handleSearchChange(e.target.value)}
 						className="w-full pl-10"
 						data-testid="search-input"
 					/>
@@ -273,114 +423,134 @@ export default function MaintenanceRequestDisplay() {
 
 			{/* Maintenance Request Table */}
 			{!loading && (
-				<div className="border rounded-lg overflow-hidden">
-					<Table data-testid="maintenance-requests-table">
-						<TableHeader>
-							<TableRow>
-								<TableHead>Kode Inventaris</TableHead>
-								<TableHead>Nama Alat</TableHead>
-								<TableHead>Catatan</TableHead>
-								<TableHead>Status</TableHead>
-								<TableHead className="text-center">
-									Aksi
-								</TableHead>
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{maintenanceRequests.length > 0 ? (
-								maintenanceRequests.map((request) => (
-									<TableRow
-										key={request.id}
-										className="cursor-pointer"
-										onClick={() =>
-											navigateToRequestDetail(request.id)
-										}
-										data-testid={`request-row-${request.id}`}
-									>
-										<TableCell>
-											{request.medicalEquipment}
-										</TableCell>
-										<TableCell>
-											{request.medicalEquipment}
-										</TableCell>
-										<TableCell>
-											<div className="max-w-xs truncate">
-												{request.complaint || "-"}
-											</div>
-										</TableCell>
-										<TableCell>
-											<span
-												className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusClass(
-													request.status
-												)}`}
-											>
-												{request.status}
-											</span>
-										</TableCell>
-										<TableCell
-											className="text-right"
-											onClick={(e) => e.stopPropagation()}
+				<>
+					<div className="border rounded-lg overflow-hidden">
+						<Table data-testid="maintenance-requests-table">
+							<TableHeader>
+								<TableRow>
+									<TableHead>Kode Inventaris</TableHead>
+									<TableHead>Nama Alat</TableHead>
+									<TableHead>Catatan</TableHead>
+									<TableHead>Status</TableHead>
+									<TableHead className="text-center">
+										Aksi
+									</TableHead>
+								</TableRow>
+							</TableHeader>
+							<TableBody>
+								{maintenanceRequests.length > 0 ? (
+									maintenanceRequests.map((request) => (
+										<TableRow
+											key={request.id}
+											className="cursor-pointer"
+											onClick={() =>
+												navigateToRequestDetail(
+													request.id
+												)
+											}
+											data-testid={`request-row-${request.id}`}
 										>
-											<div className="flex justify-end gap-2">
-												<Button
-													size="icon"
-													variant="outline"
-													onClick={(e) => {
-														e.stopPropagation();
-														navigateToRequestEdit(
-															request.id
-														);
-													}}
-													data-testid={`edit-button-${request.id}`}
+											<TableCell>
+												{request.medicalEquipment}
+											</TableCell>
+											<TableCell>
+												{request.medicalEquipment}
+											</TableCell>
+											<TableCell>
+												<div className="max-w-xs truncate">
+													{request.complaint || "-"}
+												</div>
+											</TableCell>
+											<TableCell>
+												<span
+													className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusClass(
+														request.status
+													)}`}
 												>
-													<Edit className="h-4 w-4" />
-												</Button>
-												<Button
-													size="icon"
-													variant="destructive"
-													onClick={(e) => {
-														e.stopPropagation();
-														handleDelete(
-															request.id
-														);
-													}}
-													data-testid={`delete-button-${request.id}`}
-												>
-													<Trash2 className="h-4 w-4" />
-												</Button>
-											</div>
+													{request.status}
+												</span>
+											</TableCell>
+											<TableCell
+												className="text-right"
+												onClick={(e) =>
+													e.stopPropagation()
+												}
+											>
+												<div className="flex justify-end gap-2">
+													<Button
+														size="icon"
+														variant="outline"
+														onClick={(e) => {
+															e.stopPropagation();
+															navigateToRequestEdit(
+																request.id
+															);
+														}}
+														data-testid={`edit-button-${request.id}`}
+													>
+														<Edit className="h-4 w-4" />
+													</Button>
+													<Button
+														size="icon"
+														variant="destructive"
+														onClick={(e) => {
+															e.stopPropagation();
+															confirmDelete(
+																request.id
+															);
+														}}
+														data-testid={`delete-button-${request.id}`}
+													>
+														<Trash2 className="h-4 w-4" />
+													</Button>
+												</div>
+											</TableCell>
+										</TableRow>
+									))
+								) : (
+									<TableRow>
+										<TableCell
+											colSpan={5}
+											className="text-center"
+										>
+											{search
+												? "Tidak ada permintaan pemeliharaan yang cocok dengan pencarian Anda"
+												: "Tidak ada permintaan pemeliharaan yang ditemukan"}
 										</TableCell>
 									</TableRow>
-								))
-							) : (
-								<TableRow>
-									<TableCell
-										colSpan={5}
-										className="text-center"
-									>
-										{search
-											? "Tidak ada permintaan pemeliharaan yang cocok dengan pencarian Anda"
-											: "Tidak ada permintaan pemeliharaan yang ditemukan"}
-									</TableCell>
-								</TableRow>
-							)}
-						</TableBody>
-					</Table>
-				</div>
+								)}
+							</TableBody>
+						</Table>
+					</div>
+
+					<PaginationControls
+						currentPage={paginationMeta.page}
+						totalPages={paginationMeta.totalPages}
+						onPageChange={handlePageChange}
+					/>
+				</>
 			)}
 
 			{/* Filter Modal */}
 			{showFilterModal && (
-				<MaintenanceRequestFilterModal
+				<RequestFilterModal
 					isOpen={showFilterModal}
 					filters={filters}
-					onConfirm={(newFilters) => {
-						setFilters(newFilters);
-						setShowFilterModal(false);
-					}}
+					onConfirm={handleFilterApply}
 					onCancel={() => setShowFilterModal(false)}
 				/>
 			)}
+
+			<DeleteDialog
+				open={showDeleteDialog}
+				onOpenChange={setShowDeleteDialog}
+				title="Hapus Permintaan Pemeliharaan"
+				description="Apakah Anda yakin ingin menghapus permintaan pemeliharaan ini? Tindakan ini tidak dapat dibatalkan."
+				onConfirm={handleDelete}
+				isDeleting={isDeleting}
+				deleteButtonText="Hapus"
+				cancelButtonText="Batal"
+			/>
 		</div>
 	);
 }
