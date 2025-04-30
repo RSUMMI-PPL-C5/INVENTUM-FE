@@ -3,9 +3,25 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 type HistoryDetailProps = {
   isOpen: boolean
   onClose: () => void
-  data: any
+  data : HistoryData
   type: "maintenance" | "calibration" | "sparepart"
 }
+
+type HistoryData = {
+    actionPerformed: string | null
+    technician: string | null
+    result: string | null
+    maintenanceDate?: string | null
+    calibrationMethod?: string | null
+    calibrationDate?: string | null
+    nextCalibrationDue?: string | null
+    sparepartName?: string | null
+    sparepartId?: string | null
+    replacementDate?: string | null
+    createdBy: string | null
+    createdOn: string | null
+  }
+  
 
 export default function HistoryDetailModal({ isOpen, onClose, data, type }: HistoryDetailProps) {
   if (!data) return null
@@ -35,13 +51,13 @@ export default function HistoryDetailModal({ isOpen, onClose, data, type }: Hist
             <DetailItem label="Hasil" value={data.result} />
 
             {type === "maintenance" && (
-              <DetailItem label="Tanggal Maintenance" value={formatDate(data.maintenanceDate)} />
+              <DetailItem label="Tanggal Maintenance" value={formatDate(data.maintenanceDate!)} />
             )}
 
             {type === "calibration" && (
               <>
-                <DetailItem label="Metode Kalibrasi" value={data.calibrationMethod} />
-                <DetailItem label="Tanggal Kalibrasi" value={formatDate(data.calibrationDate)} />
+                <DetailItem label="Metode Kalibrasi" value={data.calibrationMethod!} />
+                <DetailItem label="Tanggal Kalibrasi" value={formatDate(data.calibrationDate!)} />
                 <DetailItem
                   label="Kalibrasi Berikutnya"
                   value={data.nextCalibrationDue ? formatDate(data.nextCalibrationDue) : "-"}
@@ -51,9 +67,9 @@ export default function HistoryDetailModal({ isOpen, onClose, data, type }: Hist
 
             {type === "sparepart" && (
               <>
-                <DetailItem label="Nama Suku Cadang" value={data.sparepartName} />
-                <DetailItem label="ID Suku Cadang" value={data.sparepartId} />
-                <DetailItem label="Tanggal Penggantian" value={formatDate(data.replacementDate)} />
+                <DetailItem label="Nama Suku Cadang" value={data.sparepartName!} />
+                <DetailItem label="ID Suku Cadang" value={data.sparepartId!} />
+                <DetailItem label="Tanggal Penggantian" value={formatDate(data.replacementDate!)} />
               </>
             )}
 

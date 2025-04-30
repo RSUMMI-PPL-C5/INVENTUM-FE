@@ -69,6 +69,21 @@ type SparepartHistory = {
   createdOn: string
 }
 
+type HistoryData = {
+    actionPerformed: string | null
+    technician: string | null
+    result: string | null
+    maintenanceDate?: string | null
+    calibrationMethod?: string | null
+    calibrationDate?: string | null
+    nextCalibrationDue?: string | null
+    sparepartName?: string | null
+    sparepartId?: string | null
+    replacementDate?: string | null
+    createdBy: string | null
+    createdOn: string | null
+  }
+
 export default function MedicalEquipmentDetails() {
   const router = useRouter()
   const params = useParams()
@@ -85,7 +100,6 @@ export default function MedicalEquipmentDetails() {
   const [activeTab, setActiveTab] = useState<"maintenance" | "kalibrasi" | "ganti_suku_cadang">("maintenance")
   const [currentPage, setCurrentPage] = useState(1)
   const [userRole, setUserRole] = useState<string>("")
-  const [search, setSearch] = useState("")
 
   const [showMaintenanceFilterModal, setShowMaintenanceFilterModal] = useState(false)
   const [showCalibrationFilterModal, setShowCalibrationFilterModal] = useState(false)
@@ -153,7 +167,9 @@ export default function MedicalEquipmentDetails() {
     return initialFilters
   })
 
-  const [selectedHistory, setSelectedHistory] = useState<any>(null)
+  const [selectedHistory, setSelectedHistory] = useState< HistoryData| null
+    >(null);
+
   const [showHistoryDetailModal, setShowHistoryDetailModal] = useState(false)
 
   // Function to update URL with current filters
@@ -602,10 +618,12 @@ export default function MedicalEquipmentDetails() {
     }
   }
 
-  const handleHistoryRowClick = (item: any) => {
-    setSelectedHistory(item)
-    setShowHistoryDetailModal(true)
-  }
+const handleHistoryRowClick = (
+  item: MaintenanceHistory | CalibrationHistory | SparepartHistory
+) => {
+  setSelectedHistory(item);
+  setShowHistoryDetailModal(true);
+};
 
   const paginatedData =
     activeTab === "maintenance"
@@ -754,7 +772,6 @@ export default function MedicalEquipmentDetails() {
                 onClick={() => {
                   setActiveTab(tab)
                   setCurrentPage(1)
-                  setSearch("")
                 }}
                 className={`py-4 px-6 text-sm font-medium transition-colors ${
                   activeTab === tab
@@ -1069,14 +1086,20 @@ export default function MedicalEquipmentDetails() {
         />
       )}
 
-      {showHistoryDetailModal && (
+        {showHistoryDetailModal && (
         <HistoryDetailModal
-          isOpen={showHistoryDetailModal}
-          onClose={() => setShowHistoryDetailModal(false)}
-          data={selectedHistory}
-          type={activeTab === "maintenance" ? "maintenance" : activeTab === "kalibrasi" ? "calibration" : "sparepart"}
+            isOpen={showHistoryDetailModal}
+            onClose={() => setShowHistoryDetailModal(false)}
+            data={selectedHistory!} // Tipe sudah diperbaiki
+            type={
+            activeTab === "maintenance"
+                ? "maintenance"
+                : activeTab === "kalibrasi"
+                ? "calibration"
+                : "sparepart"
+            }
         />
-      )}
+        )}
     </div>
   )
 }

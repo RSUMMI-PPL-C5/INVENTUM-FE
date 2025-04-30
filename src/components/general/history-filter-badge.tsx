@@ -21,7 +21,7 @@ export default function HistoryFilterBadge({ label, value, onRemove }: HistoryFi
   return (
     <div className="inline-flex items-center gap-1 px-2 py-1 bg-muted rounded-full text-xs">
       <span className="font-medium">{label}:</span>
-      <span>{displayValue as String}</span>
+      <span>{displayValue as string}</span>
       <Button
         variant="ghost"
         size="icon"
