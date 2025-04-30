@@ -120,7 +120,7 @@ export default function MaintenanceRequestDisplay() {
 		});
 
 		// Update URL without refreshing page
-		router.push(`/dashboard/maintenance-request/maintenance?${params.toString()}`, {
+		router.push(`/dashboard/maintenance-request?${params.toString()}`, {
 			scroll: false,
 		});
 	};
@@ -229,7 +229,7 @@ export default function MaintenanceRequestDisplay() {
 			const token = Cookies.get("accessToken");
 
 			const response = await fetch(
-				`${process.env.NEXT_PUBLIC_API_URL}/request/${requestToDelete}`,
+				`${process.env.NEXT_PUBLIC_API_URL}/request/maintenance/${requestToDelete}`,
 				{
 					method: "DELETE",
 					headers: {
@@ -433,9 +433,6 @@ export default function MaintenanceRequestDisplay() {
 									<TableHead>Nama Alat</TableHead>
 									<TableHead>Catatan</TableHead>
 									<TableHead>Status</TableHead>
-									<TableHead className="text-center">
-										Aksi
-									</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>
@@ -470,41 +467,6 @@ export default function MaintenanceRequestDisplay() {
 												>
 													{request.status}
 												</span>
-											</TableCell>
-											<TableCell
-												className="text-right"
-												onClick={(e) =>
-													e.stopPropagation()
-												}
-											>
-												<div className="flex justify-end gap-2">
-													<Button
-														size="icon"
-														variant="outline"
-														onClick={(e) => {
-															e.stopPropagation();
-															navigateToRequestEdit(
-																request.id
-															);
-														}}
-														data-testid={`edit-button-${request.id}`}
-													>
-														<Edit className="h-4 w-4" />
-													</Button>
-													<Button
-														size="icon"
-														variant="destructive"
-														onClick={(e) => {
-															e.stopPropagation();
-															confirmDelete(
-																request.id
-															);
-														}}
-														data-testid={`delete-button-${request.id}`}
-													>
-														<Trash2 className="h-4 w-4" />
-													</Button>
-												</div>
 											</TableCell>
 										</TableRow>
 									))
