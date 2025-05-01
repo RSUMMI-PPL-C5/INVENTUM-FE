@@ -1,317 +1,336 @@
-import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
-import UserCreate from '@/modules/user/user-create';
-import * as nextNavigation from 'next/navigation';
+import { useRouter } from "next/navigation";
+import React from "react";
+import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
+import "@testing-library/jest-dom";
+import UserCreate from "../../../../../src/modules/user/user-create";
+import Cookies from "js-cookie";
 
-// Mock the useRouter hook
-jest.mock('next/navigation', () => ({
+// Mock next/navigation
+jest.mock("next/navigation", () => ({
   useRouter: jest.fn(),
 }));
 
-describe('UserCreate Component', () => {
-  // Setup mocks before each test
-  let mockRouter: { push: jest.Mock; back: jest.Mock; refresh: jest.Mock };
-  let mockConfirm: jest.SpyInstance;
-  let mockAlert: jest.SpyInstance;
-  let mockConsoleError: jest.SpyInstance;
-  
-  beforeEach(() => {
-    // Reset mocks
-    jest.clearAllMocks();
-    
-    // Setup router mock
-    mockRouter = {
-      push: jest.fn(),
-      back: jest.fn(),
-      refresh: jest.fn(),
-    };
-    (nextNavigation.useRouter as jest.Mock).mockReturnValue(mockRouter);
-    
-    // Setup window.confirm mock
-    mockConfirm = jest.spyOn(window, 'confirm');
-    mockConfirm.mockImplementation(() => true);
-    
-    // Setup window.alert mock
-    mockAlert = jest.spyOn(window, 'alert');
-    mockAlert.mockImplementation(() => {});
-    
-    // Setup console.error mock
-    mockConsoleError = jest.spyOn(console, 'error');
-    mockConsoleError.mockImplementation(() => {});
+// Mock Cookies
+jest.mock("js-cookie", () => ({
+  get: jest.fn(),
+}));
 
-    // Use fake timers by default
-    jest.useFakeTimers();
-  });
+// Mock global functions
+global.alert = jest.fn();
+global.confirm = jest.fn();
+global.fetch = jest.fn();
+global.console.error = jest.fn();
+global.console.log = jest.fn();
+
+// Mock scrollIntoView method which is used by date picker components
+Element.prototype.scrollIntoView = jest.fn();
+
+// Mock divisions data
+const mockDivisions = [
+  { id: 1, divisi: "HR Division" },
+  { id: 2, divisi: "IT Division" },
+  { id: 3, divisi: "Marketing Division" }
+];
+
+// Helper function to fill in required fields with mocked divisions
+const fillRequiredFields = async () => {
+  fireEvent.change(screen.getByLabelText(/No. Karyawan/i), { target: { value: "12345" } });
+  fireEvent.change(screen.getByLabelText(/Nama Lengkap/i), { target: { value: "John Doe" } });
+  fireEvent.change(screen.getByLabelText(/Username/i), { target: { value: "johndoe" } });
+  fireEvent.change(screen.getByLabelText(/Email/i), { target: { value: "johndoe@example.com" } });
+  fireEvent.change(screen.getByLabelText(/Password/i), { target: { value: "password123" } });
+  fireEvent.change(screen.getByLabelText(/No. WA/i), { target: { value: "08123456789" } });
   
+  // Handle division selection
+  fireEvent.click(screen.getByText("Pilih Divisi"));
+  await waitFor(() => {
+    expect(screen.getByRole("option", { name: "IT Division" })).toBeInTheDocument();
+  });
+  fireEvent.click(screen.getByRole("option", { name: "IT Division" }));
+  
+  // Handle role selection
+  fireEvent.click(screen.getByText("Pilih Role"));
+  fireEvent.click(screen.getByRole("option", { name: "Admin" }));
+  
+  // Handle date selection
+  fireEvent.click(screen.getByText("Pilih tanggal"));
+  // Wait for calendar to appear and then use a more robust selector
+  await waitFor(() => {
+    const dateElements = screen.getAllByText("15");
+    // Click the first matching date element that's visible
+    if (dateElements.length > 0) {
+      fireEvent.click(dateElements[0]);
+    }
+  });
+};
+
+describe("UserCreate Component", () => {
+  const mockPush = jest.fn();
+
+  beforeEach(() => {
+    (useRouter as jest.Mock).mockReturnValue({ push: mockPush });
+    (global.confirm as jest.Mock).mockImplementation(() => true);
+    (Cookies.get as jest.Mock).mockReturnValue("mock-token");
+    jest.spyOn(global.Date, "now").mockImplementation(() => new Date("2025-03-14T17:00:00.000Z").getTime());
+  
+    (global.fetch as jest.Mock).mockImplementation((url: string, options: any) => {
+      // Handle division endpoint
+      if (url.includes('/divisi/all')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => mockDivisions
+        });
+      }
+      
+      // Handle user creation endpoint
+      if (url.includes('/user/') && options.method === 'POST') {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ id: 1, username: "testuser" })
+        });
+      }
+      
+      return Promise.reject(new Error(`Unhandled request: ${url}`));
+    });
+  });
+
   afterEach(() => {
-    jest.restoreAllMocks();
-    jest.useRealTimers();
+    jest.clearAllMocks();
   });
-  
-  // Basic rendering test
-  it('renders the form correctly', () => {
-    render(<UserCreate />);
-    
-    // Check that all form elements are rendered
+
+  it("renders the component correctly", async () => {
+    await act(async () => {
+      render(<UserCreate />);
+    });
+
+    expect(screen.getByText("Tambah Pengguna")).toBeInTheDocument();
+    expect(screen.getByLabelText(/No. Karyawan/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Nama Lengkap/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/No. WA/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Username/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Email/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Department/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Date of Entry/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Add User/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Cancel/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/Password/i)).toBeInTheDocument();
+    expect(screen.getByText("Divisi")).toBeInTheDocument();
+    expect(screen.getByText("Role")).toBeInTheDocument();
+    expect(screen.getByText("Tanggal Masuk")).toBeInTheDocument();
   });
-  
-  // Form input tests
-  it('updates form data when inputs change', () => {
-    render(<UserCreate />);
+
+  it("calls createUser with correct data and handles success", async () => {
+    await act(async () => {
+      render(<UserCreate />);
+    });
     
-    // Get input elements
-    const usernameInput = screen.getByLabelText(/Username/i) as HTMLInputElement;
-    const emailInput = screen.getByLabelText(/Email/i) as HTMLInputElement;
-    const departmentInput = screen.getByLabelText(/Department/i) as HTMLSelectElement;
-    const entryDateInput = screen.getByLabelText(/Date of Entry/i) as HTMLInputElement;
-    
-    // Change input values
-    fireEvent.change(usernameInput, { target: { value: 'testuser' } });
-    fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
-    fireEvent.change(departmentInput, { target: { value: 'IT' } });
-    fireEvent.change(entryDateInput, { target: { value: '2023-01-01' } });
-    
-    // Check that input values were updated
-    expect(usernameInput.value).toBe('testuser');
-    expect(emailInput.value).toBe('test@example.com');
-    expect(departmentInput.value).toBe('IT');
-    expect(entryDateInput.value).toBe('2023-01-01');
-  });
-  
-  // Validation tests
-  it('shows validation errors when form is invalid', async () => {
-    render(<UserCreate />);
-    
-    // Submit the form without filling in any fields
-    fireEvent.click(screen.getByRole('button', { name: /Add User/i }));
-    
-    // Check that validation errors are shown
+    await fillRequiredFields();
+
+    fireEvent.click(screen.getByRole("button", { name: "Simpan" }));
+
     await waitFor(() => {
-      expect(screen.getByText(/Username is required/i)).toBeInTheDocument();
-      expect(screen.getByText(/Email is required/i)).toBeInTheDocument();
-      expect(screen.getByText(/Department is required/i)).toBeInTheDocument();
-      expect(screen.getByText(/Date of entry is required/i)).toBeInTheDocument();
+      expect(global.fetch).toHaveBeenCalledWith(
+        `${process.env.NEXT_PUBLIC_API_URL}/user/`,
+        expect.objectContaining({
+          method: "POST",
+          headers: expect.objectContaining({
+            "Content-Type": "application/json",
+            Authorization: "Bearer mock-token",
+          }),
+          body: expect.stringContaining('"divisiId":2') // Now expecting ID 2 for "IT Division"
+        })
+      );
     });
   });
-  
-  // FIX: Adjusted email validation test to match component regex
-  it('validates email format', async () => {
-    render(<UserCreate />);
+
+  it("handles missing authorization token and sends request without Authorization header", async () => {
+    (Cookies.get as jest.Mock).mockReturnValue(null);
     
-    // Fill in form with valid data except for the email
-    const usernameInput = screen.getByLabelText(/Username/i);
-    const emailInput = screen.getByLabelText(/Email/i);
-    const departmentInput = screen.getByLabelText(/Department/i);
-    const entryDateInput = screen.getByLabelText(/Date of Entry/i);
+    await act(async () => {
+      render(<UserCreate />);
+    });
     
-    fireEvent.change(usernameInput, { target: { value: 'testuser' } });
-    
-    // Use an email without the required dot in the domain part
-    fireEvent.change(emailInput, { target: { value: 'invalid@domain' } });
-    
-    fireEvent.change(departmentInput, { target: { value: 'IT' } });
-    fireEvent.change(entryDateInput, { target: { value: '2023-01-01' } });
-    
-    // Submit the form
-    fireEvent.click(screen.getByRole('button', { name: /Add User/i }));
-    
-    // Check that email validation error is shown
+    await fillRequiredFields();
+
+    fireEvent.click(screen.getByRole("button", { name: "Simpan" }));
+
     await waitFor(() => {
-      expect(screen.getByText(/Email is invalid/i)).toBeInTheDocument();
+      expect(global.fetch).toHaveBeenCalledWith(
+        `${process.env.NEXT_PUBLIC_API_URL}/user/`,
+        expect.objectContaining({
+          method: "POST",
+          headers: expect.objectContaining({
+            "Content-Type": "application/json",
+            Authorization: "", // Authorization header should be an empty string
+          }),
+        })
+      );
     });
   });
-  
-  // Form submission tests
-  it('submits the form successfully', async () => {
-    render(<UserCreate />);
+
+  it("handles onSubmit success and navigates to the user list", async () => {
+    await act(async () => {
+      render(<UserCreate />);
+    });
     
-    // Fill in form with valid data
-    const usernameInput = screen.getByLabelText(/Username/i);
-    const emailInput = screen.getByLabelText(/Email/i);
-    const departmentInput = screen.getByLabelText(/Department/i);
-    const entryDateInput = screen.getByLabelText(/Date of Entry/i);
-    
-    fireEvent.change(usernameInput, { target: { value: 'testuser' } });
-    fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
-    fireEvent.change(departmentInput, { target: { value: 'IT' } });
-    fireEvent.change(entryDateInput, { target: { value: '2023-01-01' } });
-    
-    // Submit the form
-    fireEvent.click(screen.getByRole('button', { name: /Add User/i }));
-    
-    // Check for loading state
-    expect(screen.getByText(/Creating.../i)).toBeInTheDocument();
-    
-    // Fast-forward timers
-    jest.runAllTimers();
-    
-    // Check that form submission was handled correctly
+    await fillRequiredFields();
+
+    fireEvent.click(screen.getByRole("button", { name: "Simpan" }));
+
     await waitFor(() => {
-      expect(mockAlert).toHaveBeenCalledWith('User created successfully');
-      expect(mockRouter.push).toHaveBeenCalledWith('/dashboard/user');
+      expect(mockPush).toHaveBeenCalledWith("/dashboard/user?success=create");
     });
   });
-  
-  // Complete implementation of the API error test
-  it('handles API error during form submission', async () => {
-    // Mock API function that throws an error
-    const mockCreateUserApi = jest.fn().mockImplementation(() => {
-      throw new Error('API Error');
+
+  it("handles onSubmit failure and sets error message", async () => {
+    // Override the fetch mock for user creation to fail
+    (global.fetch as jest.Mock).mockImplementation((url: string) => {
+      if (url.includes('/divisi/all')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => mockDivisions
+        });
+      }
+      return Promise.reject(new Error("Failed to create user"));
+    });
+
+    await act(async () => {
+      render(<UserCreate />);
     });
     
-    // Render with our mock API
-    render(<UserCreate createUserApi={mockCreateUserApi} />);
-    
-    // Fill in form with valid data
-    const usernameInput = screen.getByLabelText(/Username/i);
-    const emailInput = screen.getByLabelText(/Email/i);
-    const departmentInput = screen.getByLabelText(/Department/i);
-    const entryDateInput = screen.getByLabelText(/Date of Entry/i);
-    
-    fireEvent.change(usernameInput, { target: { value: 'testuser' } });
-    fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
-    fireEvent.change(departmentInput, { target: { value: 'IT' } });
-    fireEvent.change(entryDateInput, { target: { value: '2023-01-01' } });
-    
-    // Submit the form
-    fireEvent.click(screen.getByRole('button', { name: /Add User/i }));
-    
-    // Check that error handling worked correctly
-    expect(mockConsoleError).toHaveBeenCalledWith('Error creating user:', expect.any(Error));
-    expect(mockAlert).toHaveBeenCalledWith('Failed to create user. Please try again.');
-    
-    // Verify loading state is reset after error
-    expect(screen.getByRole('button', { name: /Add User/i })).toBeInTheDocument();
-    expect(screen.queryByText(/Creating.../i)).not.toBeInTheDocument();
-    
-    // Verify the submit button is enabled again
-    const addUserButton = screen.getByRole('button', { name: /Add User/i });
-    expect(addUserButton).not.toBeDisabled();
+    await fillRequiredFields();
+
+    fireEvent.click(screen.getByRole("button", { name: "Simpan" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Gagal membuat pengguna. Silakan coba lagi.")).toBeInTheDocument();
+    });
   });
-  
-  // Cancel button tests
-  it('does nothing when cancel is clicked with empty form', () => {
-    render(<UserCreate />);
+
+  it("handles API failure and throws an error", async () => {
+    // Override the fetch mock for user creation to return a non-ok response
+    (global.fetch as jest.Mock).mockImplementation((url: string, options: any) => {
+      if (url.includes('/divisi/all')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => mockDivisions
+        });
+      }
+      if (url.includes('/user/') && options.method === 'POST') {
+        return Promise.resolve({
+          ok: false,
+          json: async () => ({ message: "Bad Request" })
+        });
+      }
+      return Promise.reject(new Error(`Unhandled request: ${url}`));
+    });
+
+    await act(async () => {
+      render(<UserCreate />);
+    });
     
-    // Click cancel
-    fireEvent.click(screen.getByRole('button', { name: /Cancel/i }));
-    
-    // Expect no confirm dialog
-    expect(mockConfirm).not.toHaveBeenCalled();
+    await fillRequiredFields();
+
+    fireEvent.click(screen.getByRole("button", { name: "Simpan" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Gagal membuat pengguna. Silakan coba lagi.")).toBeInTheDocument();
+    });
   });
-  
-  it('shows confirmation dialog when cancel is clicked with filled form and user confirms', () => {
-    render(<UserCreate />);
-    
-    // Fill in form with data
-    const usernameInput = screen.getByLabelText(/Username/i);
-    fireEvent.change(usernameInput, { target: { value: 'testuser' } });
-    
-    // Click cancel and confirm
-    mockConfirm.mockReturnValueOnce(true);
-    fireEvent.click(screen.getByRole('button', { name: /Cancel/i }));
-    
-    // Expect confirm dialog
-    expect(mockConfirm).toHaveBeenCalledWith('Are you sure you want to cancel? All entered data will be lost.');
-    
-    // Form should be reset (empty)
-    expect(usernameInput).toHaveValue('');
+
+  it("calls router.back() when 'Batalkan' button is clicked", async () => {
+    const mockBack = jest.fn();
+    (useRouter as jest.Mock).mockReturnValue({ back: mockBack });
+
+    await act(async () => {
+      render(<UserCreate />);
+    });
+
+    fireEvent.click(screen.getByText("Batalkan"));
+
+    expect(mockBack).toHaveBeenCalled();
   });
-  
-  it('does not reset form when cancel is clicked with filled form but user cancels', () => {
-    render(<UserCreate />);
+
+  it("calls router.push() when 'Kembali' button is clicked", async () => {
     
-    // Fill in form with data
-    const usernameInput = screen.getByLabelText(/Username/i);
-    fireEvent.change(usernameInput, { target: { value: 'testuser' } });
-    
-    // Click cancel but don't confirm
-    mockConfirm.mockReturnValueOnce(false);
-    fireEvent.click(screen.getByRole('button', { name: /Cancel/i }));
-    
-    // Expect confirm dialog
-    expect(mockConfirm).toHaveBeenCalled();
-    
-    // Form should not be reset
-    expect(usernameInput).toHaveValue('testuser');
+    const mockPush = jest.fn();
+    (useRouter as jest.Mock).mockReturnValue({ push: mockPush });
+
+    await act(async () => {
+      render(<UserCreate />);
+    });
+
+    fireEvent.click(screen.getByText("Kembali"));
+
+    expect(mockPush).toHaveBeenCalledWith("/dashboard/user");
   });
+
+  it("disables submit button when loading is true", async () => {
+    (global.fetch as jest.Mock).mockImplementation((url: string) => {
+      if (url.includes('/divisi/all')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => mockDivisions
+        });
+      }
+      if (url.includes('/user/')) {
+        return new Promise((resolve) => 
+          setTimeout(() => resolve({
+            ok: true,
+            json: async () => ({ id: 1 })
+          }), 100)
+        );
+      }
+      return Promise.reject(new Error(`Unhandled request: ${url}`));
+    });
   
-  // Loading state test
-  it('shows loading state during form submission', async () => {
-    // Create a mock implementation that doesn't run the callback immediately
-    const originalSetTimeout = window.setTimeout;
-    window.setTimeout = jest.fn() as any;
+    await act(async () => {
+      render(<UserCreate />);
+    });
     
-    render(<UserCreate />);
-    
-    // Fill in form with valid data
-    const usernameInput = screen.getByLabelText(/Username/i);
-    const emailInput = screen.getByLabelText(/Email/i);
-    const departmentInput = screen.getByLabelText(/Department/i);
-    const entryDateInput = screen.getByLabelText(/Date of Entry/i);
-    
-    fireEvent.change(usernameInput, { target: { value: 'testuser' } });
-    fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
-    fireEvent.change(departmentInput, { target: { value: 'IT' } });
-    fireEvent.change(entryDateInput, { target: { value: '2023-01-01' } });
-    
-    // Submit the form
-    fireEvent.click(screen.getByRole('button', { name: /Add User/i }));
-    
-    // Check that loading state is shown
-    expect(screen.getByText(/Creating.../i)).toBeInTheDocument();
-    const submitButton = screen.getByRole('button', { name: /Creating.../i });
-    expect(submitButton).toBeDisabled();
-    
-    // Restore original setTimeout
-    window.setTimeout = originalSetTimeout;
+    await fillRequiredFields();
+
+    const submitButton = screen.getByRole("button", { name: "Simpan" });
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(submitButton).toBeDisabled();
+    });
   });
-  
-  // FIXED: Edge case tests
-  it('handles form with some empty fields', async () => {
-    render(<UserCreate />);
-    
-    // Fill in only some fields
-    const usernameInput = screen.getByLabelText(/Username/i);
-    const emailInput = screen.getByLabelText(/Email/i);
-    
-    fireEvent.change(usernameInput, { target: { value: 'testuser' } });
-    fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
-    
-    // Submit the form
-    fireEvent.click(screen.getByRole('button', { name: /Add User/i }));
-    
-    // Check that validation errors are shown for empty fields only
-    expect(screen.getByText(/Department is required/i)).toBeInTheDocument();
-    expect(screen.getByText(/Date of entry is required/i)).toBeInTheDocument();
-    
-    // These fields should not show errors
-    expect(screen.queryByText(/Username is required/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Email is required/i)).not.toBeInTheDocument();
+
+  it("shows error modal when divisions fetch fails", async () => {
+    (global.fetch as jest.Mock).mockImplementation((url: string) => {
+      if (url.includes('/divisi/all')) {
+        return Promise.reject(new Error("Failed to fetch divisions"));
+      }
+      return Promise.reject(new Error(`Unhandled request: ${url}`));
+    });
+
+    await act(async () => {
+      render(<UserCreate />);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Failed to load parent divisions.")).toBeInTheDocument();
+    });
   });
-  
-  it('handles whitespace in required fields', async () => {
-    render(<UserCreate />);
-    
-    // Fill in fields with whitespace
-    const usernameInput = screen.getByLabelText(/Username/i);
-    const departmentInput = screen.getByLabelText(/Department/i);
-    
-    fireEvent.change(usernameInput, { target: { value: '   ' } });
-    fireEvent.change(departmentInput, { target: { value: '   ' } });
-    
-    // Submit the form
-    fireEvent.click(screen.getByRole('button', { name: /Add User/i }));
-    
-    // Check that validation treats whitespace as empty
-    expect(screen.getByText(/Username is required/i)).toBeInTheDocument();
-    expect(screen.getByText(/Department is required/i)).toBeInTheDocument();
+
+  it("closes error modal when clicking the close button", async () => {
+    (global.fetch as jest.Mock).mockImplementation((url: string) => {
+      if (url.includes('/divisi/all')) {
+        return Promise.reject(new Error("Failed to fetch divisions"));
+      }
+      return Promise.reject(new Error(`Unhandled request: ${url}`));
+    });
+
+    await act(async () => {
+      render(<UserCreate />);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Failed to load parent divisions.")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTitle("Close"));
+
+    await waitFor(() => {
+      expect(screen.queryByText("Failed to load parent divisions.")).not.toBeInTheDocument();
+    });
   });
 });
