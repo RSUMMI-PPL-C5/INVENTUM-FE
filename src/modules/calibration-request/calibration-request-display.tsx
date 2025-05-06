@@ -21,6 +21,7 @@ import RequestFilterModal, {
 import { toast } from "sonner";
 import Cookies from "js-cookie";
 import DeleteDialog from "@/components/general/delete-dialog";
+import StatusChangeModal from "@/components/general/status-change-modal";
 import { PaginationControls } from "@/components/ui/pagination-control";
 
 type CalibrationRequest = {
@@ -48,6 +49,12 @@ export default function CalibrationRequestDisplay() {
 	const [requestToDelete, setRequestToDelete] = useState<string | null>(null);
 	const [isDeleting, setIsDeleting] = useState(false);
 
+	// State for status change modal
+	const [showStatusModal, setShowStatusModal] = useState(false);
+	const [selectedRequest, setSelectedRequest] =
+		useState<CalibrationRequest | null>(null);
+	const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+
 	// Initialize state from URL params
 	const [calibrationRequests, setCalibrationRequests] = useState<
 		CalibrationRequest[]
@@ -63,6 +70,17 @@ export default function CalibrationRequestDisplay() {
 	const [search, setSearch] = useState(searchParams.get("search") || "");
 	const [showFilterModal, setShowFilterModal] = useState(false);
 	const [loading, setLoading] = useState(true);
+	const [role, setRole] = useState("");
+
+     useEffect(() => {
+        const user = Cookies.get("user")
+            
+        if (user) {
+            const { role } = JSON.parse(user)
+            setRole(role);
+        }
+        
+    }, [])
 
 	// Initialize filters from URL params
 	const [filters, setFilters] = useState<Filters>(() => {
@@ -215,11 +233,6 @@ export default function CalibrationRequestDisplay() {
 		}
 	};
 
-	const confirmDelete = (requestId: string) => {
-		setRequestToDelete(requestId);
-		setShowDeleteDialog(true);
-	};
-
 	const handleDelete = async () => {
 		if (!requestToDelete) return;
 
@@ -265,6 +278,61 @@ export default function CalibrationRequestDisplay() {
 			setShowDeleteDialog(false);
 			setRequestToDelete(null);
 		}
+	};
+
+	const handleStatusChange = async (newStatus: string) => {
+		if (!selectedRequest) return;
+
+		setIsUpdatingStatus(true);
+		try {
+			const token = Cookies.get("accessToken");
+
+			const response = await fetch(
+				`${process.env.NEXT_PUBLIC_API_URL}/request/${selectedRequest.id}`,
+				{
+					method: "PUT",
+					headers: {
+						"Content-Type": "application/json",
+						Authorization: token ? `Bearer ${token}` : "",
+					},
+					body: JSON.stringify({ status: newStatus }),
+				}
+			);
+
+			const result = await response.json();
+
+			if (!response.ok) {
+				toast.error(
+					<>
+						Error updating status:
+						<br />
+						{result.message}
+					</>
+				);
+				return;
+			}
+
+			fetchCalibrationRequests();
+			toast.success("Status berhasil diperbarui");
+			setShowStatusModal(false);
+			setSelectedRequest(null);
+		} catch (error) {
+			console.error("Error updating status:", error);
+			toast.error(
+				error instanceof Error ? error.message : "Error updating status"
+			);
+		} finally {
+			setIsUpdatingStatus(false);
+		}
+	};
+
+	const openStatusChangeModal = (
+		e: React.MouseEvent,
+		request: CalibrationRequest
+	) => {
+		e.stopPropagation();
+		setSelectedRequest(request);
+		setShowStatusModal(true);
 	};
 
 	const handleSearchChange = (value: string) => {
@@ -342,16 +410,14 @@ export default function CalibrationRequestDisplay() {
 		}
 	};
 
-	const navigateToRequestEdit = (requestId: string) => {
-		router.push(`/dashboard/calibration-request/all/${requestId}/edit`);
-	};
-
 	const navigateToRequestDetail = (requestId: string) => {
-		router.push(`/dashboard/detail-request?type=calibration&id=${requestId}`);
+		router.push(
+			`/dashboard/detail-request?type=calibration&id=${requestId}`
+		);
 	};
 
 	const navigateToRequestCreate = () => {
-        toast.info("Pilih alat medis untuk permintaan kalibrasi");
+		toast.info("Pilih alat medis untuk permintaan kalibrasi");
 		router.push(`/dashboard/medical-equipment`);
 	};
 
@@ -373,9 +439,9 @@ export default function CalibrationRequestDisplay() {
 							Permintaan Kalibrasi
 						</h2>
 						<p className="text-s-medium">
-							Kelola, pantau, dan atur semua permintaan
-							kalibrasi alat medis dalam sistem, termasuk
-							penambahan, pembaruan, status, dan catatan.
+							Kelola, pantau, dan atur semua permintaan kalibrasi
+							alat medis dalam sistem, termasuk penambahan,
+							pembaruan, status, dan catatan.
 						</p>
 					</div>
 					<Button
@@ -431,7 +497,10 @@ export default function CalibrationRequestDisplay() {
 									<TableHead>Kode Inventaris</TableHead>
 									<TableHead>Nama Alat</TableHead>
 									<TableHead>Catatan</TableHead>
-									<TableHead>Status</TableHead>						
+									<TableHead>Status</TableHead>
+                                    {["Fasum", "Admin"].includes(role) && (
+									    <TableHead>Aksi</TableHead>
+                                    )}
 								</TableRow>
 							</TableHeader>
 							<TableBody>
@@ -459,14 +528,35 @@ export default function CalibrationRequestDisplay() {
 												</div>
 											</TableCell>
 											<TableCell>
-												<span
-													className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusClass(
+												<Button
+													variant="ghost"
+													className={`px-4 py-1 rounded-full text-xs font-medium ${getStatusClass(
 														request.status
 													)}`}
+													data-testid={`status-button-${request.id}`}
 												>
 													{request.status}
-												</span>
+												</Button>
 											</TableCell>
+
+                                            {["Fasum", "Admin"].includes(role) && (
+                                                <TableCell>
+                                                    <Button
+                                                        size="icon"
+                                                        variant="outline"
+                                                        onClick={(e) =>
+                                                            openStatusChangeModal(
+                                                                e,
+                                                                request
+                                                            )
+                                                        }
+                                                        data-testid={`edit-button-${request.id}`}
+                                                    >
+                                                        <Edit className="h-4 w-4" />
+                                                    </Button>
+                                                </TableCell>
+                                            )}
+                                            
 										</TableRow>
 									))
 								) : (
@@ -513,6 +603,20 @@ export default function CalibrationRequestDisplay() {
 				deleteButtonText="Hapus"
 				cancelButtonText="Batal"
 			/>
+
+			{showStatusModal && selectedRequest && (
+				<StatusChangeModal
+					open={showStatusModal}
+					onOpenChange={(open) => {
+						setShowStatusModal(open);
+						if (!open) setSelectedRequest(null);
+					}}
+					currentStatus={selectedRequest.status}
+					onConfirm={handleStatusChange}
+					isUpdating={isUpdatingStatus}
+					title="Ubah Status Permintaan Kalibrasi"
+				/>
+			)}
 		</div>
 	);
 }
