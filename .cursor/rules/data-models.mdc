@@ -1,0 +1,26 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Data Models
+
+The application uses Prisma ORM with the following main models:
+
+## User Management
+- **User**: Application users with roles and division assignment
+- **ListDivisi**: Organizational divisions with hierarchical structure
+
+## Equipment Management
+- **MedicalEquipment**: Medical equipment inventory with tracking information
+- **Spareparts**: Spare parts inventory for equipment
+- **PartsHistory**: History of spare part replacements
+- **MaintenanceHistory**: Equipment maintenance records
+- **CalibrationHistory**: Equipment calibration records
+
+## Request Management
+- **Request**: Service requests for maintenance or calibration
+- **Comment**: Comments on requests
+- **Notifikasi**: Notifications for users
+
+The database schema is defined in [prisma/schema.prisma](mdc:PPL-C5-BACKEND/prisma/schema.prisma).
