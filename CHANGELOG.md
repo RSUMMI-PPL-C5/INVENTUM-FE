@@ -1,3 +1,10 @@
+# [1.0.0-staging.2](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/compare/v1.0.0-staging.1...v1.0.0-staging.2) (2025-05-08)
+
+
+### Features
+
+* add AI rules ([c8177d6](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/commit/c8177d6e29c6c29f605d0ad7d2ceb70f3bbc6ad3))
+
 # 1.0.0-staging.1 (2025-05-08)
 
 
