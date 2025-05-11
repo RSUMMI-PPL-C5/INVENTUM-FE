@@ -3,45 +3,97 @@ name: CD Pipeline
 on:
   push:
     branches:
-      - main 
-      - staging 
+      - main
+      - staging
+
+env:
+  DOCKERHUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
+  DOCKERHUB_REPOSITORY: my-app-fe-fe
 
 jobs:
-  deploy:
+  release:
+    name: Semantic Release
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging'
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '21'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Semantic Release
+        uses: cycjimmy/semantic-release-action@v4
+        with:
+          extra_plugins: |
+            @semantic-release/git
+            @semantic-release/changelog
+            @semantic-release/exec
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  deploy:
+    name: Deploy
+    needs: [release]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Important for semantic-release to access all commits
+
+      - name: Get latest semantic version
+        id: version
+        run: |
+          git fetch --tags
+          if git rev-parse --verify --quiet "$(git describe --tags --abbrev=0 2>/dev/null)"; then
+            echo "VERSION=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT
+            echo "Using existing tag: $(git describe --tags --abbrev=0)"
+          else
+            echo "VERSION=0.1.0" >> $GITHUB_OUTPUT
+            echo "No tags found. Using default version 0.1.0"
+          fi
 
       - name: Log in to Docker Hub
-        run: |
-            echo "${{ secrets.DOCKER_HUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
 
-      - name: Build and push Docker image
-        run: |
-            docker build \
-                --build-arg NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }} \
-                -t ${{ secrets.DOCKER_HUB_USERNAME }}/my-app-fe-fe:latest .
-            docker push ${{ secrets.DOCKER_HUB_USERNAME }}/my-app-fe-fe:latest
-            
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}
+          tags: |
+            ${{ env.DOCKERHUB_USERNAME }}/${{ env.DOCKERHUB_REPOSITORY }}:${{ steps.version.outputs.VERSION }}
+            ${{ env.DOCKERHUB_USERNAME }}/${{ env.DOCKERHUB_REPOSITORY }}:${{ github.ref == 'refs/heads/main' && 'latest' || 'staging' }}
 
       - name: Deploy to Portainer
         run: |
-          # Authenticate to Portainer and get the JWT token
           TOKEN=$(curl -s -X POST "${{ secrets.PORTAINER_URL }}/auth" \
             -H "Content-Type: application/json" \
             --data '{"username": "${{ secrets.PORTAINER_USERNAME }}", "password": "${{ secrets.PORTAINER_PASSWORD }}"}' | jq -r .jwt)
 
-          # Get the endpoint ID dynamically
           ENDPOINT_ID=$(curl -s -X GET "${{ secrets.PORTAINER_URL }}/endpoints" \
             -H "Authorization: Bearer $TOKEN" | jq -r '.[0].Id')
 
-          # Get stack ID dynamically
           STACK_ID=$(curl -s -X GET "${{ secrets.PORTAINER_URL }}/stacks?endpointId=$ENDPOINT_ID" \
             -H "Authorization: Bearer $TOKEN" | jq -r '.[] | select(.Name=="${{ secrets.STACK_NAME }}") | .Id')
 
-          # Redeploy the stack (this pulls the latest image)
           curl -s -X POST "${{ secrets.PORTAINER_URL }}/stacks/$STACK_ID/git/redeploy?endpointId=$ENDPOINT_ID" \
             -H "Authorization: Bearer $TOKEN" \
             -H "Content-Type: application/json" \

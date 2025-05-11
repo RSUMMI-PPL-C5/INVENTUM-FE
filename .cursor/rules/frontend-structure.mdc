@@ -1,0 +1,25 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Frontend Structure (PPL-C5)
+
+## Key Directories
+
+- **[src/app](mdc:PPL-C5/src/app)**: Next.js app directory with pages and routes
+- **[src/components](mdc:PPL-C5/src/components)**: Reusable UI components
+- **[src/modules](mdc:PPL-C5/src/modules)**: Feature-specific modules
+- **[src/hooks](mdc:PPL-C5/src/hooks)**: Custom React hooks
+- **[src/lib](mdc:PPL-C5/src/lib)**: Utility functions and libraries
+
+## Main Files
+
+- **[package.json](mdc:PPL-C5/package.json)**: Project dependencies and scripts
+- **[next.config.ts](mdc:PPL-C5/next.config.ts)**: Next.js configuration
+- **[middleware.ts](mdc:PPL-C5/src/middleware.ts)**: Next.js middleware for authentication
+
+## Entry Points
+
+- **[src/app/layout.tsx](mdc:PPL-C5/src/app/layout.tsx)**: Root layout component
+- **[src/app/page.tsx](mdc:PPL-C5/src/app/page.tsx)**: Homepage component
