@@ -33,6 +33,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { ImageUpload } from "@/components/general/image-upload";
 
 interface Location {
 	id: number;
@@ -50,6 +51,8 @@ const formSchema = z.object({
 		required_error: "Tanggal alat wajib diisi",
 	}),
 	createdOn: z.string().optional(),
+	image: z.instanceof(File).optional(),
+	imageUrl: z.string().optional(),
 });
 
 export default function SparePartEdit() {
@@ -133,7 +136,7 @@ export default function SparePartEdit() {
 			const purchaseDate = new Date(sparePartData.purchaseDate);
 			const toolDate = new Date(sparePartData.toolDate);
 			const createdDate = new Date(sparePartData.createdOn);
-			
+
 			const formattedCreatedDate = isValid(createdDate)
 				? format(createdDate, "dd-MM-yyyy")
 				: "Invalid date";
@@ -146,15 +149,16 @@ export default function SparePartEdit() {
 				toolLocation: sparePartData.toolLocation || "",
 				toolDate: isValid(toolDate) ? toolDate : new Date(),
 				createdOn: formattedCreatedDate,
+				imageUrl: sparePartData.imageUrl || "",
 			});
-            
+
 			console.log("Form values after reset:", form.getValues());
 		} catch (error) {
 			console.error("Error fetching spare part data:", error);
 			toast.error(
-				error instanceof Error ? 
-				<>Error fetching spare part data:<br />{error.message}</> : 
-				'Error fetching spare part data'
+				error instanceof Error ?
+					<>Error fetching spare part data:<br />{error.message}</> :
+					'Error fetching spare part data'
 			);
 		} finally {
 			setLoading(false);
@@ -163,23 +167,29 @@ export default function SparePartEdit() {
 
 	async function updateSparePart(data: z.infer<typeof formSchema>) {
 		const token = Cookies.get("accessToken");
+		const formData = new FormData();
+
+		// Add all form fields to FormData
+		formData.append("partsName", data.partsName);
+		formData.append("purchaseDate", data.purchaseDate.toISOString());
+		formData.append("price", data.price);
+		formData.append("toolLocation", data.toolLocation);
+		formData.append("toolDate", data.toolDate.toISOString());
+		formData.append("modifiedBy", "1"); // Assuming current user ID
+
+		// Add image if present
+		if (data.image) {
+			formData.append("image", data.image);
+		}
 
 		const response = await fetch(
 			`${process.env.NEXT_PUBLIC_API_URL}/spareparts/${sparePartId}`,
 			{
 				method: "PUT",
 				headers: {
-					"Content-Type": "application/json",
 					Authorization: token ? `Bearer ${token}` : "",
 				},
-				body: JSON.stringify({
-					partsName: data.partsName,
-					purchaseDate: data.purchaseDate.toISOString(),
-					price: Number.parseFloat(data.price),
-					toolLocation: data.toolLocation,
-					toolDate: data.toolDate.toISOString(),
-					modifiedBy: 1, // Assuming current user ID
-				}),
+				body: formData,
 			}
 		);
 
@@ -202,9 +212,9 @@ export default function SparePartEdit() {
 		} catch (error) {
 			console.error("Error updating spare part:", error);
 			toast.error(
-				error instanceof Error ? 
-				<>Error updating spare part:<br />{error.message}</> : 
-				'Error updating spare part'
+				error instanceof Error ?
+					<>Error updating spare part:<br />{error.message}</> :
+					'Error updating spare part'
 			);
 		} finally {
 			setSubmitting(false);
@@ -267,7 +277,7 @@ export default function SparePartEdit() {
 												className={cn(
 													"w-full pl-3 text-left font-normal",
 													!field.value &&
-														"text-muted-foreground"
+													"text-muted-foreground"
 												)}
 											>
 												{field.value ? (
@@ -363,11 +373,11 @@ export default function SparePartEdit() {
 												className={cn(
 													"w-full pl-3 text-left font-normal",
 													!field.value &&
-														"text-muted-foreground"
+													"text-muted-foreground"
 												)}
 											>
 												{field.value &&
-												isValid(field.value) ? (
+													isValid(field.value) ? (
 													format(field.value, "PPP")
 												) : (
 													<span>Pilih tanggal</span>
@@ -408,6 +418,24 @@ export default function SparePartEdit() {
 										/>
 										<CalendarIcon className="absolute right-3 top-3 w-5 h-5 text-gray-500" />
 									</div>
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+
+					<FormField
+						control={form.control}
+						name="image"
+						render={({ field: { onChange, value, ...field } }) => (
+							<FormItem>
+								<FormLabel>Gambar Spare Part</FormLabel>
+								<FormControl>
+									<ImageUpload
+										onImageSelect={(file) => onChange(file)}
+										currentImageUrl={form.getValues("imageUrl")}
+										className="mt-2"
+									/>
 								</FormControl>
 								<FormMessage />
 							</FormItem>
