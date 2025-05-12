@@ -61,55 +61,55 @@ export default function PartsHistoryCreate() {
   const [spareparts, setSpareparts] = useState<Sparepart[]>([])
 
   useEffect(() => {
+    async function fetchMedicalEquipment() {
+      try {
+        const token = Cookies.get("accessToken")
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/medical-equipment/${medicalEquipmentId}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : "",
+          },
+        })
+  
+        if (!response.ok) {
+          throw new Error("Failed to fetch medical equipment")
+        }
+  
+        const result = await response.json()
+        setEquipment(result.data)
+      } catch (err) {
+        console.error("Error fetching medical equipment:", err)
+        setError("Gagal memuat detail peralatan medis.")
+      }
+    }
+    async function fetchSpareparts() {
+      try {
+        const token = Cookies.get("accessToken")
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/spareparts`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : "",
+          },
+        })
+  
+        if (!response.ok) {
+          throw new Error("Failed to fetch spare parts")
+        }
+  
+        const result = await response.json()
+        setSpareparts(result.data)
+      } catch (err) {
+        console.error("Error fetching spare parts:", err)
+        setError("Gagal memuat suku cadang.")
+      }
+    }
+
     fetchMedicalEquipment()
     fetchSpareparts()
-  }, [medicalEquipmentId, fetchMedicalEquipment, fetchSpareparts])
+  }, [medicalEquipmentId])
 
-  async function fetchMedicalEquipment() {
-    try {
-      const token = Cookies.get("accessToken")
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/medical-equipment/${medicalEquipmentId}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
-        },
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch medical equipment")
-      }
-
-      const result = await response.json()
-      setEquipment(result.data)
-    } catch (err) {
-      console.error("Error fetching medical equipment:", err)
-      setError("Gagal memuat detail peralatan medis.")
-    }
-  }
-
-  async function fetchSpareparts() {
-    try {
-      const token = Cookies.get("accessToken")
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/spareparts`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
-        },
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch spare parts")
-      }
-
-      const result = await response.json()
-      setSpareparts(result.data)
-    } catch (err) {
-      console.error("Error fetching spare parts:", err)
-      setError("Gagal memuat suku cadang.")
-    }
-  }
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),

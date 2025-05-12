@@ -47,35 +47,6 @@ export default function MaintenanceRequestCreate() {
 		return token;
 	};
 
-	const fetchMedicalEquipmentName = async () => {
-		setLoading(true);
-		try {
-			const token = await getToken();
-
-			const response = await fetch(
-				`${process.env.NEXT_PUBLIC_API_URL}/medical-equipment/${equipmentId}`,
-				{
-					method: "GET",
-					headers: {
-						"Content-Type": "application/json",
-						Authorization: `Bearer ${token}`,
-					},
-				}
-			);
-
-			if (!response.ok) {
-				throw new Error("Failed to fetch medical equipment name");
-			}
-
-			const data = await response.json();
-			form.setValue("medicalEquipment", data.data.name);
-		} catch (error) {
-			console.error("Error fetching medical equipment name:", error);
-		} finally {
-			setLoading(false);
-		}
-	};
-
 	const createMaintenanceRequest = async (
 		data: z.infer<typeof formSchema>
 	) => {
@@ -125,8 +96,36 @@ export default function MaintenanceRequestCreate() {
 	};
 
 	useEffect(() => {
+		const fetchMedicalEquipmentName = async () => {
+			setLoading(true);
+			try {
+				const token = await getToken();
+
+				const response = await fetch(
+					`${process.env.NEXT_PUBLIC_API_URL}/medical-equipment/${equipmentId}`,
+					{
+						method: "GET",
+						headers: {
+							"Content-Type": "application/json",
+							Authorization: `Bearer ${token}`,
+						},
+					}
+				);
+
+				if (!response.ok) {
+					throw new Error("Failed to fetch medical equipment name");
+				}
+
+				const data = await response.json();
+				form.setValue("medicalEquipment", data.data.name);
+			} catch (error) {
+				console.error("Error fetching medical equipment name:", error);
+			} finally {
+				setLoading(false);
+			}
+		};
 		fetchMedicalEquipmentName();
-	}, [equipmentId]);
+	}, [equipmentId, form]);
 
 	return (
 		<>

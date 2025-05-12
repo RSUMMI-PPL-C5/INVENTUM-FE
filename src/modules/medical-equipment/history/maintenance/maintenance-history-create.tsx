@@ -50,31 +50,30 @@ export default function MaintenanceHistoryCreate() {
   const [equipment, setEquipment] = useState<MedicalEquipment | null>(null)
 
   useEffect(() => {
-    fetchMedicalEquipment()
-  }, [medicalEquipmentId, fetchMedicalEquipment])
-
-  async function fetchMedicalEquipment() {
-    try {
-      const token = Cookies.get("accessToken")
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/medical-equipment/${medicalEquipmentId}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
-        },
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch medical equipment")
+    async function fetchMedicalEquipment() {
+      try {
+        const token = Cookies.get("accessToken")
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/medical-equipment/${medicalEquipmentId}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : "",
+          },
+        })
+  
+        if (!response.ok) {
+          throw new Error("Failed to fetch medical equipment")
+        }
+  
+        const result = await response.json()
+        setEquipment(result.data)
+      } catch (err) {
+        console.error("Error fetching medical equipment:", err)
+        setError("Gagal memuat detail peralatan medis.")
       }
-
-      const result = await response.json()
-      setEquipment(result.data)
-    } catch (err) {
-      console.error("Error fetching medical equipment:", err)
-      setError("Gagal memuat detail peralatan medis.")
     }
-  }
+    fetchMedicalEquipment()
+  }, [medicalEquipmentId])
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
