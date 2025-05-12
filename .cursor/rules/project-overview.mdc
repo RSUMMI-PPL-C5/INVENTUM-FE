@@ -1,0 +1,20 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Project Overview
+
+This project consists of two main applications:
+
+1. **Frontend Application (PPL-C5)**
+   - Next.js application with React
+   - Uses Tailwind CSS for styling
+   - Located in [PPL-C5](mdc:PPL-C5)
+
+2. **Backend Application (PPL-C5-BACKEND)**
+   - Express.js REST API
+   - Uses Prisma ORM with MySQL database
+   - Located in [PPL-C5-BACKEND](mdc:PPL-C5-BACKEND)
+
+The application appears to be a Medical Equipment Management system with features for tracking equipment, maintenance, calibration, and spare parts.

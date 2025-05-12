@@ -1,0 +1,30 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Frontend Coding Standards
+
+## API Fetching
+- Always use the native fetch API
+- Do not use axios or other HTTP client libraries
+- Example in [src/lib](mdc:PPL-C5/src/lib) for API utility functions
+
+## Components
+- Use shadcn/ui components that are already set up in the project
+- Reference the setup in [components.json](mdc:PPL-C5/components.json)
+- Check existing components in [src/components](mdc:PPL-C5/src/components) for examples
+
+## Styling
+- Use Tailwind CSS for styling
+- Organize classes based on categories:
+  1. Layout (display, position)
+  2. Spacing (margin, padding)
+  3. Typography (font, text)
+  4. Colors (bg, text colors)
+- Reference the Tailwind config in [tailwind.config.ts](mdc:PPL-C5/tailwind.config.ts)
+
+## Comments
+- Write technical and professional comments
+- Avoid emojis or slang
+- Focus on explaining complex logic and why decisions were made, not what the code does

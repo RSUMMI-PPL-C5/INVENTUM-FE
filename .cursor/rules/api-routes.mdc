@@ -1,0 +1,30 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# API Routes
+
+The backend provides the following API endpoints:
+
+## Authentication
+- **[/auth](mdc:PPL-C5-BACKEND/src/routes/auth.route.ts)**: Authentication routes for login/signup
+
+## User Management
+- **[/user](mdc:PPL-C5-BACKEND/src/routes/user.route.ts)**: User CRUD operations
+- **[/divisi](mdc:PPL-C5-BACKEND/src/routes/division.route.ts)**: Division management
+
+## Equipment Management
+- **[/medical-equipment](mdc:PPL-C5-BACKEND/src/routes/medical-equipment.route.ts)**: Medical equipment CRUD
+- **[/spareparts](mdc:PPL-C5-BACKEND/src/routes/sparepart.route.ts)**: Spare parts management
+
+## Maintenance Records
+- **Maintenance**: Routes for maintenance history
+- **Calibration**: Routes for calibration records
+- **Parts History**: Routes for spare parts replacement history
+
+## Request Management
+- **[/request](mdc:PPL-C5-BACKEND/src/routes/request.route.ts)**: Service request management
+- **[/comment](mdc:PPL-C5-BACKEND/src/routes/comment.route.ts)**: Comments on requests
+
+All routes are defined in [src/index.ts](mdc:PPL-C5-BACKEND/src/index.ts) and implemented in the [src/routes](mdc:PPL-C5-BACKEND/src/routes) directory.

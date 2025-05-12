@@ -1,0 +1,50 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Development Workflow
+
+## Frontend (PPL-C5)
+
+Run the frontend development server:
+```bash
+cd PPL-C5
+npm run dev
+```
+
+Testing:
+```bash
+npm test           # Run all tests
+npm run test:unit  # Run unit tests
+npm run test:integration # Run integration tests
+```
+
+## Backend (PPL-C5-BACKEND)
+
+Run the backend development server:
+```bash
+cd PPL-C5-BACKEND
+npm run dev
+```
+
+Testing:
+```bash
+npm test           # Run all tests
+npm run test:unit  # Run unit tests
+npm run test:integration # Run integration tests
+```
+
+## Database
+
+The backend uses Prisma ORM with MySQL. Environment variables need to be set up in a `.env` file:
+```
+DATABASE_URL="mysql://username:password@localhost:3306/database_name"
+```
+
+Prisma commands:
+```bash
+npx prisma migrate dev    # Apply migrations
+npx prisma studio         # Open Prisma Studio
+npx prisma generate       # Generate Prisma client
+```
