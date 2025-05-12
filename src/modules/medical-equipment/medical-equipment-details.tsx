@@ -767,7 +767,7 @@ const handleHistoryRowClick = (
                 {["Admin", "User"].includes(userRole) && (
                   <>
                     <Button size="sm" className="gap-2 w-full" onClick={handleAddMaintenanceRequest}>
-                      <ClipboardCheck className="h-4 w-4" /> Buat Permintaan Maintenance
+                      <ClipboardCheck className="h-4 w-4" /> Buat Permintaan Pemeliharaan
                     </Button>
                     <Button size="sm" className="gap-2 w-full" onClick={handleAddCalibrationRequest}>
                       <FileCheck className="h-4 w-4" /> Buat Permintaan Kalibrasi
