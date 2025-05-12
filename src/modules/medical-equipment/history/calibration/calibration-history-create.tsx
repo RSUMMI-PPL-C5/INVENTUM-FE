@@ -40,6 +40,8 @@ const resultOptions = [
   { id: "Success", name: "Berhasil" },
   { id: "Partial", name: "Sebagian" },
   { id: "Failed", name: "Gagal" },
+  { id: "Success with Issues", name: "Berhasil dengan Catatan" },
+  { id: "Failed with Issues", name: "Gagal dengan Catatan" },
 ]
 
 export default function CalibrationHistoryCreate() {
