@@ -175,7 +175,6 @@ export default function MedicalEquipmentEdit() {
 						: null,
 					status: data.status,
 					vendor: data.vendor ?? null,
-					modifiedBy: 1, // Assuming current user ID
 				}),
 			}
 		);
