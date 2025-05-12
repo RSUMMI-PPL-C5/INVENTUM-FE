@@ -23,7 +23,7 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
+import { cn, formatNumberWithDots } from "@/lib/utils";
 import Cookies from "js-cookie";
 import { toast } from "sonner";
 import {
@@ -72,7 +72,8 @@ export default function SparePartEdit() {
 	useEffect(() => {
 		fetchAllLocations();
 		fetchSparePart();
-	}, [sparePartId, fetchAllLocations, fetchSparePart]);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [sparePartId]);
 
 	async function fetchAllLocations() {
 		try {
@@ -140,10 +141,10 @@ export default function SparePartEdit() {
 
 			// Set form values with explicit type handling
 			form.reset({
-				partsName: sparePartData.partsName || "",
+				partsName: sparePartData.partsName ?? "",
 				purchaseDate: isValid(purchaseDate) ? purchaseDate : new Date(),
-				price: (sparePartData.price || 0).toString(),
-				toolLocation: sparePartData.toolLocation || "",
+				price: (sparePartData.price ?? 0).toString(),
+				toolLocation: sparePartData.toolLocation ?? "",
 				toolDate: isValid(toolDate) ? toolDate : new Date(),
 				createdOn: formattedCreatedDate,
 			});
@@ -163,6 +164,7 @@ export default function SparePartEdit() {
 
 	async function updateSparePart(data: z.infer<typeof formSchema>) {
 		const token = Cookies.get("accessToken");
+		const cleanPrice = data.price.replace(/\./g, "");
 
 		const response = await fetch(
 			`${process.env.NEXT_PUBLIC_API_URL}/spareparts/${sparePartId}`,
@@ -175,10 +177,9 @@ export default function SparePartEdit() {
 				body: JSON.stringify({
 					partsName: data.partsName,
 					purchaseDate: data.purchaseDate.toISOString(),
-					price: Number.parseFloat(data.price),
+					price: Number.parseFloat(cleanPrice),
 					toolLocation: data.toolLocation,
 					toolDate: data.toolDate.toISOString(),
-					modifiedBy: 1, // Assuming current user ID
 				}),
 			}
 		);
@@ -306,10 +307,13 @@ export default function SparePartEdit() {
 									<Input
 										{...field}
 										placeholder="Masukkan harga"
-										type="number"
-										onChange={(e) =>
-											field.onChange(e.target.value)
-										}
+										type="text"
+										value={field.value ? formatNumberWithDots(field.value) : ""}
+										onChange={(e) => {
+											const rawValue = e.target.value.replace(/[^\d.]/g, "");
+											const numericValue = rawValue.replace(/\./g, "");
+											field.onChange(numericValue);
+										}}
 									/>
 								</FormControl>
 								<FormMessage />

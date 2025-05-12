@@ -151,16 +151,16 @@ export default function UserEdit() {
 
 			// Set form values
 			form.reset({
-				nokar: userData.nokar || "",
-				fullname: userData.fullname || "",
-				username: userData.username || "",
-				email: userData.email || "",
+				nokar: userData.nokar ?? "",
+				fullname: userData.fullname ?? "",
+				username: userData.username ?? "",
+				email: userData.email ?? "",
 				password: "",
 				divisiId: userData.divisiId ? userData.divisiId.toString() : "",
-				role: userData.role || "",
-				waNumber: userData.waNumber || "",
+				role: userData.role ?? "",
+				waNumber: userData.waNumber ?? "",
 				createdOn: formattedCreatedDate,
-				entryDate: createdDate || undefined,
+				entryDate: createdDate ?? undefined,
 			});
 		} catch (error) {
 			console.error("Error fetching user data:", error);

@@ -23,7 +23,7 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
+import { cn, formatNumberWithDots } from "@/lib/utils";
 import Cookies from "js-cookie";
 import { toast } from "sonner";
 import {
@@ -34,7 +34,6 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 
-// Add the Location type at the top of the file, after imports
 interface Location {
 	id: number;
 	divisi: string;
@@ -114,10 +113,9 @@ export default function SparePartCreate() {
 				body: JSON.stringify({
 					partsName: data.partsName,
 					purchaseDate: data.purchaseDate.toISOString(),
-					price: Number.parseFloat(data.price),
+        			price: Number.parseFloat(data.price.replace(/\./g, "")),
 					toolLocation: data.toolLocation,
 					toolDate: data.toolDate.toISOString(),
-					createdBy: 1, // Assuming current user ID
 				}),
 			}
 		);
@@ -236,21 +234,24 @@ export default function SparePartCreate() {
 						name="price"
 						render={({ field }) => (
 							<FormItem>
-								<FormLabel>Harga</FormLabel>
-								<FormControl>
-									<Input
-										{...field}
-										placeholder="Masukkan harga"
-										type="number"
-										onChange={(e) =>
-											field.onChange(e.target.value)
-										}
-									/>
-								</FormControl>
-								<FormMessage />
+							<FormLabel>Harga</FormLabel>
+							<FormControl>
+								<Input
+								{...field}
+								placeholder="Masukkan harga"
+								type="text"
+								value={field.value ? formatNumberWithDots(field.value) : ""}
+								onChange={(e) => {
+									// Remove non-digit characters and store raw value
+									const rawValue = e.target.value.replace(/\./g, "").replace(/[^\d]/g, "");
+									field.onChange(rawValue);
+								}}
+								/>
+							</FormControl>
+							<FormMessage />
 							</FormItem>
 						)}
-					/>
+						/>
 
 					<FormField
 						control={form.control}
