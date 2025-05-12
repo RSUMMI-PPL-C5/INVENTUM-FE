@@ -33,6 +33,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { ImageUpload } from "@/components/general/image-upload";
 
 // Add the Location type at the top of the file, after imports
 interface Location {
@@ -50,6 +51,7 @@ const formSchema = z.object({
 	toolDate: z.date({
 		required_error: "Tanggal alat wajib diisi",
 	}),
+	image: z.instanceof(File).optional(),
 });
 
 export default function SparePartCreate() {
@@ -102,23 +104,29 @@ export default function SparePartCreate() {
 
 	async function createSparePart(data: z.infer<typeof formSchema>) {
 		const token = Cookies.get("accessToken");
+		const formData = new FormData();
+
+		// Add all form fields to FormData
+		formData.append("partsName", data.partsName);
+		formData.append("purchaseDate", data.purchaseDate.toISOString());
+		formData.append("price", data.price);
+		formData.append("toolLocation", data.toolLocation);
+		formData.append("toolDate", data.toolDate.toISOString());
+		formData.append("createdBy", "1"); // Assuming current user ID
+
+		// Add image if present
+		if (data.image) {
+			formData.append("image", data.image);
+		}
 
 		const response = await fetch(
 			`${process.env.NEXT_PUBLIC_API_URL}/spareparts/`,
 			{
 				method: "POST",
 				headers: {
-					"Content-Type": "application/json",
 					Authorization: token ? `Bearer ${token}` : "",
 				},
-				body: JSON.stringify({
-					partsName: data.partsName,
-					purchaseDate: data.purchaseDate.toISOString(),
-					price: Number.parseFloat(data.price),
-					toolLocation: data.toolLocation,
-					toolDate: data.toolDate.toISOString(),
-					createdBy: 1, // Assuming current user ID
-				}),
+				body: formData,
 			}
 		);
 
@@ -141,9 +149,9 @@ export default function SparePartCreate() {
 		} catch (error) {
 			console.error("Error creating spare part:", error);
 			toast.error(
-				error instanceof Error ? 
-				<>Error creating spare part:<br />{error.message}</> : 
-				'Error creating spare part'
+				error instanceof Error ?
+					<>Error creating spare part:<br />{error.message}</> :
+					'Error creating spare part'
 			);
 		} finally {
 			setLoading(false);
@@ -202,7 +210,7 @@ export default function SparePartCreate() {
 												className={cn(
 													"w-full pl-3 text-left font-normal",
 													!field.value &&
-														"text-muted-foreground"
+													"text-muted-foreground"
 												)}
 											>
 												{field.value ? (
@@ -297,7 +305,7 @@ export default function SparePartCreate() {
 												className={cn(
 													"w-full pl-3 text-left font-normal",
 													!field.value &&
-														"text-muted-foreground"
+													"text-muted-foreground"
 												)}
 											>
 												{field.value ? (
@@ -321,6 +329,23 @@ export default function SparePartCreate() {
 										/>
 									</PopoverContent>
 								</Popover>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+
+					<FormField
+						control={form.control}
+						name="image"
+						render={({ field: { onChange, value, ...field } }) => (
+							<FormItem>
+								<FormLabel>Gambar Spare Part</FormLabel>
+								<FormControl>
+									<ImageUpload
+										onImageSelect={(file) => onChange(file)}
+										className="mt-2"
+									/>
+								</FormControl>
 								<FormMessage />
 							</FormItem>
 						)}
