@@ -13,7 +13,7 @@ import {
 	Graph,
 } from "react-iconly";
 import SideBarButton from "./sidebar-button";
-
+import * as Sentry from "@sentry/nextjs";
 import Cookies from "js-cookie";
 import { usePathname, useRouter } from "next/navigation";
 import { decodeToken } from "@/lib/utils";
@@ -98,6 +98,14 @@ export default function SideBar() {
 
 				const user = decodeToken(token);
 
+				// Set Sentry user context
+				if (user && user.userId) {
+					Sentry.setUser({
+						id: user.userId.toString(),
+						username: user.fullname || user.username,
+						role: user.role
+					});
+				}
 
 				Cookies.set("user", JSON.stringify(user));
 
@@ -109,6 +117,7 @@ export default function SideBar() {
 
 				setUserData(user);
 			} catch (error) {
+				Sentry.captureException(error);
 				console.error("Error fetching user data:", error);
 			} finally {
 				setLoading(false);
@@ -129,6 +138,8 @@ export default function SideBar() {
 	}, []);
 
 	const handleLogout = () => {
+		// Clear Sentry user context on logout
+		Sentry.setUser(null);
 		Cookies.remove("accessToken");
 		router.push("/");
 	};

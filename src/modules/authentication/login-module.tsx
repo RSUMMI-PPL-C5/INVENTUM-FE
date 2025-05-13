@@ -19,6 +19,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import Cookies from 'js-cookie';
+import * as Sentry from "@sentry/nextjs";
 
 export default function LoginModule() {
   const router = useRouter();
@@ -55,6 +56,8 @@ export default function LoginModule() {
 
       if (!response.ok) {
         const errorData = await response.json();
+        // Track login failures
+        Sentry.captureMessage(`Login failed: ${errorData.message}`, "warning");
         throw new Error(errorData.message || 'An error occurred during login');
       }
 
@@ -63,6 +66,8 @@ export default function LoginModule() {
 
       router.push('/dashboard/user');
     } catch (error) {
+      // Track actual errors
+      Sentry.captureException(error);
       toast.error(error instanceof Error ? error.message : 'An error occurred during login');
     } finally {
       setIsLoading(false)
@@ -76,6 +81,12 @@ export default function LoginModule() {
           toast.warning("You need to login first");
         } else if (error === "server_error") {
           toast.error("Something went wrong. Please try again.");
+          // Track middleware errors
+          Sentry.captureMessage(`Middleware error: ${error}`, "error");
+        } else if (error === "token_expired") {
+          toast.warning("Your session has expired. Please login again.");
+          // Track token expiry
+          Sentry.captureMessage("Token expired", "info");
         }
       }, 100);
     }

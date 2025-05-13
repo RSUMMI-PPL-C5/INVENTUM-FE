@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import * as Sentry from '@sentry/nextjs';
 
 export async function middleware(request: NextRequest) {
   // Check if user is on the login page
@@ -39,6 +40,8 @@ export async function middleware(request: NextRequest) {
         return response
       }
     } catch (error) {
+      // Track error in Sentry
+      Sentry.captureException(error);
       console.error('Middleware error:', error)
       return NextResponse.redirect(new URL('/?error=server_error', request.url))
     }
