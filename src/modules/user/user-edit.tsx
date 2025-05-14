@@ -88,87 +88,87 @@ export default function UserEdit() {
 	});
 
 	useEffect(() => {
+		async function fetchAllDivisions() {
+			try {
+				const token = Cookies.get("accessToken");
+
+				const response = await fetch(
+					`${process.env.NEXT_PUBLIC_API_URL}/divisi/all`,
+					{
+						method: "GET",
+						headers: {
+							"Content-Type": "application/json",
+							Authorization: token ? `Bearer ${token}` : "",
+						},
+					}
+				);
+
+				const result = await response.json();
+
+				if (!response.ok) {
+					toast.error(<>Error fetching divisions:<br />{result.message}</>);
+					return;
+				}
+
+				setDivisions(result);
+			} catch (error) {
+				console.error("Error fetching divisions:", error);
+				toast.error(error instanceof Error ? error.message : 'Error fetching divisions');
+			}
+		}
+
+		async function fetchUserData() {
+			try {
+				setLoading(true);
+				const token = Cookies.get("accessToken");
+
+				const response = await fetch(
+					`${process.env.NEXT_PUBLIC_API_URL}/user/${id}`,
+					{
+						headers: {
+							"Content-Type": "application/json",
+							Authorization: token ? `Bearer ${token}` : "",
+						},
+					}
+				);
+
+				const userData = await response.json();
+
+				if (!response.ok) {
+					toast.error(<>Error fetching user:<br />{userData.message}</>);
+					return;
+				}
+
+				// Format dates for display
+				const createdDate = userData.createdOn ? new Date(userData.createdOn) : null;
+				const formattedCreatedDate = createdDate && isValid(createdDate)
+					? format(createdDate, "yyyy-MM-dd")
+					: "";
+
+				// Set form values
+				form.reset({
+					nokar: userData.nokar || "",
+					fullname: userData.fullname || "",
+					username: userData.username || "",
+					email: userData.email || "",
+					password: "",
+					divisiId: userData.divisiId ? userData.divisiId.toString() : "",
+					role: userData.role || "",
+					waNumber: userData.waNumber || "",
+					createdOn: formattedCreatedDate,
+					entryDate: createdDate || undefined,
+				});
+			} catch (error) {
+				console.error("Error fetching user data:", error);
+				toast.error(error instanceof Error ? error.message : 'Error fetching user data');
+			} finally {
+				setLoading(false);
+			}
+		}
+
 		fetchAllDivisions();
 		fetchUserData();
-	}, [id, fetchAllDivisions, fetchUserData]);
-
-	async function fetchAllDivisions() {
-		try {
-			const token = Cookies.get("accessToken");
-
-			const response = await fetch(
-				`${process.env.NEXT_PUBLIC_API_URL}/divisi/all`,
-				{
-					method: "GET",
-					headers: {
-						"Content-Type": "application/json",
-						Authorization: token ? `Bearer ${token}` : "",
-					},
-				}
-			);
-
-			const result = await response.json();
-
-			if (!response.ok) {
-				toast.error(<>Error fetching divisions:<br />{result.message}</>);
-				return;
-			}
-
-			setDivisions(result);
-		} catch (error) {
-			console.error("Error fetching divisions:", error);
-			toast.error(error instanceof Error ? error.message : 'Error fetching divisions');
-		}
-	}
-
-	async function fetchUserData() {
-		try {
-			setLoading(true);
-			const token = Cookies.get("accessToken");
-
-			const response = await fetch(
-				`${process.env.NEXT_PUBLIC_API_URL}/user/${id}`,
-				{
-					headers: {
-						"Content-Type": "application/json",
-						Authorization: token ? `Bearer ${token}` : "",
-					},
-				}
-			);
-
-			const userData = await response.json();
-
-			if (!response.ok) {
-				toast.error(<>Error fetching user:<br />{userData.message}</>);
-				return;
-			}
-
-			// Format dates for display
-			const createdDate = userData.createdOn ? new Date(userData.createdOn) : null;
-			const formattedCreatedDate = createdDate && isValid(createdDate)
-				? format(createdDate, "yyyy-MM-dd")
-				: "";
-
-			// Set form values
-			form.reset({
-				nokar: userData.nokar || "",
-				fullname: userData.fullname || "",
-				username: userData.username || "",
-				email: userData.email || "",
-				password: "",
-				divisiId: userData.divisiId ? userData.divisiId.toString() : "",
-				role: userData.role || "",
-				waNumber: userData.waNumber || "",
-				createdOn: formattedCreatedDate,
-				entryDate: createdDate || undefined,
-			});
-		} catch (error) {
-			console.error("Error fetching user data:", error);
-			toast.error(error instanceof Error ? error.message : 'Error fetching user data');
-		} finally {
-			setLoading(false);
-		}
-	}
+	}, [id, form]);
 
 	async function updateUser(data: z.infer<typeof formSchema>) {
 		setLoading(true);

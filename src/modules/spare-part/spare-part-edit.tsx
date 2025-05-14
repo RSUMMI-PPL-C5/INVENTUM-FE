@@ -70,96 +70,96 @@ export default function SparePartEdit() {
 	});
 
 	useEffect(() => {
+		async function fetchAllLocations() {
+			try {
+				const token = Cookies.get("accessToken");
+
+				const response = await fetch(
+					`${process.env.NEXT_PUBLIC_API_URL}/divisi/all`,
+					{
+						method: "GET",
+						headers: {
+							"Content-Type": "application/json",
+							Authorization: token ? `Bearer ${token}` : "",
+						},
+					}
+				);
+
+				const result = await response.json();
+
+				if (!response.ok) {
+					toast.error(<>Error fetching locations:<br />{result.message}</>);
+					return;
+				}
+
+				setLocations(result);
+			} catch (error) {
+				console.error("Error fetching locations:", error);
+				toast.error(error instanceof Error ? error.message : 'Error fetching locations');
+			}
+		}
+
+		async function fetchSparePart() {
+			try {
+				const token = Cookies.get("accessToken");
+
+				const response = await fetch(
+					`${process.env.NEXT_PUBLIC_API_URL}/spareparts/${sparePartId}`,
+					{
+						method: "GET",
+						headers: {
+							"Content-Type": "application/json",
+							Authorization: token ? `Bearer ${token}` : "",
+						},
+					}
+				);
+
+				const result = await response.json();
+
+				if (!response.ok) {
+					toast.error(<>Error fetching spare part data:<br />{result.message}</>);
+					setLoading(false);
+					return;
+				}
+
+				const { data: sparePartData } = result;
+				console.log("Fetched spare part data:", sparePartData);
+
+				// Parse dates more safely
+				const purchaseDate = new Date(sparePartData.purchaseDate);
+				const toolDate = new Date(sparePartData.toolDate);
+				const createdDate = new Date(sparePartData.createdOn);
+				
+				const formattedCreatedDate = isValid(createdDate)
+					? format(createdDate, "dd-MM-yyyy")
+					: "Invalid date";
+
+				// Set form values with explicit type handling
+				form.reset({
+					partsName: sparePartData.partsName || "",
+					purchaseDate: isValid(purchaseDate) ? purchaseDate : new Date(),
+					price: (sparePartData.price || 0).toString(),
+					toolLocation: sparePartData.toolLocation || "",
+					toolDate: isValid(toolDate) ? toolDate : new Date(),
+					createdOn: formattedCreatedDate,
+				});
+				
+				console.log("Form values after reset:", form.getValues());
+			} catch (error) {
+				console.error("Error fetching spare part data:", error);
+				toast.error(
+					error instanceof Error ? 
+					<>Error fetching spare part data:<br />{error.message}</> : 
+					'Error fetching spare part data'
+				);
+			} finally {
+				setLoading(false);
+			}
+		}
+
 		fetchAllLocations();
 		fetchSparePart();
-	}, [sparePartId, fetchAllLocations, fetchSparePart]);
-
-	async function fetchAllLocations() {
-		try {
-			const token = Cookies.get("accessToken");
-
-			const response = await fetch(
-				`${process.env.NEXT_PUBLIC_API_URL}/divisi/all`,
-				{
-					method: "GET",
-					headers: {
-						"Content-Type": "application/json",
-						Authorization: token ? `Bearer ${token}` : "",
-					},
-				}
-			);
-
-			const result = await response.json();
-
-			if (!response.ok) {
-				toast.error(<>Error fetching locations:<br />{result.message}</>);
-				return;
-			}
-
-			setLocations(result);
-		} catch (error) {
-			console.error("Error fetching locations:", error);
-			toast.error(error instanceof Error ? error.message : 'Error fetching locations');
-		}
-	}
-
-	async function fetchSparePart() {
-		try {
-			const token = Cookies.get("accessToken");
-
-			const response = await fetch(
-				`${process.env.NEXT_PUBLIC_API_URL}/spareparts/${sparePartId}`,
-				{
-					method: "GET",
-					headers: {
-						"Content-Type": "application/json",
-						Authorization: token ? `Bearer ${token}` : "",
-					},
-				}
-			);
-
-			const result = await response.json();
-
-			if (!response.ok) {
-				toast.error(<>Error fetching spare part data:<br />{result.message}</>);
-				setLoading(false);
-				return;
-			}
-
-			const { data: sparePartData } = result;
-			console.log("Fetched spare part data:", sparePartData);
-
-			// Parse dates more safely
-			const purchaseDate = new Date(sparePartData.purchaseDate);
-			const toolDate = new Date(sparePartData.toolDate);
-			const createdDate = new Date(sparePartData.createdOn);
-			
-			const formattedCreatedDate = isValid(createdDate)
-				? format(createdDate, "dd-MM-yyyy")
-				: "Invalid date";
-
-			// Set form values with explicit type handling
-			form.reset({
-				partsName: sparePartData.partsName || "",
-				purchaseDate: isValid(purchaseDate) ? purchaseDate : new Date(),
-				price: (sparePartData.price || 0).toString(),
-				toolLocation: sparePartData.toolLocation || "",
-				toolDate: isValid(toolDate) ? toolDate : new Date(),
-				createdOn: formattedCreatedDate,
-			});
-            
-			console.log("Form values after reset:", form.getValues());
-		} catch (error) {
-			console.error("Error fetching spare part data:", error);
-			toast.error(
-				error instanceof Error ? 
-				<>Error fetching spare part data:<br />{error.message}</> : 
-				'Error fetching spare part data'
-			);
-		} finally {
-			setLoading(false);
-		}
-	}
+	}, [sparePartId, form]);
 
 	async function updateSparePart(data: z.infer<typeof formSchema>) {
 		const token = Cookies.get("accessToken");
