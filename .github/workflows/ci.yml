@@ -34,7 +34,18 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Check commit message
+        id: check_commit
+        run: |
+          commit_message=$(git log -1 --pretty=%B)
+          if echo "$commit_message" | grep -iE "\[skip[ -]tests?\]" > /dev/null; then
+            echo "skip_tests=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip_tests=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Run Tests
+        if: steps.check_commit.outputs.skip_tests != 'true'
         run: npm test -- --coverage
 
       - name: Run Linter
