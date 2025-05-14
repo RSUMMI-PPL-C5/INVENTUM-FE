@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -40,41 +40,11 @@ export default function MaintenanceRequestCreate() {
 		},
 	});
 
-	const getToken = async () => {
+	const getToken = useCallback(() => {
 		const token = Cookies.get("accessToken");
-
 		if (!token) throw new Error("No token found");
 		return token;
-	};
-
-	const fetchMedicalEquipmentName = async () => {
-		setLoading(true);
-		try {
-			const token = await getToken();
-
-			const response = await fetch(
-				`${process.env.NEXT_PUBLIC_API_URL}/medical-equipment/${equipmentId}`,
-				{
-					method: "GET",
-					headers: {
-						"Content-Type": "application/json",
-						Authorization: `Bearer ${token}`,
-					},
-				}
-			);
-
-			if (!response.ok) {
-				throw new Error("Failed to fetch medical equipment name");
-			}
-
-			const data = await response.json();
-			form.setValue("medicalEquipment", data.data.name);
-		} catch (error) {
-			console.error("Error fetching medical equipment name:", error);
-		} finally {
-			setLoading(false);
-		}
-	};
+	}, []);
 
 	const createMaintenanceRequest = async (
 		data: z.infer<typeof formSchema>
@@ -125,8 +95,37 @@ export default function MaintenanceRequestCreate() {
 	};
 
 	useEffect(() => {
+		async function fetchMedicalEquipmentName() {
+			setLoading(true);
+			try {
+				const token = await getToken();
+
+				const response = await fetch(
+					`${process.env.NEXT_PUBLIC_API_URL}/medical-equipment/${equipmentId}`,
+					{
+						method: "GET",
+						headers: {
+							"Content-Type": "application/json",
+							Authorization: `Bearer ${token}`,
+						},
+					}
+				);
+
+				if (!response.ok) {
+					throw new Error("Failed to fetch medical equipment name");
+				}
+
+				const data = await response.json();
+				form.setValue("medicalEquipment", data.data.name);
+			} catch (error) {
+				console.error("Error fetching medical equipment name:", error);
+			} finally {
+				setLoading(false);
+			}
+		}
+
 		fetchMedicalEquipmentName();
-	}, [equipmentId]);
+	}, [equipmentId, form, getToken]);
 
 	return (
 		<>
