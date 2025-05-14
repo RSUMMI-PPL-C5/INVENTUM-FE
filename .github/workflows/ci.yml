@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - '*'
+      - 'chore/covering-tests'
 
 jobs:
   ci:
