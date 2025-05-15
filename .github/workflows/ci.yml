@@ -48,7 +48,7 @@ jobs:
       - name: Run Tests
         if: steps.check_commit.outputs.skip_tests != 'true'
         continue-on-error: true
-        run: npm test -- --coverage src/components/general src/app/dashboard src/modules
+        run: npm test -- --coverage
 
       - name: Run Linter
         run: npm run lint
