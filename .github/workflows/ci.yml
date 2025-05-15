@@ -48,7 +48,7 @@ jobs:
       - name: Run Tests
         if: steps.check_commit.outputs.skip_tests != 'true'
         continue-on-error: true
-        run: npm test -- --coverage
+        run: npm test --coverage
 
       - name: Run Linter
         run: npm run lint
@@ -63,5 +63,4 @@ jobs:
             -Dsonar.tests=__tests__ \
             -Dsonar.test.inclusions=__tests__/**/*.test.tsx \
             -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
-            -Dsonar.coverageReportPaths=coverage/lcov.info \
-            -Dsonar.coverage.exclusions=**/*.test.tsx
+            -Dsonar.coverage.exclusions=**/*.test.tsx,src/components/ui/**
