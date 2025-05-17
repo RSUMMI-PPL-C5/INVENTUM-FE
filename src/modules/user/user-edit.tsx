@@ -245,7 +245,7 @@ export default function UserEdit() {
 			</div>
 
 			{loading ? (
-				<div className="flex justify-center p-8">
+				<div className="flex justify-center items-center p-8 h-32">
 					<div className="animate-pulse text-center">
 						Memuat Data Pengguna...
 					</div>
@@ -254,248 +254,257 @@ export default function UserEdit() {
 				<Form {...form}>
 					<form
 						onSubmit={form.handleSubmit(onSubmit)}
-						className="space-y-6 mt-4"
+						className="space-y-6 mt-4 max-w-3xl mx-auto w-full"
 					>
-						<FormField
-							control={form.control}
-							name="nokar"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>No. Karyawan</FormLabel>
-									<FormControl>
-										<Input
-											{...field}
-											disabled
-											placeholder="Nomor karyawan"
-										/>
-									</FormControl>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-						<FormField
-							control={form.control}
-							name="fullname"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Nama Lengkap</FormLabel>
-									<FormControl>
-										<Input
-											{...field}
-											placeholder="Masukkan nama lengkap"
-										/>
-									</FormControl>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-						<FormField
-							control={form.control}
-							name="waNumber"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>No. WA</FormLabel>
-									<FormControl>
-										<Input
-											{...field}
-											placeholder="Masukkan nomor WA"
-										/>
-									</FormControl>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-						<FormField
-							control={form.control}
-							name="username"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Username</FormLabel>
-									<FormControl>
-										<Input
-											{...field}
-											disabled
-											placeholder="Username"
-										/>
-									</FormControl>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-						<FormField
-							control={form.control}
-							name="email"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Email</FormLabel>
-									<FormControl>
-										<Input
-											type="email"
-											{...field}
-											placeholder="Email"
-										/>
-									</FormControl>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
+						<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+							<FormField
+								control={form.control}
+								name="nokar"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>No. Karyawan</FormLabel>
+										<FormControl>
+											<Input
+												{...field}
+												disabled
+												placeholder="Nomor karyawan"
+											/>
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name="fullname"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Nama Lengkap</FormLabel>
+										<FormControl>
+											<Input
+												{...field}
+												placeholder="Masukkan nama lengkap"
+											/>
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name="waNumber"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>No. WA</FormLabel>
+										<FormControl>
+											<Input
+												{...field}
+												placeholder="Masukkan nomor WA"
+											/>
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name="username"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Username</FormLabel>
+										<FormControl>
+											<Input
+												{...field}
+												disabled
+												placeholder="Username"
+											/>
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name="email"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Email</FormLabel>
+										<FormControl>
+											<Input
+												type="email"
+												{...field}
+												placeholder="Email"
+											/>
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name="divisiId"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Divisi</FormLabel>
+										<Select
+											onValueChange={field.onChange}
+											value={field.value}
+										>
+											<FormControl>
+												<SelectTrigger>
+													<SelectValue placeholder="Pilih Divisi" />
+												</SelectTrigger>
+											</FormControl>
+											<SelectContent>
+												{divisions.map((division) => (
+													<SelectItem
+														key={division.id}
+														value={division.id.toString()}
+													>
+														{division.divisi}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name="role"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Role</FormLabel>
+										<Select
+											onValueChange={field.onChange}
+											value={field.value}
+										>
+											<FormControl>
+												<SelectTrigger>
+													<SelectValue placeholder="Pilih Role" />
+												</SelectTrigger>
+											</FormControl>
+											<SelectContent>
+												{roles.map((role) => (
+													<SelectItem
+														key={role.id}
+														value={role.name}
+													>
+														{role.name}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name="createdOn"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Tanggal Akun Dibuat</FormLabel>
+										<FormControl>
+											<div className="relative">
+												<Input
+													{...field}
+													disabled
+													aria-label="Tanggal Akun Dibuat"
+												/>
+												<CalendarIcon className="absolute right-3 top-3 w-5 h-5 text-gray-500" />
+											</div>
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+						</div>
 						
 						{/* Password Field with Toggle */}
-						<div className="space-y-4">
-                            {isPasswordEnabled && (
-                                    <FormField
-                                        control={form.control}
-                                        name="password"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Password Baru</FormLabel>
-                                                <FormControl>
-                                                    <div className="relative">
-                                                        <Input
-                                                            type={showPassword ? "text" : "password"}
-                                                            {...field}
-                                                            placeholder="Masukkan password baru"
-                                                        />
-                                                        <Button
-                                                            type="button"
-                                                            size="icon"
-                                                            variant="ghost"
-                                                            className="absolute right-0 top-0 h-full bg-transparent"
-                                                            aria-label={
-                                                                showPassword
-                                                                    ? "Hide password"
-                                                                    : "Show password"
-                                                            }
-                                                            onClick={() =>
-                                                                setShowPassword((prev) => !prev)
-                                                            }
-                                                        >
-                                                            {showPassword ? (
-                                                                <Hide
-                                                                    set="curved"
-                                                                    stroke="bold"
-                                                                    primaryColor="#203268"
-                                                                    filled
-                                                                />
-                                                            ) : (
-                                                                <Show
-                                                                    set="curved"
-                                                                    stroke="bold"
-                                                                    primaryColor="#203268"
-                                                                    filled
-                                                                />
-                                                            )}
-                                                        </Button>
-                                                    </div>
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                )}
-							<div className="flex items-center gap-2">
+						<div className="space-y-4 mt-4">
+							<div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-between">
+								<div className="text-sm font-medium">Password</div>
 								<Button
 									type="button"
 									onClick={handlePasswordToggle}
 									variant={isPasswordEnabled ? "destructive" : "outline"}
+									className="w-full sm:w-auto"
 								>
 									{isPasswordEnabled
 										? "Batalkan Ganti Password"
 										: "Ganti Password"}
 								</Button>
 							</div>
-							
+                            
+                            {isPasswordEnabled && (
+                                <FormField
+                                    control={form.control}
+                                    name="password"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Password Baru</FormLabel>
+                                            <FormControl>
+                                                <div className="relative">
+                                                    <Input
+                                                        type={showPassword ? "text" : "password"}
+                                                        {...field}
+                                                        placeholder="Masukkan password baru"
+                                                    />
+                                                    <Button
+                                                        type="button"
+                                                        size="icon"
+                                                        variant="ghost"
+                                                        className="absolute right-0 top-0 h-full bg-transparent"
+                                                        aria-label={
+                                                            showPassword
+                                                                ? "Hide password"
+                                                                : "Show password"
+                                                        }
+                                                        onClick={() =>
+                                                            setShowPassword((prev) => !prev)
+                                                        }
+                                                    >
+                                                        {showPassword ? (
+                                                            <Hide
+                                                                set="curved"
+                                                                stroke="bold"
+                                                                primaryColor="#203268"
+                                                                filled
+                                                            />
+                                                        ) : (
+                                                            <Show
+                                                                set="curved"
+                                                                stroke="bold"
+                                                                primaryColor="#203268"
+                                                                filled
+                                                            />
+                                                        )}
+                                                    </Button>
+                                                </div>
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            )}
 						</div>
 						
-						<FormField
-							control={form.control}
-							name="divisiId"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Divisi</FormLabel>
-									<Select
-										onValueChange={field.onChange}
-										value={field.value}
-									>
-										<FormControl>
-											<SelectTrigger>
-												<SelectValue placeholder="Pilih Divisi" />
-											</SelectTrigger>
-										</FormControl>
-										<SelectContent>
-											{divisions.map((division) => (
-												<SelectItem
-													key={division.id}
-													value={division.id.toString()}
-												>
-													{division.divisi}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-						<FormField
-							control={form.control}
-							name="role"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Role</FormLabel>
-									<Select
-										onValueChange={field.onChange}
-										value={field.value}
-									>
-										<FormControl>
-											<SelectTrigger>
-												<SelectValue placeholder="Pilih Role" />
-											</SelectTrigger>
-										</FormControl>
-										<SelectContent>
-											{roles.map((role) => (
-												<SelectItem
-													key={role.id}
-													value={role.name}
-												>
-													{role.name}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-						<FormField
-							control={form.control}
-							name="createdOn"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Tanggal Akun Dibuat</FormLabel>
-									<FormControl>
-										<div className="relative">
-											<Input
-												{...field}
-												disabled
-												aria-label="Tanggal Akun Dibuat"
-											/>
-											<CalendarIcon className="absolute right-3 top-3 w-5 h-5 text-gray-500" />
-										</div>
-									</FormControl>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-						<div className="flex justify-end space-x-4">
+						<div className="flex flex-col-reverse sm:flex-row justify-end space-y-4 space-y-reverse sm:space-y-0 sm:space-x-4 mt-8">
 							<Button
 								type="button"
 								variant="destructive"
 								onClick={() => router.back()}
+								className="w-full sm:w-auto"
 							>
 								Batalkan
 							</Button>
-							<Button type="submit" disabled={loading}>
+							<Button 
+								type="submit" 
+								disabled={loading}
+								className="w-full sm:w-auto"
+							>
 								{loading ? "Menyimpan..." : "Simpan"}
 							</Button>
 						</div>

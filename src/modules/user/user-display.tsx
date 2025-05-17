@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Edit, Trash2, Filter, Plus, Search } from "lucide-react";
+import { Edit, Trash2, Filter, Plus, Search, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
@@ -22,6 +22,8 @@ import { toast } from "sonner";
 import Cookies from "js-cookie";
 import DeleteDialog from "@/components/general/delete-dialog";
 import { PaginationControls } from "@/components/ui/pagination-control";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 
 type User = {
 	id: string;
@@ -300,17 +302,69 @@ export default function UsersPage() {
 		router.push(`/dashboard/user/create`);
 	};
 
+	// Mobile Card View for Users
+	const UserCard = ({ user }: { user: User }) => (
+		<Card 
+			className="cursor-pointer hover:bg-accent/50 transition-colors mb-3" 
+			onClick={() => navigateToUserDetail(user.id)}
+			data-testid={`user-card-${user.id}`}
+		>
+			<CardContent className="p-4">
+				<div className="flex justify-between items-start gap-2">
+					<div className="space-y-1 flex-1 min-w-0">
+						<h3 className="font-medium truncate">{user.fullname ?? user.username}</h3>
+						<p className="text-sm text-muted-foreground truncate">{user.email}</p>
+						<div className="flex items-center gap-2 mt-2">
+							<Badge variant="outline" className="text-xs">
+								{user.divisi?.divisi ?? `-`}
+							</Badge>
+							<span className="text-xs text-muted-foreground">
+								{formatDate(user.createdOn)}
+							</span>
+						</div>
+					</div>
+					<div className="flex flex-col gap-2" onClick={(e) => e.stopPropagation()}>
+						<Button
+							size="icon"
+							variant="outline"
+							onClick={(e) => {
+								e.stopPropagation();
+								navigateToUserEdit(user.id);
+							}}
+							data-testid={`edit-button-mobile-${user.id}`}
+							className="h-8 w-8"
+						>
+							<Edit className="h-4 w-4" />
+						</Button>
+						<Button
+							size="icon"
+							variant="destructive"
+							onClick={(e) => {
+								e.stopPropagation();
+								confirmDelete(user.id);
+							}}
+							data-testid={`delete-button-mobile-${user.id}`}
+							className="h-8 w-8"
+						>
+							<Trash2 className="h-4 w-4" />
+						</Button>
+					</div>
+				</div>
+			</CardContent>
+		</Card>
+	);
+
 	return (
 		<div className="space-y-6 font-plus-jakarta-sans">
 			<h1 className="text-header-h5 font-bold font-poppins">Pengguna</h1>
 
 			{/* Header Section */}
-			<div className="bg-primary-solid items-center p-2 flex gap-3 h-fit text-white rounded-lg overflow-hidden">
-				<div className="flex items-center justify-center w-[264px] h-[224px] border border-primary-super-light rounded-lg">
+			<div className="bg-primary-solid p-2 flex flex-col md:flex-row gap-3 h-fit text-white rounded-lg overflow-hidden">
+				<div className="hidden md:flex items-center justify-center w-full md:w-[264px] h-[180px] md:h-[224px] border border-primary-super-light rounded-lg">
 					illustration
 				</div>
 
-				<div className="flex flex-col gap-6 py-6 px-6">
+				<div className="flex flex-col gap-4 md:gap-6 py-4 md:py-6 px-4 md:px-6">
 					<div className="space-y-2">
 						<h2 className="text-header-h6 font-bold font-poppins">
 							Pengguna
@@ -365,10 +419,26 @@ export default function UsersPage() {
 				</div>
 			)}
 
-			{/* Users Table */}
+			{/* Users Table/Cards */}
 			{!loading && (
 				<>
-					<div className="border rounded-lg overflow-hidden">
+					{/* Mobile Card View - Only visible on mobile */}
+					<div className="block md:hidden space-y-4">
+						{users.length > 0 ? (
+							users.map((user) => (
+								<UserCard key={user.id} user={user} />
+							))
+						) : (
+							<div className="text-center py-8 px-4 border rounded-lg">
+								{search
+									? "Tidak ada pengguna yang cocok dengan pencarian Anda"
+									: "Tidak ada pengguna yang ditemukan"}
+							</div>
+						)}
+					</div>
+
+					{/* Desktop Table View - Hidden on mobile, visible on md screens and up */}
+					<div className="hidden md:block border rounded-lg overflow-hidden">
 						<Table data-testid="users-table">
 							<TableHeader>
 								<TableRow>
@@ -423,16 +493,16 @@ export default function UsersPage() {
 														<Edit className="h-4 w-4" />
 													</Button>
 													<Button
-                                                        size="icon"
-                                                        variant="destructive"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            confirmDelete(user.id);
-                                                        }}
-                                                        data-testid={`delete-button-${user.id}`}
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
+														size="icon"
+														variant="destructive"
+														onClick={(e) => {
+															e.stopPropagation();
+															confirmDelete(user.id);
+														}}
+														data-testid={`delete-button-${user.id}`}
+													>
+														<Trash2 className="h-4 w-4" />
+													</Button>
 												</div>
 											</TableCell>
 										</TableRow>

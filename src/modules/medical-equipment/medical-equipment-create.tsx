@@ -156,186 +156,191 @@ export default function MedicalEquipmentCreate() {
 			<Form {...form}>
 				<form
 					onSubmit={form.handleSubmit(onSubmit)}
-					className="space-y-6 mt-4"
+					className="space-y-6 mt-4 max-w-3xl mx-auto w-full"
 				>
-					<FormField
-						control={form.control}
-						name="inventorisId"
-						render={({ field }) => (
-							<FormItem>
-								<FormLabel>Inventoris ID</FormLabel>
-								<FormControl>
-									<Input
-										{...field}
-										placeholder="Masukkan Inventoris ID"
-									/>
-								</FormControl>
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
-					<FormField
-						control={form.control}
-						name="name"
-						render={({ field }) => (
-							<FormItem>
-								<FormLabel>Nama Alat</FormLabel>
-								<FormControl>
-									<Input
-										{...field}
-										placeholder="Masukkan nama alat medis"
-									/>
-								</FormControl>
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
-					<FormField
-						control={form.control}
-						name="brandName"
-						render={({ field }) => (
-							<FormItem>
-								<FormLabel>Brand</FormLabel>
-								<FormControl>
-									<Input
-										{...field}
-										placeholder="Masukkan merk"
-									/>
-								</FormControl>
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
-					<FormField
-						control={form.control}
-						name="modelName"
-						render={({ field }) => (
-							<FormItem>
-								<FormLabel>Model</FormLabel>
-								<FormControl>
-									<Input
-										{...field}
-										placeholder="Masukkan model"
-									/>
-								</FormControl>
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
-					<FormField
-						control={form.control}
-						name="purchasePrice"
-						render={({ field }) => (
-							<FormItem>
-								<FormLabel>Harga Pembelian</FormLabel>
-								<FormControl>
-									<Input
-										{...field}
-										placeholder="Masukkan harga pembelian"
-										type="number"
-									/>
-								</FormControl>
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
-					<FormField
-						control={form.control}
-						name="vendor"
-						render={({ field }) => (
-							<FormItem>
-								<FormLabel>Vendor</FormLabel>
-								<FormControl>
-									<Input
-										{...field}
-										placeholder="Masukkan vendor"
-									/>
-								</FormControl>
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
-					<FormField
-						control={form.control}
-						name="status"
-						render={({ field }) => (
-							<FormItem>
-								<FormLabel>Status</FormLabel>
-								<Select
-									onValueChange={field.onChange}
-									defaultValue={field.value}
-								>
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+						<FormField
+							control={form.control}
+							name="inventorisId"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Inventoris ID</FormLabel>
 									<FormControl>
-										<SelectTrigger>
-											<SelectValue placeholder="Pilih Status" />
-										</SelectTrigger>
-									</FormControl>
-									<SelectContent>
-										{equipmentStatus.map((status) => (
-											<SelectItem
-												key={status.id}
-												value={status.id}
-											>
-												{status.name}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
-					<FormField
-						control={form.control}
-						name="purchaseDate"
-						render={({ field }) => (
-							<FormItem className="flex flex-col">
-								<FormLabel>Tanggal Pembelian</FormLabel>
-								<Popover>
-									<PopoverTrigger asChild>
-										<FormControl>
-											<Button
-												variant={"outline"}
-												className={cn(
-													"w-full pl-3 text-left font-normal",
-													!field.value &&
-														"text-muted-foreground"
-												)}
-											>
-												{field.value ? (
-													format(field.value, "PPP")
-												) : (
-													<span>Pilih tanggal</span>
-												)}
-												<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-											</Button>
-										</FormControl>
-									</PopoverTrigger>
-									<PopoverContent
-										className="w-auto p-0"
-										align="start"
-									>
-										<Calendar
-											mode="single"
-											selected={field.value}
-											onSelect={field.onChange}
-											initialFocus
+										<Input
+											{...field}
+											placeholder="Masukkan Inventoris ID"
 										/>
-									</PopoverContent>
-								</Popover>
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
-					<div className="flex justify-end space-x-4">
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+						<FormField
+							control={form.control}
+							name="name"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Nama Alat</FormLabel>
+									<FormControl>
+										<Input
+											{...field}
+											placeholder="Masukkan nama alat medis"
+										/>
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+						<FormField
+							control={form.control}
+							name="brandName"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Brand</FormLabel>
+									<FormControl>
+										<Input
+											{...field}
+											placeholder="Masukkan merk"
+										/>
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+						<FormField
+							control={form.control}
+							name="modelName"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Model</FormLabel>
+									<FormControl>
+										<Input
+											{...field}
+											placeholder="Masukkan model"
+										/>
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+						<FormField
+							control={form.control}
+							name="purchasePrice"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Harga Pembelian</FormLabel>
+									<FormControl>
+										<Input
+											{...field}
+											placeholder="Masukkan harga pembelian"
+											type="number"
+										/>
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+						<FormField
+							control={form.control}
+							name="vendor"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Vendor</FormLabel>
+									<FormControl>
+										<Input
+											{...field}
+											placeholder="Masukkan vendor"
+										/>
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+					</div>
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+						<FormField
+							control={form.control}
+							name="status"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Status</FormLabel>
+									<Select
+										onValueChange={field.onChange}
+										defaultValue={field.value}
+									>
+										<FormControl>
+											<SelectTrigger>
+												<SelectValue placeholder="Pilih Status" />
+											</SelectTrigger>
+										</FormControl>
+										<SelectContent>
+											{equipmentStatus.map((status) => (
+												<SelectItem
+													key={status.id}
+													value={status.id}
+												>
+													{status.name}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+						<FormField
+							control={form.control}
+							name="purchaseDate"
+							render={({ field }) => (
+								<FormItem className="flex flex-col">
+									<FormLabel>Tanggal Pembelian</FormLabel>
+									<Popover>
+										<PopoverTrigger asChild>
+											<FormControl>
+												<Button
+													variant={"outline"}
+													className={cn(
+														"w-full pl-3 text-left font-normal",
+														!field.value &&
+															"text-muted-foreground"
+													)}
+												>
+													{field.value ? (
+														format(field.value, "PPP")
+													) : (
+														<span>Pilih tanggal</span>
+													)}
+													<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+												</Button>
+											</FormControl>
+										</PopoverTrigger>
+										<PopoverContent
+											className="w-auto p-0"
+											align="start"
+										>
+											<Calendar
+												mode="single"
+												selected={field.value}
+												onSelect={field.onChange}
+												initialFocus
+											/>
+										</PopoverContent>
+									</Popover>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+					</div>
+					<div className="flex flex-col-reverse sm:flex-row justify-end space-y-4 space-y-reverse sm:space-y-0 sm:space-x-4 mt-8">
 						<Button
 							type="button"
 							variant="destructive"
 							onClick={() => router.back()}
+							className="w-full sm:w-auto"
 						>
 							Batalkan
 						</Button>
-						<Button type="submit" disabled={loading}>
+						<Button type="submit" disabled={loading} className="w-full sm:w-auto">
 							{loading ? "Menyimpan..." : "Simpan"}
 						</Button>
 					</div>

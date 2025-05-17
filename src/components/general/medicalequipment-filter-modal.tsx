@@ -94,13 +94,13 @@ export default function MedicalEquipmentFilterModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onCancel()}>
-      <DialogContent className="w-fit">
+      <DialogContent className="max-w-[95vw] md:max-w-3xl w-fit overflow-y-auto max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>Filter Alat Medis</DialogTitle>
           <DialogDescription>Pilih filter untuk menyaring daftar alat medis</DialogDescription>
         </DialogHeader>
 
-        <div className="flex gap-12 py-4">
+        <div className="flex flex-col md:flex-row gap-6 md:gap-12 py-4">
           <div className="flex flex-col gap-8">
             {/* Status Filter */}
             <div className="space-y-2">
@@ -120,7 +120,8 @@ export default function MedicalEquipmentFilterModal({
             </div>
           </div>
           
-          <div className="w-[1px] h-full bg-black" />
+          <div className="hidden md:block w-[1px] h-full bg-black" />
+          <hr className="md:hidden my-2" />
 
           <div className="flex flex-col gap-8">
             {/* Created On Filter */}

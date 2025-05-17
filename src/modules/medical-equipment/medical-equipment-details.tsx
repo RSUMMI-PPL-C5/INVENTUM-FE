@@ -706,23 +706,67 @@ const handleHistoryRowClick = (
     router.push(`/dashboard/medical-equipment/${equipmentId}`, { scroll: false })
   }
 
+  // Card view component for mobile history items
+  const HistoryCard = ({ item, type }: { 
+    item: MaintenanceHistory | CalibrationHistory | SparepartHistory,
+    type: "maintenance" | "kalibrasi" | "ganti_suku_cadang"
+  }) => {
+    const date = type === "maintenance" 
+      ? (item as MaintenanceHistory).maintenanceDate 
+      : type === "kalibrasi" 
+        ? (item as CalibrationHistory).calibrationDate 
+        : (item as SparepartHistory).replacementDate;
+
+    return (
+      <div 
+        className="bg-white border rounded-lg shadow-sm p-4 mb-3 transition-all hover:shadow-md"
+        onClick={() => handleHistoryRowClick(item)}
+      >
+        <div className="flex justify-between items-start mb-3">
+          <h3 className="font-medium text-sm break-words">{item.actionPerformed}</h3>
+          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getResultClass(item.result)}`}>
+            {item.result}
+          </span>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-y-2 text-xs">
+          <div className="text-muted-foreground">Teknisi:</div>
+          <div className="font-medium">{item.technician}</div>
+          
+          {type === "kalibrasi" && (
+            <>
+              <div className="text-muted-foreground">Metode:</div>
+              <div className="font-medium">{(item as CalibrationHistory).calibrationMethod}</div>
+            </>
+          )}
+          
+          <div className="text-muted-foreground">Tanggal:</div>
+          <div className="font-medium">{formatDate(date)}</div>
+          
+          <div className="text-muted-foreground">Dibuat Oleh:</div>
+          <div className="font-medium">{item.createdBy}</div>
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 md:px-4 sm:px-2">
       <div className="flex items-center gap-2">
-        <Button variant="outline" size="sm" onClick={handleGoBack}>
-          <ArrowLeft className="h-4 w-4 mr-1" /> Kembali
+        <Button variant="outline" size="sm" onClick={handleGoBack} className="md:text-sm sm:text-xs">
+          <ArrowLeft className="h-4 w-4 sm:h-3 sm:w-3 mr-1" /> Kembali
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="col-span-1 bg-blue-50 p-6 rounded-lg space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 space-y-4 sm:space-y-3">
+        <div className="col-span-1 bg-blue-50 p-6 sm:p-4 rounded-lg space-y-4 sm:space-y-3">
           {loading ? (
             <div className="h-6 bg-muted animate-pulse w-1/2 rounded" />
           ) : equipment ? (
             <>
-              <h1 className="text-header-h6 font-bold">{equipment.name}</h1>
-              <p className="text-sm text-muted-foreground">{equipment.brandName ?? "-"}</p>
-              <div className="grid grid-cols-2 gap-4 text-sm mt-4">
+              <h1 className="text-header-h6 font-bold sm:text-base break-words">{equipment.name}</h1>
+              <p className="text-sm sm:text-xs text-muted-foreground">{equipment.brandName ?? "-"}</p>
+              <div className="grid grid-cols-2 sm:grid-cols-1 gap-4 sm:gap-3 text-sm sm:text-xs mt-4 sm:mt-3">
                 <DetailItem label="Kode Inventaris" value={equipment.inventorisId} />
                 <DetailItem label="Model" value={equipment.modelName} />
                 <DetailItem label="Status" value={equipment.status} />
@@ -733,39 +777,39 @@ const handleHistoryRowClick = (
                 <DetailItem label="Diperbarui Pada" value={formatDate(equipment.modifiedOn)} />
               </div>
 
-              <div className="flex flex-col gap-3 pt-6">
+              <div className="flex flex-col gap-3 sm:gap-2 pt-6 sm:pt-4">
                 {["Admin", "Fasum"].includes(userRole) && (
                   <>
-                    <Button size="sm" className="gap-2 w-full" onClick={handleAddMaintenance}>
-                      <Wrench className="h-4 w-4" /> Tambah Riwayat Maintenance
+                    <Button size="sm" className="gap-2 w-full sm:text-xs" onClick={handleAddMaintenance}>
+                      <Wrench className="h-4 w-4 sm:h-3 sm:w-3" /> Tambah Riwayat Maintenance
                     </Button>
-                    <Button size="sm" className="gap-2 w-full" onClick={handleAddCalibration}>
-                      <Sliders className="h-4 w-4" /> Tambah Riwayat Kalibrasi
+                    <Button size="sm" className="gap-2 w-full sm:text-xs" onClick={handleAddCalibration}>
+                      <Sliders className="h-4 w-4 sm:h-3 sm:w-3" /> Tambah Riwayat Kalibrasi
                     </Button>
-                    <Button size="sm" className="gap-2 w-full" onClick={handleAddSparePart}>
-                      <Wrench className="h-4 w-4" /> Tambah Pergantian Suku Cadang
+                    <Button size="sm" className="gap-2 w-full sm:text-xs" onClick={handleAddSparePart}>
+                      <Wrench className="h-4 w-4 sm:h-3 sm:w-3" /> Tambah Pergantian Suku Cadang
                     </Button>
                   </>
                 )}
                 {["Admin", "User"].includes(userRole) && (
                   <>
-                    <Button size="sm" className="gap-2 w-full" onClick={handleAddMaintenanceRequest}>
-                      <ClipboardCheck className="h-4 w-4" /> Buat Permintaan Maintenance
+                    <Button size="sm" className="gap-2 w-full sm:text-xs" onClick={handleAddMaintenanceRequest}>
+                      <ClipboardCheck className="h-4 w-4 sm:h-3 sm:w-3" /> Buat Permintaan Maintenance
                     </Button>
-                    <Button size="sm" className="gap-2 w-full" onClick={handleAddCalibrationRequest}>
-                      <FileCheck className="h-4 w-4" /> Buat Permintaan Kalibrasi
+                    <Button size="sm" className="gap-2 w-full sm:text-xs" onClick={handleAddCalibrationRequest}>
+                      <FileCheck className="h-4 w-4 sm:h-3 sm:w-3" /> Buat Permintaan Kalibrasi
                     </Button>
                   </>
                 )}
               </div>
             </>
           ) : (
-            <p className="text-sm text-muted-foreground">Alat tidak ditemukan.</p>
+            <p className="text-sm sm:text-xs text-muted-foreground">Alat tidak ditemukan.</p>
           )}
         </div>
 
         <div className="col-span-2 bg-white border rounded-lg shadow-sm">
-          <div className="flex border-b justify-center">
+          <div className="flex sm:flex-wrap border-b justify-center">
             {tabs.map((tab) => (
               <button
                 key={tab}
@@ -773,7 +817,7 @@ const handleHistoryRowClick = (
                   setActiveTab(tab)
                   setCurrentPage(1)
                 }}
-                className={`py-4 px-6 text-sm font-medium transition-colors ${
+                className={`py-4 sm:py-3 px-6 sm:px-3 text-sm sm:text-xs font-medium transition-colors ${
                   activeTab === tab
                     ? "border-b-2 border-primary-solid text-primary-solid"
                     : "text-muted-foreground hover:text-primary-solid/80"
@@ -789,7 +833,7 @@ const handleHistoryRowClick = (
           </div>
 
           {/* Search & Filter */}
-          <div className="flex justify-end sm:flex-row gap-4 p-4 border-b">
+          <div className="flex justify-end gap-4 p-4 sm:p-3 border-b">
             <Button
               variant="outline"
               onClick={() => {
@@ -801,16 +845,16 @@ const handleHistoryRowClick = (
                   setShowPartsFilterModal(true)
                 }
               }}
-              className="w-full sm:w-auto"
+              className="w-auto sm:w-full sm:text-xs"
             >
-              <Filter className="mr-2 h-4 w-4" /> Filter
+              <Filter className="mr-2 h-4 w-4 sm:h-3 sm:w-3 sm:mr-1" /> Filter
             </Button>
           </div>
 
           {/* Active Filters */}
           {hasActiveFilters(activeTab) && (
-            <div className="p-4 border-b flex flex-wrap gap-2 items-center">
-              <span className="text-sm text-muted-foreground mr-2">Filter aktif:</span>
+            <div className="p-4 sm:p-3 border-b flex flex-wrap gap-2 sm:gap-1 items-center">
+              <span className="text-sm sm:text-xs text-muted-foreground mr-2 sm:mr-1">Filter aktif:</span>
 
               {activeTab === "maintenance" && (
                 <>
@@ -974,87 +1018,116 @@ const handleHistoryRowClick = (
                 </>
               )}
 
-              <Button variant="ghost" size="sm" onClick={clearAllFilters} className="ml-auto">
+              <Button variant="ghost" size="sm" onClick={clearAllFilters} className="ml-auto sm:text-xs">
                 <X className="h-3 w-3 mr-1" /> Hapus semua filter
               </Button>
             </div>
           )}
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr className="bg-muted/50">
-                  <th className="text-left py-3 px-4 font-medium text-muted-foreground border-b">Deskripsi</th>
-                  <th className="text-left py-3 px-4 font-medium text-muted-foreground border-b">Teknisi</th>
-                  <th className="text-left py-3 px-4 font-medium text-muted-foreground border-b">Hasil</th>
-                  {activeTab === "kalibrasi" && (
-                    <th className="text-left py-3 px-4 font-medium text-muted-foreground border-b">Metode</th>
-                  )}
-                  <th className="text-left py-3 px-4 font-medium text-muted-foreground border-b">Tanggal</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loadingHistories ? (
-                  <tr>
-                    <td colSpan={activeTab === "kalibrasi" ? 5 : 4} className="py-4 text-center">
-                      Memuat...
-                    </td>
-                  </tr>
-                ) : paginatedData.length > 0 ? (
-                  paginatedData.map((item, index) => (
-                    <tr
-                      key={index}
-                      onClick={() => handleHistoryRowClick(item)}
-                      className="cursor-pointer hover:bg-muted/30 transition-colors"
-                    >
-                      <td className="py-3 px-4">{item.actionPerformed}</td>
-                      <td className="py-3 px-4">{item.technician}</td>
-                      <td className="py-3 px-4">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getResultClass(item.result)}`}>
-                          {item.result}
-                        </span>
-                      </td>
-                      {activeTab === "kalibrasi" && (
-                        <td className="py-3 px-4">{(item as CalibrationHistory).calibrationMethod}</td>
-                      )}
-                      <td className="py-3 px-4">
-                        {formatDate(
-                          activeTab === "ganti_suku_cadang"
-                            ? (item as SparepartHistory).replacementDate
-                            : activeTab === "maintenance"
-                              ? (item as MaintenanceHistory).maintenanceDate
-                              : (item as CalibrationHistory).calibrationDate,
-                        )}
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={activeTab === "kalibrasi" ? 5 : 4} className="py-4 text-center">
-                      Tidak ada data.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          {/* Loading state */}
+          {loadingHistories && (
+            <div className="flex justify-center p-8">
+              <div className="animate-pulse text-center">
+                Memuat riwayat...
+              </div>
+            </div>
+          )}
 
-          <div className="border-t p-4">
-            <PaginationControls
-              currentPage={currentPage}
-              totalPages={Math.max(
-                1,
-                Math.ceil(
-                  (activeTab === "maintenance"
-                    ? filteredMaintenanceHistories.length
-                    : activeTab === "kalibrasi"
-                      ? filteredCalibrationHistories.length
-                      : filteredSparepartHistories.length) / itemsPerPage,
-                ),
-              )}
-              onPageChange={setCurrentPage}
-            />
-          </div>
+          {/* Desktop view - Table */}
+          {!loadingHistories && (
+            <>
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-sm border-collapse">
+                  <thead>
+                    <tr className="bg-muted/50">
+                      <th className="text-left py-3 px-4 font-medium text-muted-foreground border-b">Deskripsi</th>
+                      <th className="text-left py-3 px-4 font-medium text-muted-foreground border-b">Teknisi</th>
+                      <th className="text-left py-3 px-4 font-medium text-muted-foreground border-b">Hasil</th>
+                      {activeTab === "kalibrasi" && (
+                        <th className="text-left py-3 px-4 font-medium text-muted-foreground border-b">Metode</th>
+                      )}
+                      <th className="text-left py-3 px-4 font-medium text-muted-foreground border-b">Tanggal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedData.length > 0 ? (
+                      paginatedData.map((item, index) => (
+                        <tr
+                          key={index}
+                          onClick={() => handleHistoryRowClick(item)}
+                          className="cursor-pointer hover:bg-muted/30 transition-colors"
+                        >
+                          <td className="py-3 px-4">{item.actionPerformed}</td>
+                          <td className="py-3 px-4">{item.technician}</td>
+                          <td className="py-3 px-4">
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getResultClass(item.result)}`}>
+                              {item.result}
+                            </span>
+                          </td>
+                          {activeTab === "kalibrasi" && (
+                            <td className="py-3 px-4">
+                              {(item as CalibrationHistory).calibrationMethod}
+                            </td>
+                          )}
+                          <td className="py-3 px-4">
+                            {formatDate(
+                              activeTab === "ganti_suku_cadang"
+                                ? (item as SparepartHistory).replacementDate
+                                : activeTab === "maintenance"
+                                  ? (item as MaintenanceHistory).maintenanceDate
+                                  : (item as CalibrationHistory).calibrationDate,
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={activeTab === "kalibrasi" ? 5 : 4} className="py-4 text-center">
+                          Tidak ada data.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile view - Cards */}
+              <div className="md:hidden p-3">
+                {paginatedData.length > 0 ? (
+                  <div className="grid grid-cols-1 gap-3">
+                    {paginatedData.map((item, index) => (
+                      <HistoryCard 
+                        key={index} 
+                        item={item} 
+                        type={activeTab}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 px-4 border rounded-lg bg-white">
+                    Tidak ada data.
+                  </div>
+                )}
+              </div>
+
+              <div className="border-t p-4 sm:p-3">
+                <PaginationControls
+                  currentPage={currentPage}
+                  totalPages={Math.max(
+                    1,
+                    Math.ceil(
+                      (activeTab === "maintenance"
+                        ? filteredMaintenanceHistories.length
+                        : activeTab === "kalibrasi"
+                          ? filteredCalibrationHistories.length
+                          : filteredSparepartHistories.length) / itemsPerPage,
+                    ),
+                  )}
+                  onPageChange={setCurrentPage}
+                />
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -1108,7 +1181,7 @@ function DetailItem({ label, value }: { label: string; value: string | null }) {
   return (
     <div>
       <div className="text-xs text-muted-foreground">{label}</div>
-      <div className="font-medium">{value || "-"}</div>
+      <div className="font-medium sm:text-xs sm:truncate">{value || "-"}</div>
     </div>
   )
 }

@@ -181,167 +181,169 @@ export default function UserCreate() {
 			<Form {...form}>
 				<form
 					onSubmit={form.handleSubmit(onSubmit)}
-					className="space-y-6 mt-4"
+					className="space-y-6 mt-4 max-w-3xl mx-auto w-full"
 				>
-					<FormField
-						control={form.control}
-						name="nokar"
-						render={({ field }) => (
-							<FormItem>
-								<FormLabel>No. Karyawan</FormLabel>
-								<FormControl>
-									<Input
-										{...field}
-										placeholder="Masukkan nomor karyawan"
-									/>
-								</FormControl>
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
-					<FormField
-						control={form.control}
-						name="fullname"
-						render={({ field }) => (
-							<FormItem>
-								<FormLabel>Nama Lengkap</FormLabel>
-								<FormControl>
-									<Input
-										{...field}
-										placeholder="Masukkan nama lengkap"
-									/>
-								</FormControl>
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
-					<FormField
-						control={form.control}
-						name="waNumber"
-						render={({ field }) => (
-							<FormItem>
-								<FormLabel>No. WA</FormLabel>
-								<FormControl>
-									<Input
-										{...field}
-										placeholder="Masukkan nomor WA"
-									/>
-								</FormControl>
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
-					<FormField
-						control={form.control}
-						name="username"
-						render={({ field }) => (
-							<FormItem>
-								<FormLabel>Username</FormLabel>
-								<FormControl>
-									<Input
-										{...field}
-										placeholder="Masukkan username"
-									/>
-								</FormControl>
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
-					<FormField
-						control={form.control}
-						name="email"
-						render={({ field }) => (
-							<FormItem>
-								<FormLabel>Email</FormLabel>
-								<FormControl>
-									<Input
-										type="email"
-										{...field}
-										placeholder="Masukkan alamat email"
-									/>
-								</FormControl>
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
-					<FormField
-						control={form.control}
-						name="password"
-						render={({ field }) => (
-							<FormItem>
-								<FormLabel>Password</FormLabel>
-								<FormControl>
-									<Input
-										type="password"
-										{...field}
-										placeholder="Masukkan password"
-									/>
-								</FormControl>
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
-					<FormField
-						control={form.control}
-						name="divisiId"
-						render={({ field }) => (
-							<FormItem>
-								<FormLabel>Divisi</FormLabel>
-								<Select
-									onValueChange={field.onChange}
-									defaultValue={field.value}
-								>
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+						<FormField
+							control={form.control}
+							name="nokar"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>No. Karyawan</FormLabel>
 									<FormControl>
-										<SelectTrigger>
-											<SelectValue placeholder="Pilih Divisi" />
-										</SelectTrigger>
+										<Input
+											{...field}
+											placeholder="Masukkan nomor karyawan"
+										/>
 									</FormControl>
-									<SelectContent>
-										{/* Update the division mapping in the Select component to use the proper structure */}
-										{divisions.map((division) => (
-											<SelectItem
-												key={division.id}
-												value={division.id.toString()}
-											>
-												{division.divisi}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
-					<FormField
-						control={form.control}
-						name="role"
-						render={({ field }) => (
-							<FormItem>
-								<FormLabel>Role</FormLabel>
-								<Select
-									onValueChange={field.onChange}
-									defaultValue={field.value}
-								>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+						<FormField
+							control={form.control}
+							name="fullname"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Nama Lengkap</FormLabel>
 									<FormControl>
-										<SelectTrigger>
-											<SelectValue placeholder="Pilih Role" />
-										</SelectTrigger>
+										<Input
+											{...field}
+											placeholder="Masukkan nama lengkap"
+										/>
 									</FormControl>
-									<SelectContent>
-										{roles.map((role) => (
-											<SelectItem
-												key={role.id}
-												value={role.name}
-											>
-												{role.name}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+						<FormField
+							control={form.control}
+							name="waNumber"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>No. WA</FormLabel>
+									<FormControl>
+										<Input
+											{...field}
+											placeholder="Masukkan nomor WA"
+										/>
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+						<FormField
+							control={form.control}
+							name="username"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Username</FormLabel>
+									<FormControl>
+										<Input
+											{...field}
+											placeholder="Masukkan username"
+										/>
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+						<FormField
+							control={form.control}
+							name="email"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Email</FormLabel>
+									<FormControl>
+										<Input
+											type="email"
+											{...field}
+											placeholder="Masukkan alamat email"
+										/>
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+						<FormField
+							control={form.control}
+							name="password"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Password</FormLabel>
+									<FormControl>
+										<Input
+											type="password"
+											{...field}
+											placeholder="Masukkan password"
+										/>
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+						<FormField
+							control={form.control}
+							name="divisiId"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Divisi</FormLabel>
+									<Select
+										onValueChange={field.onChange}
+										defaultValue={field.value}
+									>
+										<FormControl>
+											<SelectTrigger>
+												<SelectValue placeholder="Pilih Divisi" />
+											</SelectTrigger>
+										</FormControl>
+										<SelectContent>
+											{/* Update the division mapping in the Select component to use the proper structure */}
+											{divisions.map((division) => (
+												<SelectItem
+													key={division.id}
+													value={division.id.toString()}
+												>
+													{division.divisi}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+						<FormField
+							control={form.control}
+							name="role"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Role</FormLabel>
+									<Select
+										onValueChange={field.onChange}
+										defaultValue={field.value}
+									>
+										<FormControl>
+											<SelectTrigger>
+												<SelectValue placeholder="Pilih Role" />
+											</SelectTrigger>
+										</FormControl>
+										<SelectContent>
+											{roles.map((role) => (
+												<SelectItem
+													key={role.id}
+													value={role.name}
+												>
+													{role.name}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+					</div>
 					<FormField
 						control={form.control}
 						name="entryDate"
@@ -384,15 +386,16 @@ export default function UserCreate() {
 							</FormItem>
 						)}
 					/>
-					<div className="flex justify-end space-x-4">
+					<div className="flex flex-col-reverse sm:flex-row justify-end space-y-4 space-y-reverse sm:space-y-0 sm:space-x-4 mt-8">
 						<Button
 							type="button"
 							variant="destructive"
 							onClick={() => router.back()}
+							className="w-full sm:w-auto"
 						>
 							Batalkan
 						</Button>
-						<Button type="submit" disabled={loading}>
+						<Button type="submit" disabled={loading} className="w-full sm:w-auto">
 							{loading ? "Menyimpan..." : "Simpan"}
 						</Button>
 					</div>

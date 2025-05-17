@@ -139,10 +139,10 @@ export default function UserDetails() {
                     <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
                 </Button>
 
-                <div className="border rounded-lg p-6 shadow-sm">
+                <div className="border rounded-lg p-4 md:p-6 shadow-sm">
                     <div className="h-8 w-1/3 bg-muted animate-pulse rounded mb-6"></div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                         {Array.from({ length: 8 }).map((_, index) => (
                             <div key={index} className="space-y-2">
                                 <div className="h-4 w-20 bg-muted animate-pulse rounded"></div>
@@ -158,7 +158,7 @@ export default function UserDetails() {
     // Error state
     if (error || !user) {
         return (
-            <div className="p-6 space-y-4" data-testid="error-state">
+            <div className="p-4 md:p-6 space-y-4" data-testid="error-state">
                 <Button
                     variant="outline"
                     onClick={handleGoBack}
@@ -178,12 +178,13 @@ export default function UserDetails() {
                 variant="outline"
                 onClick={handleGoBack}
                 data-testid="back-button"
+                className="w-full sm:w-auto"
             >
                 <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
             </Button>
 
             {/* User details */}
-            <div className="border rounded-lg p-6 shadow-sm ">
+            <div className="border rounded-lg p-4 md:p-6 shadow-sm max-w-4xl mx-auto w-full">
                 <h1
                     className="text-header-h6 font-bold mb-6"
                     data-testid="user-name"
@@ -191,12 +192,12 @@ export default function UserDetails() {
                     {user.fullname ?? user.username}
                 </h1>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                     <div className="space-y-1">
                         <h3 className="text-sm font-medium text-muted-foreground">
                             Email
                         </h3>
-                        <p className="text-sm" data-testid="user-email">
+                        <p className="text-sm break-words" data-testid="user-email">
                             {user.email}
                         </p>
                     </div>
@@ -265,14 +266,19 @@ export default function UserDetails() {
                     </div>
                 </div>
 
-                <div className="flex justify-end gap-4 pt-6 mt-6">
-                    <Button onClick={handleEdit} data-testid="edit-button">
+                <div className="flex flex-col sm:flex-row justify-end gap-3 pt-6 mt-6">
+                    <Button 
+                        onClick={handleEdit} 
+                        data-testid="edit-button"
+                        className="w-full sm:w-auto"
+                    >
                         <Edit className="mr-2 h-4 w-4" /> Edit
                     </Button>
                     <Button
                         variant="destructive"
                         onClick={handleDeleteClick}
                         data-testid="delete-button"
+                        className="w-full sm:w-auto"
                     >
                         <Trash2 className="mr-2 h-4 w-4" /> Hapus
                     </Button>

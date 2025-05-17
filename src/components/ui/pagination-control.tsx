@@ -9,6 +9,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
+import { useEffect, useState } from "react"
 
 interface PaginationControlsProps {
   currentPage: number
@@ -17,10 +18,64 @@ interface PaginationControlsProps {
 }
 
 export function PaginationControls({ currentPage, totalPages, onPageChange }: PaginationControlsProps) {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+    
+    // Initial check
+    checkMobile();
+    
+    // Listen for window resize
+    window.addEventListener('resize', checkMobile);
+    
+    // Cleanup
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   // Generate page numbers to display
   const getPageNumbers = () => {
     const pages = []
 
+    // For mobile, use more compact pagination
+    if (isMobile) {
+      // Always show current page
+      pages.push(currentPage);
+      
+      // Show next page if it exists
+      if (currentPage < totalPages) {
+        pages.push(currentPage + 1);
+      }
+      
+      // Show previous page if it exists and we're not on the first few pages
+      if (currentPage > 1) {
+        pages.unshift(currentPage - 1);
+      }
+      
+      // If we're far from the start, add the first page and ellipsis
+      if (currentPage > 3) {
+        pages.unshift("ellipsis-start");
+        pages.unshift(1);
+      } else if (currentPage === 3) {
+        // If we're on page 3, explicitly show page 1
+        pages.unshift(1);
+      }
+      
+      // If we're far from the end, add the last page and ellipsis
+      if (currentPage < totalPages - 2) {
+        pages.push("ellipsis-end");
+        pages.push(totalPages);
+      } else if (currentPage === totalPages - 2) {
+        // If we're on the third-to-last page, explicitly show the last page
+        pages.push(totalPages);
+      }
+      
+      return pages;
+    }
+
+    // Desktop pagination logic (unchanged)
     // Always show first page
     pages.push(1)
 

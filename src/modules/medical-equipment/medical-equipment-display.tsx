@@ -329,19 +329,71 @@ export default function MedicalEquipmentPage() {
 		router.push(`/dashboard/medical-equipment/create`);
 	};
 
+	// Mobile card view for equipment items
+	const MobileEquipmentCard = ({ equipment }: { equipment: MedicalEquipment }) => (
+		<div 
+			className="bg-white border rounded-lg shadow-sm p-4 mb-4 transition-all hover:shadow-md"
+			onClick={() => navigateToEquipmentDetail(equipment.id)}
+			data-testid={`equipment-card-${equipment.id}`}
+		>
+			<div className="flex justify-between items-start mb-2">
+				<div>
+					<h3 className="font-medium text-base">{equipment.name}</h3>
+					<p className="text-sm text-gray-500">{equipment.inventorisId}</p>
+				</div>
+				<span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusClass(equipment.status)}`}>
+					{equipment.status}
+				</span>
+			</div>
+			
+			<div className="grid grid-cols-2 gap-y-2 mt-3 text-sm">
+				<div className="text-gray-500">Harga:</div>
+				<div>{formatPrice(equipment.purchasePrice)}</div>
+				
+				<div className="text-gray-500">Tanggal Pembelian:</div>
+				<div>{formatDate(equipment.purchaseDate)}</div>
+			</div>
+			
+			<div className="flex justify-end gap-2 mt-4" onClick={(e) => e.stopPropagation()}>
+				<Button
+					size="icon"
+					variant="outline"
+					onClick={(e) => {
+						e.stopPropagation();
+						navigateToEquipmentEdit(equipment.id);
+					}}
+					data-testid={`edit-button-mobile-${equipment.id}`}
+				>
+					<Edit className="h-4 w-4" />
+				</Button>
+				<Button
+					size="icon"
+					variant="destructive"
+					onClick={(e) => {
+						e.stopPropagation();
+						confirmDelete(equipment.id);
+					}}
+					data-testid={`delete-button-mobile-${equipment.id}`}
+				>
+					<Trash2 className="h-4 w-4" />
+				</Button>
+			</div>
+		</div>
+	);
+
 	return (
 		<div className="space-y-6 font-plus-jakarta-sans">
 			<h1 className="text-header-h5 font-bold font-poppins">
 				Alat Medis
 			</h1>
 
-			{/* Header Section */}
-			<div className="bg-primary-solid items-center p-2 flex gap-3 h-fit text-white rounded-lg overflow-hidden">
-				<div className="flex items-center justify-center w-[264px] h-[224px] border border-primary-super-light rounded-lg">
+			{/* Header Section - Made responsive */}
+			<div className="bg-primary-solid p-2 flex flex-col md:flex-row gap-3 h-fit text-white rounded-lg overflow-hidden">
+				<div className="hidden md:flex items-center justify-center w-[264px] h-[224px] border border-primary-super-light rounded-lg">
 					illustration
 				</div>
 
-				<div className="flex flex-col gap-6 py-6 px-6">
+				<div className="flex flex-col gap-4 py-4 px-4 md:gap-6 md:py-6 md:px-6">
 					<div className="space-y-2">
 						<h2 className="text-header-h6 font-bold font-poppins">
 							Alat Medis
@@ -362,7 +414,7 @@ export default function MedicalEquipmentPage() {
 				</div>
 			</div>
 
-			{/* Search & Filter */}
+			{/* Search & Filter - Already responsive with flex-col on small screens */}
 			<div className="flex flex-col sm:flex-row items-center gap-4">
 				<div className="relative w-full">
 					<div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
@@ -395,10 +447,11 @@ export default function MedicalEquipmentPage() {
 				</div>
 			)}
 
-			{/* Medical Equipment Table */}
+			{/* Medical Equipment Table for desktop and Mobile Cards for small screens */}
 			{!loading && (
 				<>
-					<div className="border rounded-lg overflow-hidden">
+					{/* Table view for desktop */}
+					<div className="hidden md:block border rounded-lg overflow-hidden">
 						<Table data-testid="medical-equipments-table">
 							<TableHeader>
 								<TableRow>
@@ -499,6 +552,26 @@ export default function MedicalEquipmentPage() {
 								)}
 							</TableBody>
 						</Table>
+					</div>
+
+					{/* Card view for mobile */}
+					<div className="md:hidden">
+						{medicalEquipments.length > 0 ? (
+							<div className="grid grid-cols-1 gap-4">
+								{medicalEquipments.map(equipment => (
+									<MobileEquipmentCard 
+										key={equipment.id} 
+										equipment={equipment} 
+									/>
+								))}
+							</div>
+						) : (
+							<div className="text-center py-8 px-4 border rounded-lg bg-white">
+								{search
+									? "Tidak ada alat medis yang cocok dengan pencarian Anda"
+									: "Tidak ada alat medis yang ditemukan"}
+							</div>
+						)}
 					</div>
 
 					<PaginationControls

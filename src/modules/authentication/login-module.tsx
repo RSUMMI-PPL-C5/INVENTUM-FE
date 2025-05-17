@@ -82,29 +82,29 @@ export default function LoginModule() {
   }, [error]);
 
   return (
-    <div className="h-screen flex items-center justify-center">
-      <div className="flex flex-col items-center gap-8 mb-8">
+    <div className="min-h-screen flex items-center justify-center px-4 py-8 bg-background">
+      <div className="flex flex-col items-center gap-6 w-full max-w-[400px]">
         <Image
-          width={200}
+          width={150}
           height={0}
           src="/rsummi-logo.png"
-          className="h-auto"
+          className="h-auto max-w-[150px] md:max-w-[200px]"
           alt="Logo RS UMMI"
         />
-        <div className="bg-white w-[400px] gap-8 px-12 py-6 flex flex-col items-center justify-center shadow-[0px_0px_100px_0px_rgba(0,0,0,0.10)] text-m-medium font-plus-jakarta-sans rounded-lg">
+        <div className="bg-white w-full gap-6 px-6 py-6 flex flex-col items-center justify-center shadow-[0px_0px_100px_0px_rgba(0,0,0,0.10)] text-m-medium font-plus-jakarta-sans rounded-lg">
           <div className="flex flex-col items-center justify-center">
-            <span className="text-header-h3 font-poppins text-primary-solid">INVENTUM</span>
-            <span>Inventaris Terpadu RS UMMI</span>
+            <span className="text-header-h4 md:text-header-h3 font-poppins text-primary-solid">INVENTUM</span>
+            <span className="text-s-medium md:text-m-medium text-center">Inventaris Terpadu RS UMMI</span>
           </div>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 w-full">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 w-full">
               <div className="space-y-4">  
                 <FormField
                   control={form.control}
                   name="username"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Username</FormLabel>
+                      <FormLabel className="text-s-medium md:text-m-medium">Username</FormLabel>
                       <FormControl>
                         <Input placeholder="azmy.arya.rizaldi" {...field} />
                       </FormControl>
@@ -117,7 +117,7 @@ export default function LoginModule() {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Password</FormLabel>
+                      <FormLabel className="text-s-medium md:text-m-medium">Password</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Input

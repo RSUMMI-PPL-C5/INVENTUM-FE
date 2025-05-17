@@ -35,18 +35,19 @@ export default function DeleteDialog({
 }: DeleteDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-[95vw] sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
             {description}
           </DialogDescription>
         </DialogHeader>
-        <DialogFooter className="flex justify-end gap-2">
+        <DialogFooter className="flex flex-col sm:flex-row sm:justify-end gap-2 mt-4">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
             disabled={isDeleting}
+            className="w-full sm:w-auto"
           >
             {cancelButtonText}
           </Button>
@@ -54,6 +55,7 @@ export default function DeleteDialog({
             onClick={onConfirm}
             disabled={isDeleting}
             variant="destructive"
+            className="w-full sm:w-auto"
           >
             {isDeleting ? (
               <>

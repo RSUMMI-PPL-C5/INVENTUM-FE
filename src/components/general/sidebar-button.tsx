@@ -31,7 +31,7 @@ const SideBarButton: React.FC<SideBarButtonProps> = ({
             <span>{icon}</span>
             {isHovered && (
                 <span
-                    className="text-s-regular transition-all duration-150"
+                    className="text-s-regular transition-all duration-150 truncate"
                     style={{ color }}
                 >
                     {props.children}
