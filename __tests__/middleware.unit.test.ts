@@ -19,6 +19,7 @@ describe("Middleware Authentication", () => {
         get: jest.fn(),
       },
       url: "https://example.com/dashboard",
+      nextUrl: { pathname: "/dashboard", origin: "https://example.com", search: "", href: "https://example.com/dashboard" }
     } as unknown as NextRequest;
 
     process.env.NEXT_PUBLIC_API_URL = "https://api.example.com";

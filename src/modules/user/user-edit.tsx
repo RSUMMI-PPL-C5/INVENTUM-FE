@@ -95,7 +95,6 @@ export default function UserEdit() {
     },
   });
 
-  // Definisikan fungsi fetch sebagai fungsi biasa (bukan di dalam useEffect)
   const fetchData = useCallback(async () => {
     setLoading(true);
     setFetchError(null);
