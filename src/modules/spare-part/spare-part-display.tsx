@@ -214,14 +214,23 @@ export default function SparepartDisplay() {
     })
   }
 
-  const handleApplyFilter = (filters: Record<string, string>) => {
-    // Combine search and filters, reset to page 1
+const handleApplyFilter = (filters: Record<string, string>) => {
+  if (Object.keys(filters).length === 0) {
+    const params = new URLSearchParams();
+    if (search) {
+      params.set("search", search);
+    }
+    params.set("page", "1");
+    
+    router.push(`/dashboard/spare-part?${params.toString()}`, { scroll: false });
+  } else {
     updateURLParams({
       ...filters,
       search: search || null,
       page: "1",
-    })
+    });
   }
+}
 
   const handlePageChange = (page: number) => {
     updateURLParams({

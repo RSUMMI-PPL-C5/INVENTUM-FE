@@ -13,8 +13,9 @@ import {
 } from "@/components/ui/dialog"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { format } from "date-fns"
+import { id } from "date-fns/locale" // Add Indonesian locale
 import { CalendarIcon, Filter } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { cn, formatNumberWithDots } from "@/lib/utils" // Import formatNumberWithDots
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 
@@ -34,7 +35,7 @@ interface FilterDialogProps {
   currentFilters?: URLSearchParams
 }
 
-export function FilterDialog({ onApplyFilter, currentFilters }: FilterDialogProps) {
+export function FilterDialog({ onApplyFilter, currentFilters }: Readonly<FilterDialogProps>) {
   const [isOpen, setIsOpen] = useState(false)
   const [filters, setFilters] = useState<SparepartFilters>({
     purchaseDateStart: currentFilters?.get("purchaseDateStart")
@@ -88,7 +89,8 @@ export function FilterDialog({ onApplyFilter, currentFilters }: FilterDialogProp
   }
 
   const handlePriceChange = (type: "priceMin" | "priceMax", value: string) => {
-    const numValue = value === "" ? null : Number.parseFloat(value)
+    const rawValue = value.replace(/[^\d.]/g, "").replace(/\./g, "")
+    const numValue = rawValue === "" ? null : Number.parseFloat(rawValue)
     setFilters((prev) => ({
       ...prev,
       [type]: numValue,
@@ -191,23 +193,31 @@ export function FilterDialog({ onApplyFilter, currentFilters }: FilterDialogProp
                 <div className="flex flex-col sm:flex-row gap-4">
                   <div className="flex-1">
                     <Label htmlFor="priceMin">Minimum</Label>
-                    <Input
-                      id="priceMin"
-                      type="number"
-                      value={filters.priceMin?.toString() || ""}
-                      onChange={(e) => handlePriceChange("priceMin", e.target.value)}
-                      placeholder="Rp 0"
-                    />
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs-semibold text-gray-400/80">Rp</span>
+                      <Input
+                        id="priceMin"
+                        type="text"
+                        className="pl-9"
+                        value={filters.priceMin ? formatNumberWithDots(filters.priceMin.toString()) : ""}
+                        onChange={(e) => handlePriceChange("priceMin", e.target.value)}
+                        placeholder="0"
+                      />
+                    </div>
                   </div>
                   <div className="flex-1">
                     <Label htmlFor="priceMax">Maksimum</Label>
-                    <Input
-                      id="priceMax"
-                      type="number"
-                      value={filters.priceMax?.toString() || ""}
-                      onChange={(e) => handlePriceChange("priceMax", e.target.value)}
-                      placeholder="Rp 1.000.000"
-                    />
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs-semibold text-gray-400/80">Rp</span>
+                      <Input
+                        id="priceMax"
+                        type="text"
+                        className="pl-9"
+                        value={filters.priceMax ? formatNumberWithDots(filters.priceMax.toString()) : ""}
+                        onChange={(e) => handlePriceChange("priceMax", e.target.value)}
+                        placeholder="1.000.000"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -234,7 +244,7 @@ export function FilterDialog({ onApplyFilter, currentFilters }: FilterDialogProp
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
                           {filters.purchaseDateStart ? (
-                            format(filters.purchaseDateStart, "PPP")
+                            format(filters.purchaseDateStart, "dd MMM yyyy", { locale: id })
                           ) : (
                             <span>Pilih tanggal</span>
                           )}
@@ -247,6 +257,8 @@ export function FilterDialog({ onApplyFilter, currentFilters }: FilterDialogProp
                           onSelect={(date) => handleDateChange("purchaseDateStart", date)}
                           disabled={(date) => date > new Date()}
                           initialFocus
+                          locale={id}
+                          weekStartsOn={1}
                         />
                       </PopoverContent>
                     </Popover>
@@ -265,7 +277,7 @@ export function FilterDialog({ onApplyFilter, currentFilters }: FilterDialogProp
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
                           {filters.purchaseDateEnd ? (
-                            format(filters.purchaseDateEnd, "PPP")
+                            format(filters.purchaseDateEnd, "dd MMM yyyy", { locale: id })
                           ) : (
                             <span>Pilih tanggal</span>
                           )}
@@ -280,6 +292,8 @@ export function FilterDialog({ onApplyFilter, currentFilters }: FilterDialogProp
                             date > new Date() || (filters.purchaseDateStart ? date < filters.purchaseDateStart : false)
                           }
                           initialFocus
+                          locale={id}
+                          weekStartsOn={1}
                         />
                       </PopoverContent>
                     </Popover>
@@ -304,7 +318,10 @@ export function FilterDialog({ onApplyFilter, currentFilters }: FilterDialogProp
                           )}
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
-                          {filters.createdOnStart ? format(filters.createdOnStart, "PPP") : <span>Pilih tanggal</span>}
+                          {filters.createdOnStart ? 
+                            format(filters.createdOnStart, "dd MMM yyyy", { locale: id }) : 
+                            <span>Pilih tanggal</span>
+                          }
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0">
@@ -314,6 +331,8 @@ export function FilterDialog({ onApplyFilter, currentFilters }: FilterDialogProp
                           onSelect={(date) => handleDateChange("createdOnStart", date)}
                           disabled={(date) => date > new Date()}
                           initialFocus
+                          locale={id}
+                          weekStartsOn={1}
                         />
                       </PopoverContent>
                     </Popover>
@@ -331,7 +350,10 @@ export function FilterDialog({ onApplyFilter, currentFilters }: FilterDialogProp
                           )}
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
-                          {filters.createdOnEnd ? format(filters.createdOnEnd, "PPP") : <span>Pilih tanggal</span>}
+                          {filters.createdOnEnd ? 
+                            format(filters.createdOnEnd, "dd MMM yyyy", { locale: id }) : 
+                            <span>Pilih tanggal</span>
+                          }
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0">
@@ -343,6 +365,8 @@ export function FilterDialog({ onApplyFilter, currentFilters }: FilterDialogProp
                             date > new Date() || (filters.createdOnStart ? date < filters.createdOnStart : false)
                           }
                           initialFocus
+                          locale={id}
+                          weekStartsOn={1}
                         />
                       </PopoverContent>
                     </Popover>
@@ -367,11 +391,10 @@ export function FilterDialog({ onApplyFilter, currentFilters }: FilterDialogProp
                           )}
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
-                          {filters.modifiedOnStart ? (
-                            format(filters.modifiedOnStart, "PPP")
-                          ) : (
+                          {filters.modifiedOnStart ? 
+                            format(filters.modifiedOnStart, "dd MMM yyyy", { locale: id }) : 
                             <span>Pilih tanggal</span>
-                          )}
+                          }
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0">
@@ -381,6 +404,8 @@ export function FilterDialog({ onApplyFilter, currentFilters }: FilterDialogProp
                           onSelect={(date) => handleDateChange("modifiedOnStart", date)}
                           disabled={(date) => date > new Date()}
                           initialFocus
+                          locale={id}
+                          weekStartsOn={1}
                         />
                       </PopoverContent>
                     </Popover>
@@ -398,7 +423,10 @@ export function FilterDialog({ onApplyFilter, currentFilters }: FilterDialogProp
                           )}
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
-                          {filters.modifiedOnEnd ? format(filters.modifiedOnEnd, "PPP") : <span>Pilih tanggal</span>}
+                          {filters.modifiedOnEnd ? 
+                            format(filters.modifiedOnEnd, "dd MMM yyyy", { locale: id }) : 
+                            <span>Pilih tanggal</span>
+                          }
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0">
@@ -410,6 +438,8 @@ export function FilterDialog({ onApplyFilter, currentFilters }: FilterDialogProp
                             date > new Date() || (filters.modifiedOnStart ? date < filters.modifiedOnStart : false)
                           }
                           initialFocus
+                          locale={id}
+                          weekStartsOn={1}
                         />
                       </PopoverContent>
                     </Popover>

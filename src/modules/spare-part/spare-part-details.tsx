@@ -6,6 +6,7 @@ import { ArrowLeft, Edit, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import Cookies from "js-cookie";
+import { formatCurrency } from "@/lib/utils";
 
 type Sparepart = {
 	id: string;
@@ -111,15 +112,6 @@ export default function SparePartDetails() {
 			return "Tanggal tidak valid";
 		}
 	};
-
-	const formatCurrency = (value: number) => {
-		return new Intl.NumberFormat("id-ID", {
-			style: "currency",
-			currency: "IDR",
-			minimumFractionDigits: 0,
-		}).format(value);
-	};
-
 	// Loading state
 	if (loading) {
 		return (
