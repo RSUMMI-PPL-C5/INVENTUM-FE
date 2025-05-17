@@ -292,20 +292,6 @@ export default function DisplayDivisi() {
 		);
 	};
 
-	// Create description content for delete dialog
-	const deleteDescription = (
-		<>
-			Are you sure you want to delete the division &quot;
-			{divisionToDelete?.divisi}&quot;?
-			{divisionToDelete?.children?.length ? (
-				<span className="text-red-500 block mt-2">
-					Warning: This division has sub-divisions
-					that will also be deleted.
-				</span>
-			) : null}
-		</>
-	);
-
 	return (
 		<>
 			<div className="flex justify-between items-center mb-6">
@@ -339,16 +325,19 @@ export default function DisplayDivisi() {
 				</CardContent>
 			</Card>
 
-			{/* Using the reusable DeleteDialog component */}
 			<DeleteDialog
 				open={deleteDialogOpen}
 				onOpenChange={setDeleteDialogOpen}
-				title="Konfirmasi Hapus Divisi"
-				description={deleteDescription}
+    			title="Hapus Divisi"
+				description={`Apakah Anda yakin ingin menghapus divisi "${divisionToDelete?.divisi}"? ${
+					divisionToDelete?.children?.length 
+					? "Divisi ini memiliki sub-divisi yang juga akan dihapus." 
+					: "Tindakan ini tidak dapat dibatalkan."
+				}`}
 				onConfirm={confirmDelete}
 				isDeleting={isDeleting}
-				deleteButtonText="Delete"
-				cancelButtonText="Cancel"
+				deleteButtonText="Hapus"
+				cancelButtonText="Batal"
 			/>
 		</>
 	);
