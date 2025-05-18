@@ -7,6 +7,33 @@ import { ArrowUpIcon, ArrowDownIcon } from "lucide-react"
 import Cookies from "js-cookie"
 import { toast } from "sonner"
 
+// Hook untuk mengukur ukuran layar secara responsif
+const useWindowSize = () => {
+  const [windowSize, setWindowSize] = useState({
+    width: typeof window !== 'undefined' ? window.innerWidth : 1200,
+    height: typeof window !== 'undefined' ? window.innerHeight : 800,
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    };
+    
+    // Hanya jalankan di browser
+    if (typeof window !== 'undefined') {
+      window.addEventListener("resize", handleResize);
+      handleResize(); // Set ukuran awal
+      
+      return () => window.removeEventListener("resize", handleResize);
+    }
+  }, []);
+
+  return windowSize;
+};
+
 // Tipe data untuk respons dari API
 interface MonthlyRequestData {
   month: string
@@ -56,9 +83,15 @@ const shortMonthNames = {
 
 // Fungsi untuk menampilkan konten chart berdasarkan state
 const renderChartContent = (loading: boolean, monthlyData: FormattedChartData[]) => {
+  const { width } = useWindowSize();
+  
+  // Menentukan konfigurasi responsif berdasarkan lebar layar
+  const isMobile = width < 640;
+  const isTablet = width >= 640 && width < 1024;
+  
   if (loading) {
     return (
-      <div className="h-[300px] flex items-center justify-center">
+      <div className="h-[250px] sm:h-[300px] md:h-[350px] flex items-center justify-center">
         <p>Memuat data...</p>
       </div>
     );
@@ -66,25 +99,24 @@ const renderChartContent = (loading: boolean, monthlyData: FormattedChartData[])
   
   if (monthlyData.length === 0) {
     return (
-      <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+      <div className="h-[250px] sm:h-[300px] md:h-[350px] flex items-center justify-center text-muted-foreground">
         Tidak ada data permintaan untuk ditampilkan
       </div>
     );
   }
 
-  // Custom tooltip untuk bar chart yang menggunakan nama bulan lengkap
+  // Custom tooltip yang responsif
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload?.length) {
-      // Cari data full bulan berdasarkan label
       const currentData = monthlyData.find(data => data.month === label);
       
       return (
-        <div className="bg-white p-3 border rounded shadow-sm">
-          <p className="font-medium">{currentData?.fullMonth ?? label}</p>
-          <p className="text-sm text-blue-600">
+        <div className="bg-white p-2 sm:p-3 border rounded shadow-sm">
+          <p className="font-medium text-xs sm:text-sm">{currentData?.fullMonth ?? label}</p>
+          <p className={`text-xs sm:text-sm text-blue-600 ${isMobile ? 'mt-0.5' : 'mt-1'}`}>
             Pemeliharaan: {payload[0].value}
           </p>
-          <p className="text-sm text-purple-600">
+          <p className={`text-xs sm:text-sm text-purple-600 ${isMobile ? 'mt-0.5' : 'mt-1'}`}>
             Kalibrasi: {payload[1].value}
           </p>
         </div>
@@ -93,37 +125,77 @@ const renderChartContent = (loading: boolean, monthlyData: FormattedChartData[])
     return null;
   };
   
+  // Konfigurasikan margin berdasarkan ukuran layar
+  const chartMargin = isMobile 
+    ? { top: 5, right: 10, left: 5, bottom: 40 }
+    : isTablet
+      ? { top: 5, right: 20, left: 15, bottom: 30 }
+      : { top: 5, right: 30, left: 20, bottom: 25 };
+
+  // Konfigurasi interval label berdasarkan jumlah data dan lebar layar
+  // Untuk menghindari tumpang tindih pada layar kecil
+  const labelInterval = isMobile
+    ? Math.max(1, Math.floor(monthlyData.length / 4))
+    : isTablet
+      ? Math.max(0, Math.floor(monthlyData.length / 6))
+      : 0;
+      
   return (
-    <div className="h-[300px]">
-      <ResponsiveContainer width="100%" height="100%">
+    <div className="h-[250px] sm:h-[300px] md:h-[350px] flex justify-center">
+      <ResponsiveContainer width="95%" height="100%"> 
         <BarChart
           data={monthlyData}
-          margin={{
-            top: 5,
-            right: 30,
-            left: 20,
-            bottom: 25,
-          }}
+          margin={{ top: 5, right: 20, left: 20, bottom: 25 }} 
+          barGap={isMobile ? 3 : 8}
+          barSize={isMobile ? 15 : isTablet ? 25 : 35}
         >
-          <CartesianGrid strokeDasharray="3 3" />
+          <CartesianGrid strokeDasharray="3 3" vertical={!isMobile} />
           <XAxis 
             dataKey="month" 
-            tick={{ fontSize: 12 }} 
-            height={40} 
-            tickMargin={10} 
+            tick={{ 
+              fontSize: isMobile ? 9 : isTablet ? 10 : 12,
+              fill: "#64748b"
+            }} 
+            height={isMobile ? 50 : 40} 
+            tickMargin={5}
+            angle={isMobile ? -45 : 0}
+            textAnchor={isMobile ? "end" : "middle"}
+            interval={labelInterval}
           />
-          <YAxis />
-          <Tooltip content={CustomTooltip} />
-          <Legend />
+          <YAxis 
+            width={isMobile ? 25 : isTablet ? 35 : 40}
+            tick={{ fontSize: isMobile ? 9 : isTablet ? 10 : 12 }}
+            tickFormatter={(value) => (value === 0 ? "0" : value.toString())}
+          />
+          <Tooltip 
+            content={CustomTooltip}
+            wrapperStyle={{ zIndex: 1000 }}
+          />
+          <Legend 
+            verticalAlign={isMobile ? "bottom" : "bottom"}
+            height={isMobile ? 36 : 40}
+            iconSize={isMobile ? 10 : 12}
+            wrapperStyle={{ 
+              fontSize: isMobile ? '11px' : isTablet ? '12px' : '14px',
+              paddingTop: isMobile ? '5px' : '0px',
+              fontWeight: 500 
+            }}
+          />
           <Bar 
             dataKey="maintenance" 
             fill="#3b82f6" 
-            name="Pemeliharaan" 
+            name="Pemeliharaan"
+            radius={[3, 3, 0, 0]}
+            // Animasi yang lebih cepat untuk perangkat mobile
+            animationDuration={isMobile ? 500 : 1000}
           />
           <Bar 
             dataKey="calibration" 
             fill="#8b5cf6" 
-            name="Kalibrasi" 
+            name="Kalibrasi"
+            radius={[3, 3, 0, 0]} 
+            // Animasi yang lebih cepat untuk perangkat mobile
+            animationDuration={isMobile ? 500 : 1000}
           />
         </BarChart>
       </ResponsiveContainer>
@@ -164,8 +236,6 @@ export default function DashboardCharts() {
       } else if (responseData?.data && Array.isArray(responseData.data)) {
         data = responseData.data;
       }
-      
-      console.log("Monthly request data:", data)
       
       if (data.length === 0) {
         setMonthlyData([])
@@ -243,17 +313,17 @@ export default function DashboardCharts() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
         <Card>
-          <CardContent className="pt-6">
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-muted-foreground">Total Pemeliharaan</p>
+          <CardContent className="pt-4 sm:pt-6">
+            <div className="space-y-1 sm:space-y-2">
+              <p className="text-xs sm:text-sm font-medium text-muted-foreground">Total Pemeliharaan</p>
               <div className="flex items-baseline justify-between">
-                <h2 className="text-3xl font-bold">124</h2>
-                <div className="flex items-center text-sm text-green-600">
-                  <ArrowUpIcon className="h-4 w-4 mr-1" />
+                <h2 className="text-2xl sm:text-3xl font-bold">124</h2>
+                <div className="flex items-center text-xs sm:text-sm text-green-600">
+                  <ArrowUpIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                   <span>+12.5%</span>
                 </div>
               </div>
@@ -263,13 +333,13 @@ export default function DashboardCharts() {
         </Card>
 
         <Card>
-          <CardContent className="pt-6">
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-muted-foreground">Total Kalibrasi</p>
+          <CardContent className="pt-4 sm:pt-6">
+            <div className="space-y-1 sm:space-y-2">
+              <p className="text-xs sm:text-sm font-medium text-muted-foreground">Total Kalibrasi</p>
               <div className="flex items-baseline justify-between">
-                <h2 className="text-3xl font-bold">87</h2>
-                <div className="flex items-center text-sm text-green-600">
-                  <ArrowUpIcon className="h-4 w-4 mr-1" />
+                <h2 className="text-2xl sm:text-3xl font-bold">87</h2>
+                <div className="flex items-center text-xs sm:text-sm text-green-600">
+                  <ArrowUpIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                   <span>+5.2%</span>
                 </div>
               </div>
@@ -278,14 +348,14 @@ export default function DashboardCharts() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="pt-6">
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-muted-foreground">Penggantian Suku Cadang</p>
+        <Card className="sm:col-span-2 md:col-span-1">
+          <CardContent className="pt-4 sm:pt-6">
+            <div className="space-y-1 sm:space-y-2">
+              <p className="text-xs sm:text-sm font-medium text-muted-foreground">Penggantian Suku Cadang</p>
               <div className="flex items-baseline justify-between">
-                <h2 className="text-3xl font-bold">36</h2>
-                <div className="flex items-center text-sm text-red-600">
-                  <ArrowDownIcon className="h-4 w-4 mr-1" />
+                <h2 className="text-2xl sm:text-3xl font-bold">36</h2>
+                <div className="flex items-center text-xs sm:text-sm text-red-600">
+                  <ArrowDownIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                   <span>-2.1%</span>
                 </div>
               </div>
@@ -296,15 +366,15 @@ export default function DashboardCharts() {
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
         {/* Placeholder for future pie chart */}
         <Card>
-          <CardHeader>
-            <CardTitle>Status Permintaan</CardTitle>
-            <CardDescription>Distribusi status permintaan pemeliharaan dan kalibrasi</CardDescription>
+          <CardHeader className="pb-0 sm:pb-2">
+            <CardTitle className="text-base sm:text-lg">Status Permintaan</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">Distribusi status permintaan pemeliharaan dan kalibrasi</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+            <div className="h-[250px] sm:h-[300px] md:h-[350px] flex items-center justify-center text-muted-foreground text-xs sm:text-sm">
               Data status permintaan akan ditampilkan di sini
             </div>
           </CardContent>
@@ -312,11 +382,11 @@ export default function DashboardCharts() {
 
         {/* Monthly Requests Bar Chart */}
         <Card>
-          <CardHeader>
-            <CardTitle>Permintaan Bulanan</CardTitle>
-            <CardDescription>Jumlah permintaan pemeliharaan dan kalibrasi per bulan</CardDescription>
+          <CardHeader className="pb-0 sm:pb-1">
+            <CardTitle className="text-base sm:text-lg">Permintaan Bulanan</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">Jumlah permintaan pemeliharaan dan kalibrasi per bulan</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-0 sm:px-0 pt-7 pb-0">
             {renderChartContent(loading, monthlyData)}
           </CardContent>
         </Card>
