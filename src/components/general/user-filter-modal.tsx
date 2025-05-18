@@ -16,7 +16,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { format, isValid } from "date-fns"
 import { id } from "date-fns/locale"
-import { CalendarIcon } from "lucide-react"
+import { CalendarIcon, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
@@ -56,6 +56,13 @@ export default function UserFilterModal({ isOpen, filters, onConfirm, onCancel }
   useEffect(() => {
     fetchAllDivisions()
   }, [])
+
+  const clearDivision = () => {
+    setLocalFilters(prev => ({
+      ...prev,
+      division: ""
+    }))
+  }
 
   async function fetchAllDivisions() {
     try {
@@ -162,25 +169,39 @@ export default function UserFilterModal({ isOpen, filters, onConfirm, onCancel }
               </div>
             </div>
 
-            {/* Division Filter - UPDATED */}
+            {/* Division Filter */}
             <div className="space-y-2">
               <h3 className="font-medium">Divisi</h3>
-              <Select 
-                onValueChange={handleDivisionChange} 
-                value={localFilters.division || ""}
-              >
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Semua Divisi" />
-                </SelectTrigger>
-                <SelectContent>
-                  {/* Opsi "Semua Divisi" dihapus dari sini */}
-                  {divisions.map((division) => (
-                    <SelectItem key={division.id} value={division.id.toString()}>
-                      {division.divisi}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-2">
+                <Select 
+                  onValueChange={handleDivisionChange} 
+                  value={localFilters.division || ""}
+                >
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Semua Divisi" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {divisions.map((division) => (
+                      <SelectItem key={division.id} value={division.id.toString()}>
+                        {division.divisi}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                {localFilters.division && (
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={clearDivision}
+                    className="h-8 w-8" 
+                    type="button"
+                    title="Hapus filter divisi"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
 
