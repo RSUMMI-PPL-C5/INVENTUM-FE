@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { CartesianGrid, Legend, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
+import { CartesianGrid, Legend, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Sector } from "recharts"
 import { ArrowUpIcon, ArrowDownIcon } from "lucide-react"
 import Cookies from "js-cookie"
 import { toast } from "sonner"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 // Hook untuk mengukur ukuran layar secara responsif
 const useWindowSize = () => {
@@ -47,6 +48,25 @@ interface FormattedChartData {
   fullMonth: string
   maintenance: number
   calibration: number
+}
+
+// Tipe data untuk status permintaan
+interface RequestStatusData {
+  status: string
+  count: number
+  percentage: number
+}
+
+// Tipe data untuk respons status permintaan dari API
+interface RequestStatusResponse {
+  MAINTENANCE: RequestStatusData[]
+  CALIBRATION: RequestStatusData[]
+  total: {
+    success: number
+    warning: number
+    failed: number
+    total: number
+  }
 }
 
 // Nama bulan lengkap untuk tampilan yang lebih baik
@@ -203,13 +223,66 @@ const renderChartContent = (loading: boolean, monthlyData: FormattedChartData[])
   );
 };
 
+// Custom active shape for pie charts
+const renderActiveShape = (props: any) => {
+  const { cx, cy, midAngle, innerRadius, outerRadius, startAngle, endAngle, fill, payload, value, percent } = props
+  const RADIAN = Math.PI / 180
+  const sin = Math.sin(-RADIAN * midAngle)
+  const cos = Math.cos(-RADIAN * midAngle)
+  const sx = cx + (outerRadius + 10) * cos
+  const sy = cy + (outerRadius + 10) * sin
+  const mx = cx + (outerRadius + 30) * cos
+  const my = cy + (outerRadius + 30) * sin
+  const ex = mx + (cos >= 0 ? 1 : -1) * 22
+  const ey = my
+  const textAnchor = cos >= 0 ? "start" : "end"
+
+  return (
+    <g>
+      <text x={cx} y={cy} dy={8} textAnchor="middle" fill={fill} fontSize={12} fontWeight="bold">
+        {payload.name}
+      </text>
+      <Sector
+        cx={cx}
+        cy={cy}
+        innerRadius={innerRadius}
+        outerRadius={outerRadius}
+        startAngle={startAngle}
+        endAngle={endAngle}
+        fill={fill}
+      />
+      <Sector
+        cx={cx}
+        cy={cy}
+        startAngle={startAngle}
+        endAngle={endAngle}
+        innerRadius={outerRadius + 6}
+        outerRadius={outerRadius + 10}
+        fill={fill}
+      />
+      <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={fill} fill="none" />
+      <circle cx={ex} cy={ey} r={2} fill={fill} stroke="none" />
+      <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} textAnchor={textAnchor} fill="#333" fontSize={12}>{`${value} (${(percent * 100).toFixed(0)}%)`}</text>
+    </g>
+  )
+}
+
 export default function DashboardCharts() {
   const [loading, setLoading] = useState(true)
   const [monthlyData, setMonthlyData] = useState<FormattedChartData[]>([])
+  const [statusLoading, setStatusLoading] = useState(true)
+  const [maintenanceStatusData, setMaintenanceStatusData] = useState<any[]>([])
+  const [calibrationStatusData, setCalibrationStatusData] = useState<any[]>([])
+  const [activeIndex, setActiveIndex] = useState(0)
 
   useEffect(() => {
     fetchMonthlyRequestData()
+    fetchRequestStatusData()
   }, [])
+
+  const onPieEnter = (_: any, index: number) => {
+    setActiveIndex(index)
+  }
 
   const fetchMonthlyRequestData = async () => {
     try {
@@ -251,6 +324,72 @@ export default function DashboardCharts() {
       setMonthlyData([])
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchRequestStatusData = async () => {
+    try {
+      setStatusLoading(true)
+      const token = Cookies.get("accessToken")
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/report/request-status`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch request status data")
+      }
+
+      const responseData = await response.json()
+      
+      if (!responseData.success || !responseData.data) {
+        throw new Error("Invalid response format")
+      }
+      
+      const statusData: RequestStatusResponse = responseData.data
+      
+      // Format maintenance data for pie chart
+      const maintenanceFormatted = statusData.MAINTENANCE.map(item => ({
+        name: item.status === "Partial" ? "Warning" : item.status,
+        value: item.count,
+        percentage: item.percentage,
+        color: getStatusColor(item.status)
+      }))
+      
+      // Format calibration data for pie chart
+      const calibrationFormatted = statusData.CALIBRATION.map(item => ({
+        name: item.status === "Partial" ? "Warning" : item.status,
+        value: item.count,
+        percentage: item.percentage,
+        color: getStatusColor(item.status)
+      }))
+      
+      setMaintenanceStatusData(maintenanceFormatted)
+      setCalibrationStatusData(calibrationFormatted)
+    } catch (error) {
+      console.error("Error fetching request status data:", error)
+      toast.error("Gagal memuat data status permintaan")
+      // Set default empty data
+      setMaintenanceStatusData([])
+      setCalibrationStatusData([])
+    } finally {
+      setStatusLoading(false)
+    }
+  }
+  
+  const getStatusColor = (status: string) => {
+    switch(status) {
+      case "Success":
+        return "#22c55e" // green-500
+      case "Partial":
+        return "#f59e0b" // amber-500
+      case "Failed":
+        return "#ef4444" // red-500
+      default:
+        return "#8884d8" // default color
     }
   }
 
@@ -312,6 +451,84 @@ export default function DashboardCharts() {
     }
   }
 
+  // Status request card content
+  const renderStatusRequestCard = () => {
+    if (statusLoading) {
+      return (
+        <div className="h-[250px] sm:h-[300px] md:h-[350px] flex items-center justify-center">
+          <p>Memuat data...</p>
+        </div>
+      )
+    }
+
+    return (
+      <Tabs defaultValue="maintenance">
+        <TabsList className="mb-4">
+          <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
+          <TabsTrigger value="calibration">Kalibrasi</TabsTrigger>
+        </TabsList>
+        <TabsContent value="maintenance" className="h-[250px] sm:h-[300px]">
+          {maintenanceStatusData.length === 0 ? (
+            <div className="h-full flex items-center justify-center text-muted-foreground">
+              Tidak ada data status permintaan untuk ditampilkan
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  activeIndex={activeIndex}
+                  activeShape={renderActiveShape}
+                  data={maintenanceStatusData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  dataKey="value"
+                  onMouseEnter={onPieEnter}
+                >
+                  {maintenanceStatusData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Legend />
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
+        </TabsContent>
+        <TabsContent value="calibration" className="h-[250px] sm:h-[300px]">
+          {calibrationStatusData.length === 0 ? (
+            <div className="h-full flex items-center justify-center text-muted-foreground">
+              Tidak ada data status permintaan untuk ditampilkan
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  activeIndex={activeIndex}
+                  activeShape={renderActiveShape}
+                  data={calibrationStatusData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  dataKey="value"
+                  onMouseEnter={onPieEnter}
+                >
+                  {calibrationStatusData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Legend />
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
+        </TabsContent>
+      </Tabs>
+    )
+  }
+
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Summary Cards */}
@@ -367,16 +584,14 @@ export default function DashboardCharts() {
 
       {/* Charts */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-        {/* Placeholder for future pie chart */}
+        {/* Status Request Pie Chart */}
         <Card>
           <CardHeader className="pb-0 sm:pb-2">
             <CardTitle className="text-base sm:text-lg">Status Permintaan</CardTitle>
             <CardDescription className="text-xs sm:text-sm">Distribusi status permintaan pemeliharaan dan kalibrasi</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-[250px] sm:h-[300px] md:h-[350px] flex items-center justify-center text-muted-foreground text-xs sm:text-sm">
-              Data status permintaan akan ditampilkan di sini
-            </div>
+            {renderStatusRequestCard()}
           </CardContent>
         </Card>
 
