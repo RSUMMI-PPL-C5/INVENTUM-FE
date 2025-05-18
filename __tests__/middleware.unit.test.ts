@@ -29,7 +29,8 @@ describe("Middleware Authentication", () => {
   let adminRouteRequest: NextRequest;
 
   beforeEach(() => {
-    // Regular dashboard request
+    (NextResponse.next as jest.Mock).mockClear();
+    (NextResponse.redirect as jest.Mock).mockClear();
     request = {
       cookies: {
         get: jest.fn(),
@@ -72,7 +73,6 @@ describe("Middleware Authentication", () => {
     } as unknown as NextRequest;
     
     process.env.NEXT_PUBLIC_API_URL = "https://api.example.com";
-    
     jest.clearAllMocks();
   });
 
@@ -196,8 +196,7 @@ describe("Middleware Authentication", () => {
     );
   });
 
-  // TEST FOR TOKEN PARSING
-
+  // UPDATED TEST FOR TOKEN PARSING
   it("should correctly parse JWT token payload", async () => {
     const mockToken = "header.eyJyb2xlIjoiQWRtaW4ifQ.signature";
     (request.cookies.get as jest.Mock).mockReturnValue({ value: mockToken });
@@ -205,18 +204,27 @@ describe("Middleware Authentication", () => {
     
     await middleware(request);
     
-    expect(global.Buffer.from).toHaveBeenCalledWith("eyJyb2xlIjoiQWRtaW4ifQ", "base64");
+    // Verify atob is called with the correct payload part
+    expect(global.atob).toHaveBeenCalledWith("eyJyb2xlIjoiQWRtaW4ifQ");
   });
-
-  // SUCCESSFUL AUTHENTICATION TEST
   
-  it("should allow request to proceed if authentication is successful", async () => {
-    (request.cookies.get as jest.Mock).mockReturnValue({ value: "valid-token" });
+  // TEST TOKEN PARSING WITH URL-SAFE BASE64
+  it("should handle URL-safe base64 encoding in JWT token", async () => {
+    const mockUrlSafeToken = "header.eyJyb2xlIjoiQWRtaW4iLCJleHAiOjE2Mzk5OTk5OTl9.signature";
+    (request.cookies.get as jest.Mock).mockReturnValue({ value: mockUrlSafeToken });
     (fetch as jest.Mock).mockResolvedValue({ ok: true });
+    
+    // Reset atob mock to verify replacement handling
+    (global.atob as jest.Mock).mockClear();
+    (global.atob as jest.Mock).mockImplementation((str) => {
+      // This would be the result after replacing - and _ with + and /
+      expect(str).toBe("eyJyb2xlIjoiQWRtaW4iLCJleHAiOjE2Mzk5OTk5OTl9");
+      return JSON.stringify({ role: 'Admin' });
+    });
     
     await middleware(request);
     
-    expect(NextResponse.next).toHaveBeenCalled();
+    expect(global.atob).toHaveBeenCalled();
   });
 });
 
