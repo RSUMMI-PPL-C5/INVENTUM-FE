@@ -1,56 +1,74 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
+function handleError(request: NextRequest, errorType: string) {
+  if (errorType === 'token_expired') {
+    const response = NextResponse.redirect(new URL('/?error=token_expired', request.url))
+    response.cookies.delete('accessToken')
+    return response
+  }
+  return NextResponse.redirect(new URL(`/?error=${errorType}`, request.url))
+}
+
+function redirectBasedOnRole(request: NextRequest, userRole: string) {
+  if (userRole === 'Admin') {
+    return NextResponse.redirect(new URL('/dashboard/user', request.url))
+  }
+  return NextResponse.redirect(new URL('/dashboard/medical-equipment', request.url))
+}
+
+function getTokenPayload(token: string) {
+  const payload = token.split('.')[1] ?? ''
+  const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'))
+  return JSON.parse(json)
+}
+
 export async function middleware(request: NextRequest) {
-  // Check if user is on the login page
   const isLoginPage = request.nextUrl.pathname === '/'
+  const accessToken = request.cookies.get('accessToken')?.value
   
-  // Get access token from cookies
-  const accessToken = request.cookies.get('accessToken')
+  // If no token and accessing protected route, redirect to login
+  if (!accessToken) {
+    return isLoginPage 
+      ? NextResponse.next()
+      : NextResponse.redirect(new URL('/?error=unauthorized', request.url))
+  }
+  
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL
+  if (!apiUrl) {
+    return handleError(request, 'server_error')
+  }
 
-  // If user is already logged in (has accessToken)
-  if (accessToken) {
-    try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL
+  try {
+    // Validate token with backend
+    const apiResponse = await fetch(`${apiUrl}/auth/check`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
 
-      if (!apiUrl) {
-        return NextResponse.redirect(new URL('/?error=server_error', request.url))
-      }
-
-      // Validate token with backend
-      const apiResponse = await fetch(`${apiUrl}/auth/check`, {
-        headers: { Authorization: `Bearer ${accessToken.value}` },
-      })
-
-      // If token is valid
-      if (apiResponse.ok) {
-        // If user is on login page, redirect to dashboard
-        if (isLoginPage) {
-          return NextResponse.redirect(new URL('/dashboard/user', request.url))
-        }
-        // Otherwise allow access to requested page
-        return NextResponse.next()
-      } 
-      // If token is invalid or expired
-      else {
-        // Clear the invalid token
-        const response = NextResponse.redirect(new URL('/?error=token_expired', request.url))
-        response.cookies.delete('accessToken')
-        return response
-      }
-    } catch (error) {
-      console.error('Middleware error:', error)
-      return NextResponse.redirect(new URL('/?error=server_error', request.url))
+    // Handle invalid token
+    if (!apiResponse.ok) {
+      return handleError(request, 'token_expired')
     }
-  } 
-  // If user is not logged in (no accessToken)
-  else {
-    // If trying to access protected routes, redirect to login
-    if (!isLoginPage) {
-      return NextResponse.redirect(new URL('/?error=unauthorized', request.url))
+    
+    // Get user role from token
+    const userRole = getTokenPayload(accessToken).role
+    
+    // If on login page, redirect based on role
+    if (isLoginPage) {
+      return redirectBasedOnRole(request, userRole)
     }
-    // If on login page, allow access
+    
+    // Protect admin-only routes
+    const path = request.nextUrl.pathname
+    if (path.startsWith('/dashboard/user') && userRole !== 'Admin') {
+      return NextResponse.redirect(new URL('/dashboard/medical-equipment', request.url))
+    }
+    
+    // Allow access if authorized
     return NextResponse.next()
+  } catch (error) {
+    console.error('Middleware error:', error)
+    return handleError(request, 'server_error')
   }
 }
 

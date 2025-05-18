@@ -23,7 +23,7 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
+import { cn, formatNumberWithDots } from "@/lib/utils";
 import Cookies from "js-cookie";
 import { toast } from "sonner";
 import {
@@ -33,6 +33,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { id } from "date-fns/locale";
 
 interface Location {
 	id: number;
@@ -131,7 +132,7 @@ export default function SparePartEdit() {
 				const createdDate = new Date(sparePartData.createdOn);
 				
 				const formattedCreatedDate = isValid(createdDate)
-					? format(createdDate, "dd-MM-yyyy")
+					? format(createdDate, "dd MMM yyyy", { locale: id })
 					: "Invalid date";
 
 				// Set form values with explicit type handling
@@ -163,6 +164,7 @@ export default function SparePartEdit() {
 
 	async function updateSparePart(data: z.infer<typeof formSchema>) {
 		const token = Cookies.get("accessToken");
+		const cleanPrice = data.price.replace(/\./g, "");
 
 		const response = await fetch(
 			`${process.env.NEXT_PUBLIC_API_URL}/spareparts/${sparePartId}`,
@@ -175,10 +177,9 @@ export default function SparePartEdit() {
 				body: JSON.stringify({
 					partsName: data.partsName,
 					purchaseDate: data.purchaseDate.toISOString(),
-					price: Number.parseFloat(data.price),
+					price: Number.parseFloat(cleanPrice),
 					toolLocation: data.toolLocation,
 					toolDate: data.toolDate.toISOString(),
-					modifiedBy: 1, // Assuming current user ID
 				}),
 			}
 		);
@@ -258,40 +259,40 @@ export default function SparePartEdit() {
 						name="purchaseDate"
 						render={({ field }) => (
 							<FormItem className="flex flex-col">
-								<FormLabel>Tanggal Pembelian</FormLabel>
-								<Popover>
-									<PopoverTrigger asChild>
-										<FormControl>
-											<Button
-												variant={"outline"}
-												className={cn(
-													"w-full pl-3 text-left font-normal",
-													!field.value &&
-														"text-muted-foreground"
-												)}
-											>
-												{field.value ? (
-													format(field.value, "PPP")
-												) : (
-													<span>Pilih tanggal</span>
-												)}
-												<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-											</Button>
-										</FormControl>
-									</PopoverTrigger>
-									<PopoverContent
-										className="w-auto p-0"
-										align="start"
+							<FormLabel>Tanggal Pembelian</FormLabel>
+							<Popover>
+								<PopoverTrigger asChild>
+								<FormControl>
+									<Button
+									variant={"outline"}
+									className={cn(
+										"w-full pl-3 text-left font-normal",
+										!field.value && "text-muted-foreground"
+									)}
 									>
-										<Calendar
-											mode="single"
-											selected={field.value}
-											onSelect={field.onChange}
-											initialFocus
-										/>
-									</PopoverContent>
-								</Popover>
-								<FormMessage />
+									{field.value && isValid(field.value) ? (
+										// Format dengan locale Indonesia
+										format(field.value, "dd MMM yyyy", { locale: id })
+									) : (
+										<span>Pilih tanggal</span>
+									)}
+									<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+									</Button>
+								</FormControl>
+								</PopoverTrigger>
+								<PopoverContent className="w-auto p-0" align="start">
+								<Calendar
+									mode="single"
+									selected={field.value}
+									onSelect={field.onChange}
+									initialFocus
+									locale={id}
+									weekStartsOn={1}
+									className="rounded-md border"
+								/>
+								</PopoverContent>
+							</Popover>
+							<FormMessage />
 							</FormItem>
 						)}
 					/>
@@ -306,10 +307,13 @@ export default function SparePartEdit() {
 									<Input
 										{...field}
 										placeholder="Masukkan harga"
-										type="number"
-										onChange={(e) =>
-											field.onChange(e.target.value)
-										}
+										type="text"
+										value={field.value ? formatNumberWithDots(field.value) : ""}
+										onChange={(e) => {
+											const rawValue = e.target.value.replace(/[^\d.]/g, "");
+											const numericValue = rawValue.replace(/\./g, "");
+											field.onChange(numericValue);
+										}}
 									/>
 								</FormControl>
 								<FormMessage />
@@ -354,41 +358,40 @@ export default function SparePartEdit() {
 						name="toolDate"
 						render={({ field }) => (
 							<FormItem className="flex flex-col">
-								<FormLabel>Tanggal Alat</FormLabel>
-								<Popover>
-									<PopoverTrigger asChild>
-										<FormControl>
-											<Button
-												variant={"outline"}
-												className={cn(
-													"w-full pl-3 text-left font-normal",
-													!field.value &&
-														"text-muted-foreground"
-												)}
-											>
-												{field.value &&
-												isValid(field.value) ? (
-													format(field.value, "PPP")
-												) : (
-													<span>Pilih tanggal</span>
-												)}
-												<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-											</Button>
-										</FormControl>
-									</PopoverTrigger>
-									<PopoverContent
-										className="w-auto p-0"
-										align="start"
+							<FormLabel>Tanggal Alat</FormLabel>
+							<Popover>
+								<PopoverTrigger asChild>
+								<FormControl>
+									<Button
+									variant={"outline"}
+									className={cn(
+										"w-full pl-3 text-left font-normal",
+										!field.value && "text-muted-foreground"
+									)}
 									>
-										<Calendar
-											mode="single"
-											selected={field.value}
-											onSelect={field.onChange}
-											initialFocus
-										/>
-									</PopoverContent>
-								</Popover>
-								<FormMessage />
+									{field.value && isValid(field.value) ? (
+										// Format dengan locale Indonesia
+										format(field.value, "dd MMM yyyy", { locale: id })
+									) : (
+										<span>Pilih tanggal</span>
+									)}
+									<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+									</Button>
+								</FormControl>
+								</PopoverTrigger>
+								<PopoverContent className="w-auto p-0" align="start">
+								<Calendar
+									mode="single"
+									selected={field.value}
+									onSelect={field.onChange}
+									initialFocus
+									locale={id}
+									weekStartsOn={1}
+									className="rounded-md border"
+								/>
+								</PopoverContent>
+							</Popover>
+							<FormMessage />
 							</FormItem>
 						)}
 					/>

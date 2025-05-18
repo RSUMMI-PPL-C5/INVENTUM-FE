@@ -7,8 +7,10 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { format } from "date-fns"
+import { format, isValid } from "date-fns"
 import { CalendarIcon } from 'lucide-react'
+import { id } from "date-fns/locale"
+import { cn } from "@/lib/utils"
 
 export type CalibrationHistoryFilters = {
   search: string
@@ -80,7 +82,6 @@ export default function CalibrationHistoryFilterModal({
                 <SelectValue placeholder="Pilih hasil" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Semua</SelectItem>
                 <SelectItem value="Success">Berhasil</SelectItem>
                 <SelectItem value="Partial">Sebagian</SelectItem>
                 <SelectItem value="Failed">Gagal</SelectItem>
@@ -92,41 +93,62 @@ export default function CalibrationHistoryFilterModal({
             <div className="col-span-3 flex gap-2">
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start text-left font-normal">
+                  <Button 
+                    variant="outline" 
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !localFilters.calibrationDateStart && "text-muted-foreground"
+                    )}
+                  >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {localFilters.calibrationDateStart ? (
-                      format(localFilters.calibrationDateStart, "dd MMM yyyy")
+                    {localFilters.calibrationDateStart && isValid(localFilters.calibrationDateStart) ? (
+                      format(localFilters.calibrationDateStart, "dd MMM yyyy", { locale: id })
                     ) : (
                       <span>Dari tanggal</span>
                     )}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
+                <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
                     selected={localFilters.calibrationDateStart || undefined}
                     onSelect={(date) => handleChange("calibrationDateStart", (date as Date))}
                     initialFocus
+                    locale={id}
+                    weekStartsOn={1}
+                    className="rounded-md border"
                   />
                 </PopoverContent>
               </Popover>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start text-left font-normal">
+                  <Button 
+                    variant="outline" 
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !localFilters.calibrationDateEnd && "text-muted-foreground"
+                    )}
+                  >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {localFilters.calibrationDateEnd ? (
-                      format(localFilters.calibrationDateEnd, "dd MMM yyyy")
+                    {localFilters.calibrationDateEnd && isValid(localFilters.calibrationDateEnd) ? (
+                      format(localFilters.calibrationDateEnd, "dd MMM yyyy", { locale: id })
                     ) : (
                       <span>Sampai tanggal</span>
                     )}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
+                <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
                     selected={localFilters.calibrationDateEnd || undefined}
                     onSelect={(date) => handleChange("calibrationDateEnd", (date as Date))}
                     initialFocus
+                    locale={id}
+                    weekStartsOn={1}
+                    className="rounded-md border"
+                    disabled={(date) => 
+                      localFilters.calibrationDateStart ? date < localFilters.calibrationDateStart : false
+                    }
                   />
                 </PopoverContent>
               </Popover>
@@ -138,21 +160,30 @@ export default function CalibrationHistoryFilterModal({
             <div className="col-span-3">
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start text-left font-normal">
+                  <Button 
+                    variant="outline" 
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !localFilters.nextCalibrationDueBefore && "text-muted-foreground"
+                    )}
+                  >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {localFilters.nextCalibrationDueBefore ? (
-                      format(localFilters.nextCalibrationDueBefore, "dd MMM yyyy")
+                    {localFilters.nextCalibrationDueBefore && isValid(localFilters.nextCalibrationDueBefore) ? (
+                      format(localFilters.nextCalibrationDueBefore, "dd MMM yyyy", { locale: id })
                     ) : (
                       <span>Sebelum tanggal</span>
                     )}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
+                <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
                     selected={localFilters.nextCalibrationDueBefore || undefined}
                     onSelect={(date) => handleChange("nextCalibrationDueBefore", (date as Date))}
                     initialFocus
+                    locale={id}
+                    weekStartsOn={1}
+                    className="rounded-md border"
                   />
                 </PopoverContent>
               </Popover>
@@ -164,41 +195,62 @@ export default function CalibrationHistoryFilterModal({
             <div className="col-span-3 flex gap-2">
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start text-left font-normal">
+                  <Button 
+                    variant="outline" 
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !localFilters.createdOnStart && "text-muted-foreground"
+                    )}
+                  >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {localFilters.createdOnStart ? (
-                      format(localFilters.createdOnStart, "dd MMM yyyy")
+                    {localFilters.createdOnStart && isValid(localFilters.createdOnStart) ? (
+                      format(localFilters.createdOnStart, "dd MMM yyyy", { locale: id })
                     ) : (
                       <span>Dari tanggal</span>
                     )}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
+                <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
                     selected={localFilters.createdOnStart || undefined}
                     onSelect={(date) => handleChange("createdOnStart", (date as Date))}
                     initialFocus
+                    locale={id}
+                    weekStartsOn={1}
+                    className="rounded-md border"
                   />
                 </PopoverContent>
               </Popover>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start text-left font-normal">
+                  <Button 
+                    variant="outline" 
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !localFilters.createdOnEnd && "text-muted-foreground"
+                    )}
+                  >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {localFilters.createdOnEnd ? (
-                      format(localFilters.createdOnEnd, "dd MMM yyyy")
+                    {localFilters.createdOnEnd && isValid(localFilters.createdOnEnd) ? (
+                      format(localFilters.createdOnEnd, "dd MMM yyyy", { locale: id })
                     ) : (
                       <span>Sampai tanggal</span>
                     )}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
+                <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
                     selected={localFilters.createdOnEnd || undefined}
                     onSelect={(date) => handleChange("createdOnEnd", (date as Date))}
                     initialFocus
+                    locale={id}
+                    weekStartsOn={1}
+                    className="rounded-md border"
+                    disabled={(date) => 
+                      localFilters.createdOnStart ? date < localFilters.createdOnStart : false
+                    }
                   />
                 </PopoverContent>
               </Popover>
@@ -209,7 +261,7 @@ export default function CalibrationHistoryFilterModal({
           <Button variant="outline" onClick={handleReset}>
             Reset
           </Button>
-          <Button variant="outline" onClick={onCancel}>
+          <Button variant="destructive" onClick={onCancel}>
             Batal
           </Button>
           <Button onClick={handleConfirm}>Terapkan</Button>

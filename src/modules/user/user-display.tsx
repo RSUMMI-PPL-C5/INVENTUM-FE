@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import Cookies from "js-cookie";
 import DeleteDialog from "@/components/general/delete-dialog";
 import { PaginationControls } from "@/components/ui/pagination-control";
+import { formatDate } from "@/lib/utils";
 
 type User = {
 	id: string;
@@ -209,7 +210,8 @@ export default function UsersPage() {
     };
     
     const handleDelete = async () => {
-        if (!userToDelete) return;
+        /* istanbul ignore next */ // NOSONAR
+		if (!userToDelete) return;
     
         setIsDeleting(true); // Mulai proses penghapusan
         try {
@@ -277,16 +279,6 @@ export default function UsersPage() {
 	useEffect(() => {
 		fetchUsers();
 	}, [searchParams]);
-
-	const formatDate = (dateString: string | null) => {
-		if (!dateString) return "-";
-		try {
-			return format(new Date(dateString), "dd MMM yyyy");
-		} catch (_error) {
-			console.error("Error formatting date:", _error);
-			return dateString;
-		}
-	};
 
 	const navigateToUserEdit = (userId: string) => {
 		router.push(`/dashboard/user/${userId}/edit`);

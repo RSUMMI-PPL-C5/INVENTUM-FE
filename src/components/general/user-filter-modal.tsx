@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Cookies from "js-cookie"
-import { toast } from "sonner" // or your toast library
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import {
@@ -14,7 +14,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { format } from "date-fns"
+import { format, isValid } from "date-fns"
+import { id } from "date-fns/locale"
 import { CalendarIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -48,7 +49,7 @@ const roles = [
   { id: "3", name: "Admin" },
 ]
 
-export default function UserFilterModal({ isOpen, filters, onConfirm, onCancel }: UserFilterModalProps) {
+export default function UserFilterModal({ isOpen, filters, onConfirm, onCancel }: Readonly<UserFilterModalProps>) {
   const [localFilters, setLocalFilters] = useState<Filters>({ ...filters })
   const [divisions, setDivisions] = useState<Division[]>([])
 
@@ -98,11 +99,16 @@ export default function UserFilterModal({ isOpen, filters, onConfirm, onCancel }
     }))
   }
 
-  const handleDateChange = (type: keyof Filters, date: Date | undefined) => {
+  const handleDateChange = (
+    type: keyof Pick<Filters, "createdOnStart" | "createdOnEnd" | "modifiedOnStart" | "modifiedOnEnd">,
+    date: Date | undefined
+  ) => {
     setLocalFilters((prev) => {
       const updatedFilters = { ...prev }
-      if (date && (type === "createdOnStart" || type === "createdOnEnd" || type === "modifiedOnStart" || type === "modifiedOnEnd")) {
-        (updatedFilters[type] as Date | null) = date
+      
+      if (date) {
+        updatedFilters[type] = date
+        
         if (type === "createdOnStart" && prev.createdOnEnd && date > prev.createdOnEnd) {
           updatedFilters.createdOnEnd = date
         }
@@ -110,8 +116,9 @@ export default function UserFilterModal({ isOpen, filters, onConfirm, onCancel }
           updatedFilters.modifiedOnEnd = date
         }
       } else {
-        (updatedFilters[type] as Date | null) = null
+        updatedFilters[type] = null
       }
+      
       return updatedFilters
     })
   }
@@ -119,7 +126,7 @@ export default function UserFilterModal({ isOpen, filters, onConfirm, onCancel }
   const resetFilters = () => {
     setLocalFilters({
       role: [],
-      division: "all",
+      division: "", // Diubah dari "all" menjadi string kosong
       createdOnStart: null,
       createdOnEnd: null,
       modifiedOnStart: null,
@@ -129,13 +136,13 @@ export default function UserFilterModal({ isOpen, filters, onConfirm, onCancel }
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onCancel()}>
-      <DialogContent className="w-fit">
+      <DialogContent className="w-fit max-w-[90vw]">
         <DialogHeader>
           <DialogTitle>Filter Pengguna</DialogTitle>
           <DialogDescription>Pilih filter untuk menyaring daftar pengguna</DialogDescription>
         </DialogHeader>
 
-        <div className="flex gap-12 py-4">
+        <div className="flex flex-col md:flex-row gap-8 py-4">
           {/* Left Side */}
           <div className="flex flex-col gap-8">
             {/* Role Filter */}
@@ -155,15 +162,18 @@ export default function UserFilterModal({ isOpen, filters, onConfirm, onCancel }
               </div>
             </div>
 
-            {/* Division Filter */}
+            {/* Division Filter - UPDATED */}
             <div className="space-y-2">
               <h3 className="font-medium">Divisi</h3>
-              <Select onValueChange={handleDivisionChange} value={localFilters.division}>
+              <Select 
+                onValueChange={handleDivisionChange} 
+                value={localFilters.division || ""}
+              >
                 <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Pilih Divisi" />
+                  <SelectValue placeholder="Semua Divisi" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Semua Divisi</SelectItem>
+                  {/* Opsi "Semua Divisi" dihapus dari sini */}
                   {divisions.map((division) => (
                     <SelectItem key={division.id} value={division.id.toString()}>
                       {division.divisi}
@@ -174,29 +184,165 @@ export default function UserFilterModal({ isOpen, filters, onConfirm, onCancel }
             </div>
           </div>
 
-          <div className="w-[1px] h-full bg-black" />
+          <div className="w-[1px] h-full bg-border hidden md:block" />
 
           {/* Right Side */}
           <div className="flex flex-col gap-8">
             {/* Created On Filter */}
-            <DateRangeFilter
-              title="Tanggal Pembuatan"
-              startId="createdOnStart"
-              endId="createdOnEnd"
-              startDate={localFilters.createdOnStart}
-              endDate={localFilters.createdOnEnd}
-              onChange={(field, date) => handleDateChange(field, date)}
-            />
+            <div className="space-y-2">
+              <h3 className="font-medium">Tanggal Pembuatan</h3>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1">
+                  <Label htmlFor="createdOnStart">Dari</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        id="createdOnStart"
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !localFilters.createdOnStart && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {localFilters.createdOnStart && isValid(localFilters.createdOnStart) ? (
+                          format(localFilters.createdOnStart, "dd MMM yyyy", { locale: id })
+                        ) : (
+                          <span>Pilih tanggal</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={localFilters.createdOnStart || undefined}
+                        onSelect={(date) => handleDateChange("createdOnStart", date)}
+                        disabled={(date) => date > new Date()}
+                        initialFocus
+                        locale={id}
+                        weekStartsOn={1}
+                        className="rounded-md border"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div className="flex-1">
+                  <Label htmlFor="createdOnEnd">Sampai</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        id="createdOnEnd"
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !localFilters.createdOnEnd && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {localFilters.createdOnEnd && isValid(localFilters.createdOnEnd) ? (
+                          format(localFilters.createdOnEnd, "dd MMM yyyy", { locale: id })
+                        ) : (
+                          <span>Pilih tanggal</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={localFilters.createdOnEnd || undefined}
+                        onSelect={(date) => handleDateChange("createdOnEnd", date)}
+                        disabled={(date) =>
+                          date > new Date() ||
+                          (localFilters.createdOnStart ? date < localFilters.createdOnStart : false)
+                        }
+                        initialFocus
+                        locale={id}
+                        weekStartsOn={1}
+                        className="rounded-md border"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+            </div>
 
             {/* Modified On Filter */}
-            <DateRangeFilter
-              title="Tanggal Modifikasi"
-              startId="modifiedOnStart"
-              endId="modifiedOnEnd"
-              startDate={localFilters.modifiedOnStart}
-              endDate={localFilters.modifiedOnEnd}
-              onChange={(field, date) => handleDateChange(field, date)}
-            />
+            <div className="space-y-2">
+              <h3 className="font-medium">Tanggal Modifikasi</h3>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1">
+                  <Label htmlFor="modifiedOnStart">Dari</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        id="modifiedOnStart"
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !localFilters.modifiedOnStart && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {localFilters.modifiedOnStart && isValid(localFilters.modifiedOnStart) ? (
+                          format(localFilters.modifiedOnStart, "dd MMM yyyy", { locale: id })
+                        ) : (
+                          <span>Pilih tanggal</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={localFilters.modifiedOnStart || undefined}
+                        onSelect={(date) => handleDateChange("modifiedOnStart", date)}
+                        disabled={(date) => date > new Date()}
+                        initialFocus
+                        locale={id}
+                        weekStartsOn={1}
+                        className="rounded-md border"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div className="flex-1">
+                  <Label htmlFor="modifiedOnEnd">Sampai</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        id="modifiedOnEnd"
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !localFilters.modifiedOnEnd && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {localFilters.modifiedOnEnd && isValid(localFilters.modifiedOnEnd) ? (
+                          format(localFilters.modifiedOnEnd, "dd MMM yyyy", { locale: id })
+                        ) : (
+                          <span>Pilih tanggal</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={localFilters.modifiedOnEnd || undefined}
+                        onSelect={(date) => handleDateChange("modifiedOnEnd", date)}
+                        disabled={(date) =>
+                          date > new Date() ||
+                          (localFilters.modifiedOnStart ? date < localFilters.modifiedOnStart : false)
+                        }
+                        initialFocus
+                        locale={id}
+                        weekStartsOn={1}
+                        className="rounded-md border"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -213,78 +359,5 @@ export default function UserFilterModal({ isOpen, filters, onConfirm, onCancel }
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
-}
-
-// Small subcomponent to make Date filters clean
-function DateRangeFilter({
-  title,
-  startId,
-  endId,
-  startDate,
-  endDate,
-  onChange,
-}: {
-  title: string
-  startId: keyof Filters
-  endId: keyof Filters
-  startDate: Date | null
-  endDate: Date | null
-  onChange: (field: keyof Filters, date: Date | undefined) => void
-}) {
-  return (
-    <div className="space-y-2">
-      <h3 className="font-medium">{title}</h3>
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="flex-1">
-          <Label htmlFor={startId}>Dari</Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                id={startId}
-                variant="outline"
-                className={cn("w-full justify-start text-left font-normal", !startDate && "text-muted-foreground")}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {startDate ? format(startDate, "PPP") : <span>Pilih tanggal</span>}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
-              <Calendar
-                mode="single"
-                selected={startDate || undefined}
-                onSelect={(date) => onChange(startId, date)}
-                disabled={(date) => date > new Date()}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
-        <div className="flex-1">
-          <Label htmlFor={endId}>Sampai</Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                id={endId}
-                variant="outline"
-                className={cn("w-full justify-start text-left font-normal", !endDate && "text-muted-foreground")}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {endDate ? format(endDate, "PPP") : <span>Pilih tanggal</span>}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
-              <Calendar
-                mode="single"
-                selected={endDate || undefined}
-                onSelect={(date) => onChange(endId, date)}
-                disabled={(date) => date > new Date() || (startDate ? date < startDate : false)}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
-      </div>
-    </div>
   )
 }
