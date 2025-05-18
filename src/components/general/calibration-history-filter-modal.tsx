@@ -82,7 +82,6 @@ export default function CalibrationHistoryFilterModal({
                 <SelectValue placeholder="Pilih hasil" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Semua</SelectItem>
                 <SelectItem value="Success">Berhasil</SelectItem>
                 <SelectItem value="Partial">Sebagian</SelectItem>
                 <SelectItem value="Failed">Gagal</SelectItem>
@@ -262,7 +261,7 @@ export default function CalibrationHistoryFilterModal({
           <Button variant="outline" onClick={handleReset}>
             Reset
           </Button>
-          <Button variant="outline" onClick={onCancel}>
+          <Button variant="destructive" onClick={onCancel}>
             Batal
           </Button>
           <Button onClick={handleConfirm}>Terapkan</Button>
