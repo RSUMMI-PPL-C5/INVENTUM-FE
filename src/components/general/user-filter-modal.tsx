@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Cookies from "js-cookie"
-import { toast } from "sonner" // or your toast library
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import {
@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { format, isValid } from "date-fns"
-import { id } from "date-fns/locale" // Tambahkan locale Indonesia
+import { id } from "date-fns/locale"
 import { CalendarIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -49,7 +49,7 @@ const roles = [
   { id: "3", name: "Admin" },
 ]
 
-export default function UserFilterModal({ isOpen, filters, onConfirm, onCancel }: UserFilterModalProps) {
+export default function UserFilterModal({ isOpen, filters, onConfirm, onCancel }: Readonly<UserFilterModalProps>) {
   const [localFilters, setLocalFilters] = useState<Filters>({ ...filters })
   const [divisions, setDivisions] = useState<Division[]>([])
 
@@ -107,7 +107,7 @@ export default function UserFilterModal({ isOpen, filters, onConfirm, onCancel }
       const updatedFilters = { ...prev }
       
       if (date) {
-        (updatedFilters[type] as Date | null) = date
+        updatedFilters[type] = date
         
         if (type === "createdOnStart" && prev.createdOnEnd && date > prev.createdOnEnd) {
           updatedFilters.createdOnEnd = date
@@ -116,7 +116,7 @@ export default function UserFilterModal({ isOpen, filters, onConfirm, onCancel }
           updatedFilters.modifiedOnEnd = date
         }
       } else {
-        (updatedFilters[type] as Date | null) = null
+        updatedFilters[type] = null
       }
       
       return updatedFilters
@@ -126,7 +126,7 @@ export default function UserFilterModal({ isOpen, filters, onConfirm, onCancel }
   const resetFilters = () => {
     setLocalFilters({
       role: [],
-      division: "all",
+      division: "", // Diubah dari "all" menjadi string kosong
       createdOnStart: null,
       createdOnEnd: null,
       modifiedOnStart: null,
@@ -162,15 +162,18 @@ export default function UserFilterModal({ isOpen, filters, onConfirm, onCancel }
               </div>
             </div>
 
-            {/* Division Filter */}
+            {/* Division Filter - UPDATED */}
             <div className="space-y-2">
               <h3 className="font-medium">Divisi</h3>
-              <Select onValueChange={handleDivisionChange} value={localFilters.division}>
+              <Select 
+                onValueChange={handleDivisionChange} 
+                value={localFilters.division || ""}
+              >
                 <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Pilih Divisi" />
+                  <SelectValue placeholder="Semua Divisi" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Semua Divisi</SelectItem>
+                  {/* Opsi "Semua Divisi" dihapus dari sini */}
                   {divisions.map((division) => (
                     <SelectItem key={division.id} value={division.id.toString()}>
                       {division.divisi}

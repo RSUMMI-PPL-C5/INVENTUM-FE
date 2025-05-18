@@ -347,7 +347,7 @@ export default function MedicalEquipmentCreate() {
 							<FormMessage />
 							</FormItem>
 						)}
-						/>
+					/>
 					<div className="flex justify-end space-x-4">
 						<Button
 							type="button"

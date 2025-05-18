@@ -18,7 +18,9 @@ function redirectBasedOnRole(request: NextRequest, userRole: string) {
 }
 
 function getTokenPayload(token: string) {
-  return JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString())
+  const payload = token.split('.')[1] ?? ''
+  const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'))
+  return JSON.parse(json)
 }
 
 export async function middleware(request: NextRequest) {
