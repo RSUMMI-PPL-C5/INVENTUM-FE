@@ -98,13 +98,19 @@ interface RequestStatusResponse {
   }
 }
 
-// Add these interfaces after the existing interfaces
+// Interface untuk data statistik ringkasan dari API
 interface SummaryCountData {
+  /** Jumlah total pemeliharaan */
   maintenanceCount: number
+  /** Jumlah total kalibrasi */
   calibrationCount: number
+  /** Jumlah total penggantian suku cadang */
   sparePartsCount: number
+  /** Persentase perubahan jumlah pemeliharaan dibanding periode sebelumnya */
   maintenancePercentageChange: number
+  /** Persentase perubahan jumlah kalibrasi dibanding periode sebelumnya */
   calibrationPercentageChange: number
+  /** Persentase perubahan jumlah penggantian suku cadang dibanding periode sebelumnya */
   sparePartsPercentageChange: number
 }
 
@@ -308,6 +314,15 @@ const renderActiveShape = (props: any) => {
   )
 }
 
+/**
+ * Komponen DashboardCharts
+ * 
+ * Menampilkan ringkasan statistik dan grafik untuk:
+ * - Total pemeliharaan, kalibrasi, dan penggantian suku cadang
+ * - Persentase perubahan untuk setiap metrik
+ * - Grafik status permintaan
+ * - Grafik permintaan bulanan
+ */
 export default function DashboardCharts() {
   const [loading, setLoading] = useState(true)
   const [monthlyData, setMonthlyData] = useState<FormattedChartData[]>([])
