@@ -9,34 +9,42 @@ on:
 jobs:
   deploy:
     runs-on: self-hosted
-    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-        
-      - name: Build Docker image
-        run: |
-          # Navigate to frontend directory if needed
-          # cd frontend  # Uncomment if frontend is in subfolder
-          docker build -t inventum-frontend:staging .
-          
-      - name: Deploy frontend
+      
+      - name: Build and Deploy Frontend
         working-directory: /home/noov/inventum/staging
         run: |
-          # Stop and remove only the frontend container if it exists
+          # Load environment variables
+          source .env
+          
+          # Create .env.local in the frontend source directory
+          cat > /home/noov/actions-runner/_work/INVENTUM-FE/INVENTUM-FE/.env.local << EOF
+          NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+          NEXT_PUBLIC_APP_ENV=${NEXT_PUBLIC_APP_ENV}
+          NEXT_PUBLIC_APP_NAME=${NEXT_PUBLIC_APP_NAME}
+          NEXT_PUBLIC_APP_VERSION=${NEXT_PUBLIC_APP_VERSION}
+          EOF
+          
+          # Verify the .env.local file
+          echo "Created .env.local with:"
+          cat /home/noov/actions-runner/_work/INVENTUM-FE/INVENTUM-FE/.env.local
+          
+          # Build the Docker image (Next.js will automatically read .env.local)
+          docker build --no-cache -t inventum-frontend:staging /home/noov/actions-runner/_work/INVENTUM-FE/INVENTUM-FE/
+          
+          # Stop and redeploy frontend
           docker compose -f docker-compose.staging.yml stop frontend || true
           docker compose -f docker-compose.staging.yml rm -f frontend || true
-          
-          # Start the frontend container
           docker compose -f docker-compose.staging.yml up -d frontend
           
-      - name: Reconnect monitoring to network
-        run: |
-          # Reconnect prometheus and grafana to inventum-network
-          docker network connect inventum-network prometheus || true
-          docker network connect inventum-network grafana || true
+          # Clean up the .env.local file
+          rm -f /home/noov/actions-runner/_work/INVENTUM-FE/INVENTUM-FE/.env.local
           
-      - name: Deployment Info
-        run: |
+          # Wait and verify
+          sleep 10
+          echo "Deployment verification:"
+          docker exec inventum-frontend-staging printenv | grep NEXT_PUBLIC
+          
           echo "Frontend deployment completed successfully"
-          echo "Frontend available at: http://fe.al3l.com"
