@@ -203,3 +203,10 @@ describe('MaintenanceRequestCreatePage', () => {
     });
   });
 });
+
+describe('MaintenanceRequestCreatePage wrapper', () => {
+  it('renders without crashing', () => {
+    const Page = require('@/app/dashboard/medical-equipment/[id]/maintenance-request/page').default;
+    render(<Page />);
+  });
+});

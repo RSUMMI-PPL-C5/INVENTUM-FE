@@ -12,7 +12,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { format } from "date-fns"
+import { format, isValid } from "date-fns"
+import { id } from "date-fns/locale" // Tambahkan locale Indonesia
 import { CalendarIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -33,7 +34,11 @@ type RequestFilterModalProps = {
   onCancel: () => void
 }
 
-const statuses = ["Pending", "On Progress", "Completed"]
+const statuses = [
+  { value: "Pending", label: "Menunggu" },
+  { value: "On Progress", label: "Diproses" },
+  { value: "Completed", label: "Selesai" }
+]
 
 export default function RequestFilterModal({ 
   isOpen, 
@@ -94,33 +99,33 @@ export default function RequestFilterModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onCancel()}>
-      <DialogContent className="w-fit">
+      <DialogContent className="w-fit max-w-[90vw]">
         <DialogHeader>
           <DialogTitle>Filter Request</DialogTitle>
           <DialogDescription>Pilih filter untuk menyaring request</DialogDescription>
         </DialogHeader>
 
-        <div className="flex gap-12 py-4">
+        <div className="flex flex-col md:flex-row gap-8 py-4">
           <div className="flex flex-col gap-8">
             {/* Status Filter */}
             <div className="space-y-2">
               <h3 className="font-medium">Status</h3>
               <div className="flex flex-col gap-4">
                 {statuses.map((status) => (
-                  <div key={status} className="flex items-center space-x-2">
+                  <div key={status.value} className="flex items-center space-x-2">
                     <Checkbox
-                      id={`status-${status}`}
-                      checked={localFilters.status.includes(status)}
-                      onCheckedChange={() => handleStatusToggle(status)}
+                      id={`status-${status.value}`}
+                      checked={localFilters.status.includes(status.value)}
+                      onCheckedChange={() => handleStatusToggle(status.value)}
                     />
-                    <Label htmlFor={`status-${status}`}>{status}</Label>
+                    <Label htmlFor={`status-${status.value}`}>{status.label}</Label>
                   </div>
                 ))}
               </div>
             </div>
           </div>
           
-          <div className="w-[1px] h-full bg-black" />
+          <div className="w-[1px] h-full bg-border hidden md:block" />
 
           <div className="flex flex-col gap-8">
             {/* Created On Filter */}
@@ -140,20 +145,23 @@ export default function RequestFilterModal({
                         )}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
-                        {localFilters.createdOnStart ? (
-                          format(localFilters.createdOnStart, "PPP")
+                        {localFilters.createdOnStart && isValid(localFilters.createdOnStart) ? (
+                          format(localFilters.createdOnStart, "dd MMM yyyy", { locale: id })
                         ) : (
                           <span>Pilih tanggal</span>
                         )}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
+                    <PopoverContent className="w-auto p-0" align="start">
                       <Calendar
                         mode="single"
                         selected={localFilters.createdOnStart || undefined}
                         onSelect={(date) => handleDateChange("createdOnStart", date)}
                         disabled={(date) => date > new Date()}
                         initialFocus
+                        locale={id}
+                        weekStartsOn={1}
+                        className="rounded-md border"
                       />
                     </PopoverContent>
                   </Popover>
@@ -171,14 +179,14 @@ export default function RequestFilterModal({
                         )}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
-                        {localFilters.createdOnEnd ? (
-                          format(localFilters.createdOnEnd, "PPP")
+                        {localFilters.createdOnEnd && isValid(localFilters.createdOnEnd) ? (
+                          format(localFilters.createdOnEnd, "dd MMM yyyy", { locale: id })
                         ) : (
                           <span>Pilih tanggal</span>
                         )}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
+                    <PopoverContent className="w-auto p-0" align="start">
                       <Calendar
                         mode="single"
                         selected={localFilters.createdOnEnd || undefined}
@@ -188,6 +196,9 @@ export default function RequestFilterModal({
                           (localFilters.createdOnStart ? date < localFilters.createdOnStart : false)
                         }
                         initialFocus
+                        locale={id}
+                        weekStartsOn={1}
+                        className="rounded-md border"
                       />
                     </PopoverContent>
                   </Popover>
@@ -212,20 +223,23 @@ export default function RequestFilterModal({
                         )}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
-                        {localFilters.modifiedOnStart ? (
-                          format(localFilters.modifiedOnStart, "PPP")
+                        {localFilters.modifiedOnStart && isValid(localFilters.modifiedOnStart) ? (
+                          format(localFilters.modifiedOnStart, "dd MMM yyyy", { locale: id })
                         ) : (
                           <span>Pilih tanggal</span>
                         )}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
+                    <PopoverContent className="w-auto p-0" align="start">
                       <Calendar
                         mode="single"
                         selected={localFilters.modifiedOnStart || undefined}
                         onSelect={(date) => handleDateChange("modifiedOnStart", date)}
                         disabled={(date) => date > new Date()}
                         initialFocus
+                        locale={id}
+                        weekStartsOn={1}
+                        className="rounded-md border"
                       />
                     </PopoverContent>
                   </Popover>
@@ -243,14 +257,14 @@ export default function RequestFilterModal({
                         )}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
-                        {localFilters.modifiedOnEnd ? (
-                          format(localFilters.modifiedOnEnd, "PPP")
+                        {localFilters.modifiedOnEnd && isValid(localFilters.modifiedOnEnd) ? (
+                          format(localFilters.modifiedOnEnd, "dd MMM yyyy", { locale: id })
                         ) : (
                           <span>Pilih tanggal</span>
                         )}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
+                    <PopoverContent className="w-auto p-0" align="start">
                       <Calendar
                         mode="single"
                         selected={localFilters.modifiedOnEnd || undefined}
@@ -260,6 +274,9 @@ export default function RequestFilterModal({
                           (localFilters.modifiedOnStart ? date < localFilters.modifiedOnStart : false)
                         }
                         initialFocus
+                        locale={id}
+                        weekStartsOn={1}
+                        className="rounded-md border"
                       />
                     </PopoverContent>
                   </Popover>

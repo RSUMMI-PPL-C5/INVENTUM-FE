@@ -415,6 +415,19 @@ export default function MaintenanceRequestDisplay() {
 		}
 	};
 
+	const getStatusText = (status: string) => {
+		switch (status.toLowerCase()) {
+			case "completed":
+				return "Selesai";
+			case "pending":
+				return "Menunggu";
+			case "on progress":
+				return "Diproses";
+			default:
+				return status;
+		}
+	}
+
 	const navigateToRequestDetail = (requestId: string) => {
 		router.push(
 			`/dashboard/detail-request?type=maintenance&id=${requestId}`
@@ -541,7 +554,7 @@ export default function MaintenanceRequestDisplay() {
 													
 													data-testid={`status-button-${request.id}`}
 												>
-													{request.status}
+													{getStatusText(request.status)}
 												</Button>
 											</TableCell>
                                             {["Fasum", "Admin"].includes(role) && (
@@ -619,6 +632,7 @@ export default function MaintenanceRequestDisplay() {
 					onConfirm={handleStatusChange}
 					isUpdating={isUpdatingStatus}
 					title="Ubah Status Permintaan Pemeliharaan"
+					getStatusText={getStatusText}
 				/>
 			)}
 		</div>

@@ -2,6 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import CalibrationRequestCreate from '@/modules/medical-equipment/request/calibration/calibration-request-create';
 import { useRouter, useParams } from 'next/navigation';
 import Cookies from "js-cookie";
+import Page from '@/app/dashboard/medical-equipment/[id]/calibration-request/page';
 
 jest.mock('next/navigation', () => ({
   useRouter: jest.fn(),
@@ -201,5 +202,11 @@ describe('CalibrationRequestCreatePage', () => {
         '/dashboard/medical-equipment/1?success=true'
       );
     });
+  });
+});
+
+describe('CalibrationRequestCreatePage wrapper', () => {
+  it('renders without crashing', () => {
+    render(<Page />);
   });
 });

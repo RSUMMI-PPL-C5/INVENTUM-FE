@@ -23,7 +23,7 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
+import { cn, formatNumberWithDots } from "@/lib/utils";
 import Cookies from "js-cookie";
 import { toast } from "sonner";
 import {
@@ -33,9 +33,8 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { ImageUpload } from "@/components/general/image-upload";
+import { id } from "date-fns/locale";
 
-// Add the Location type at the top of the file, after imports
 interface Location {
 	id: number;
 	divisi: string;
@@ -126,7 +125,13 @@ export default function SparePartCreate() {
 				headers: {
 					Authorization: token ? `Bearer ${token}` : "",
 				},
-				body: formData,
+				body: JSON.stringify({
+					partsName: data.partsName,
+					purchaseDate: data.purchaseDate.toISOString(),
+					price: Number.parseFloat(data.price.replace(/\./g, "")),
+					toolLocation: data.toolLocation,
+					toolDate: data.toolDate.toISOString(),
+				}),
 			}
 		);
 
@@ -235,6 +240,42 @@ export default function SparePartCreate() {
 									</PopoverContent>
 								</Popover>
 								<FormMessage />
+								<FormLabel>Tanggal Pembelian</FormLabel>
+								<Popover>
+									<PopoverTrigger asChild>
+										<FormControl>
+											<Button
+												variant={"outline"}
+												className={cn(
+													"w-full pl-3 text-left font-normal",
+													!field.value && "text-muted-foreground"
+												)}
+											>
+												{field.value ? (
+													format(field.value, "dd MMM yyyy", { locale: id })
+												) : (
+													<span>Pilih tanggal</span>
+												)}
+												<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+											</Button>
+										</FormControl>
+									</PopoverTrigger>
+									<PopoverContent
+										className="w-auto p-0"
+										align="start"
+									>
+										<Calendar
+											mode="single"
+											selected={field.value}
+											onSelect={field.onChange}
+											initialFocus
+											locale={id}
+											weekStartsOn={1}
+											className="rounded-md border"
+										/>
+									</PopoverContent>
+								</Popover>
+								<FormMessage />
 							</FormItem>
 						)}
 					/>
@@ -249,10 +290,13 @@ export default function SparePartCreate() {
 									<Input
 										{...field}
 										placeholder="Masukkan harga"
-										type="number"
-										onChange={(e) =>
-											field.onChange(e.target.value)
-										}
+										type="text"
+										value={field.value ? formatNumberWithDots(field.value) : ""}
+										onChange={(e) => {
+											// Remove non-digit characters and store raw value
+											const rawValue = e.target.value.replace(/\./g, "").replace(/[^\d]/g, "");
+											field.onChange(rawValue);
+										}}
 									/>
 								</FormControl>
 								<FormMessage />
@@ -326,6 +370,40 @@ export default function SparePartCreate() {
 											selected={field.value}
 											onSelect={field.onChange}
 											initialFocus
+										/>
+									</PopoverContent>
+								</Popover>
+								<FormMessage />
+								<FormLabel>Tanggal Alat</FormLabel>
+								<Popover>
+									<PopoverTrigger asChild>
+										<FormControl>
+											<Button
+												variant={"outline"}
+												className={cn(
+													"w-full pl-3 text-left font-normal",
+													!field.value && "text-muted-foreground"
+												)}
+											>
+												{field.value ? (
+													// Format dengan locale Indonesia
+													format(field.value, "dd MMM yyyy", { locale: id })
+												) : (
+													<span>Pilih tanggal</span>
+												)}
+												<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+											</Button>
+										</FormControl>
+									</PopoverTrigger>
+									<PopoverContent className="w-auto p-0" align="start">
+										<Calendar
+											mode="single"
+											selected={field.value}
+											onSelect={field.onChange}
+											initialFocus
+											locale={id}
+											weekStartsOn={1}
+											className="rounded-md border"
 										/>
 									</PopoverContent>
 								</Popover>

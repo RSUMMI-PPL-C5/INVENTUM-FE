@@ -12,6 +12,7 @@ import Cookies from "js-cookie"
 import { PaginationControls } from "@/components/ui/pagination-control"
 import DeleteDialog from "@/components/general/delete-dialog"
 import { FilterDialog } from "@/components/general/sparepart-filter-modal"
+import { formatCurrency, formatDate } from "@/lib/utils"
 
 interface Sparepart {
   id: string
@@ -213,41 +214,28 @@ export default function SparepartDisplay() {
     })
   }
 
-  const handleApplyFilter = (filters: Record<string, string>) => {
-    // Combine search and filters, reset to page 1
+const handleApplyFilter = (filters: Record<string, string>) => {
+  if (Object.keys(filters).length === 0) {
+    const params = new URLSearchParams();
+    if (search) {
+      params.set("search", search);
+    }
+    params.set("page", "1");
+    
+    router.push(`/dashboard/spare-part?${params.toString()}`, { scroll: false });
+  } else {
     updateURLParams({
       ...filters,
       search: search || null,
       page: "1",
-    })
+    });
   }
+}
 
   const handlePageChange = (page: number) => {
     updateURLParams({
       page: page.toString(),
     })
-  }
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-    }).format(value)
-  }
-
-  const formatDate = (dateString: string) => {
-    try {
-      const date = new Date(dateString)
-      return new Intl.DateTimeFormat("id-ID", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      }).format(date)
-    } catch (error) {
-      console.error(error)
-      return "Invalid Date"
-    }
   }
 
   const navigateToViewDetails = (id: string) => {

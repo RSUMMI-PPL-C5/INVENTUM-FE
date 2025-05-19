@@ -1,3 +1,18 @@
+# [1.0.0-staging.4](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/compare/v1.0.0-staging.3...v1.0.0-staging.4) (2025-05-19)
+
+
+### Features
+
+* added new components for tabs ([1ccfc36](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/commit/1ccfc368195378d68ae0e4e32b5d6209e189ad0f))
+* newly added monthly request charts and placeholder for other charts ([b2c1bb0](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/commit/b2c1bb0aa7322720e53edd6170d49e5f9028e624))
+
+# [1.0.0-staging.3](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/compare/v1.0.0-staging.2...v1.0.0-staging.3) (2025-05-18)
+
+
+### Bug Fixes
+
+* Fixed previous addressed issues in the PR descriptions ([a7118d7](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/commit/a7118d75ec811d0d016f44eed88063d32602f945))
+
 # [1.0.0-staging.2](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/compare/v1.0.0-staging.1...v1.0.0-staging.2) (2025-05-08)
 
 

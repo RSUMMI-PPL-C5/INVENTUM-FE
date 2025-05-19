@@ -30,8 +30,9 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
+import { cn, formatNumberWithDots } from "@/lib/utils";
 import Cookies from "js-cookie";
+import { id } from "date-fns/locale";
 import { toast } from "sonner";
 
 const formSchema = z.object({
@@ -82,6 +83,19 @@ export default function MedicalEquipmentCreate() {
 			vendor: "",
 		},
 	});
+
+	const getStatusText = (status: string) => {
+		switch (status.toLowerCase()) {
+			case "active":
+				return "Aktif";
+			case "inactive":
+				return "Tidak Aktif";
+			case "maintenance":
+				return "Pemeliharaan";
+			default:
+				return status;
+		}
+	};
 
 	async function createMedicalEquipment(data: z.infer<typeof formSchema>) {
 		const token = Cookies.get("accessToken");
@@ -232,7 +246,12 @@ export default function MedicalEquipmentCreate() {
 									<Input
 										{...field}
 										placeholder="Masukkan harga pembelian"
-										type="number"
+										type="text"
+										value={field.value ? formatNumberWithDots(field.value.toString()) : ""}
+										onChange={(e) => {
+											const rawValue = e.target.value.replace(/\./g, "").replace(/[^\d]/g, "");
+											field.onChange(rawValue);
+										}}
 									/>
 								</FormControl>
 								<FormMessage />
@@ -267,7 +286,9 @@ export default function MedicalEquipmentCreate() {
 								>
 									<FormControl>
 										<SelectTrigger>
-											<SelectValue placeholder="Pilih Status" />
+											<SelectValue placeholder="Pilih Status">
+												{field.value ? getStatusText(field.value) : "Pilih Status"}
+											</SelectValue>
 										</SelectTrigger>
 									</FormControl>
 									<SelectContent>
@@ -276,7 +297,7 @@ export default function MedicalEquipmentCreate() {
 												key={status.id}
 												value={status.id}
 											>
-												{status.name}
+												{getStatusText(status.id)}
 											</SelectItem>
 										))}
 									</SelectContent>
@@ -290,40 +311,40 @@ export default function MedicalEquipmentCreate() {
 						name="purchaseDate"
 						render={({ field }) => (
 							<FormItem className="flex flex-col">
-								<FormLabel>Tanggal Pembelian</FormLabel>
-								<Popover>
-									<PopoverTrigger asChild>
-										<FormControl>
-											<Button
-												variant={"outline"}
-												className={cn(
-													"w-full pl-3 text-left font-normal",
-													!field.value &&
-														"text-muted-foreground"
-												)}
-											>
-												{field.value ? (
-													format(field.value, "PPP")
-												) : (
-													<span>Pilih tanggal</span>
-												)}
-												<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-											</Button>
-										</FormControl>
-									</PopoverTrigger>
-									<PopoverContent
-										className="w-auto p-0"
-										align="start"
+							<FormLabel>Tanggal Pembelian</FormLabel>
+							<Popover>
+								<PopoverTrigger asChild>
+								<FormControl>
+									<Button
+									variant={"outline"}
+									className={cn(
+										"w-full pl-3 text-left font-normal",
+										!field.value && "text-muted-foreground"
+									)}
 									>
-										<Calendar
-											mode="single"
-											selected={field.value}
-											onSelect={field.onChange}
-											initialFocus
-										/>
-									</PopoverContent>
-								</Popover>
-								<FormMessage />
+									{field.value ? (
+										// Format dengan locale Indonesia
+										format(field.value, "d MMM yyyy", { locale: id })
+									) : (
+										<span>Pilih tanggal</span>
+									)}
+									<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+									</Button>
+								</FormControl>
+								</PopoverTrigger>
+								<PopoverContent className="w-auto p-0" align="start">
+								<Calendar
+									mode="single"
+									selected={field.value}
+									onSelect={field.onChange}
+									initialFocus
+									locale={id}
+									weekStartsOn={1}
+									className="rounded-md border"
+								/>
+								</PopoverContent>
+							</Popover>
+							<FormMessage />
 							</FormItem>
 						)}
 					/>
