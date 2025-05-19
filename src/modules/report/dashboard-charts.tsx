@@ -22,12 +22,12 @@ const useWindowSize = () => {
         height: window.innerHeight,
       });
     };
-    
+
     // Hanya jalankan di browser
     if (typeof window !== 'undefined') {
       window.addEventListener("resize", handleResize);
       handleResize(); // Set ukuran awal
-      
+
       return () => window.removeEventListener("resize", handleResize);
     }
   }, []);
@@ -98,6 +98,16 @@ interface RequestStatusResponse {
   }
 }
 
+// Add these interfaces after the existing interfaces
+interface SummaryCountData {
+  maintenanceCount: number
+  calibrationCount: number
+  sparePartsCount: number
+  maintenancePercentageChange: number
+  calibrationPercentageChange: number
+  sparePartsPercentageChange: number
+}
+
 // Nama bulan lengkap untuk tampilan yang lebih baik
 const monthNames = {
   "01": "Januari",
@@ -133,11 +143,11 @@ const shortMonthNames = {
 // Fungsi untuk menampilkan konten chart berdasarkan state
 const renderChartContent = (loading: boolean, monthlyData: FormattedChartData[]) => {
   const { width } = useWindowSize();
-  
+
   // Menentukan konfigurasi responsif berdasarkan lebar layar
   const isMobile = width < 640;
   const isTablet = width >= 640 && width < 1024;
-  
+
   if (loading) {
     return (
       <div className="h-[250px] sm:h-[300px] md:h-[350px] flex items-center justify-center">
@@ -145,7 +155,7 @@ const renderChartContent = (loading: boolean, monthlyData: FormattedChartData[])
       </div>
     );
   }
-  
+
   if (monthlyData.length === 0) {
     return (
       <div className="h-[250px] sm:h-[300px] md:h-[350px] flex items-center justify-center text-muted-foreground">
@@ -158,7 +168,7 @@ const renderChartContent = (loading: boolean, monthlyData: FormattedChartData[])
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload?.length) {
       const currentData = monthlyData.find(data => data.month === label);
-      
+
       return (
         <div className="bg-white p-2 sm:p-3 border rounded shadow-sm">
           <p className="font-medium text-xs sm:text-sm">{currentData?.fullMonth ?? label}</p>
@@ -173,9 +183,9 @@ const renderChartContent = (loading: boolean, monthlyData: FormattedChartData[])
     }
     return null;
   };
-  
+
   // Konfigurasikan margin berdasarkan ukuran layar
-  const chartMargin = isMobile 
+  const chartMargin = isMobile
     ? { top: 5, right: 10, left: 5, bottom: 40 }
     : isTablet
       ? { top: 5, right: 20, left: 15, bottom: 30 }
@@ -188,61 +198,61 @@ const renderChartContent = (loading: boolean, monthlyData: FormattedChartData[])
     : isTablet
       ? Math.max(0, Math.floor(monthlyData.length / 6))
       : 0;
-      
+
   return (
     <div className="h-[250px] sm:h-[300px] md:h-[350px] flex justify-center">
-      <ResponsiveContainer width="95%" height="100%"> 
+      <ResponsiveContainer width="95%" height="100%">
         <BarChart
           data={monthlyData}
-          margin={{ top: 5, right: 20, left: 20, bottom: 25 }} 
+          margin={{ top: 5, right: 20, left: 20, bottom: 25 }}
           barGap={isMobile ? 3 : 8}
           barSize={isMobile ? 15 : isTablet ? 25 : 35}
         >
           <CartesianGrid strokeDasharray="3 3" vertical={!isMobile} />
-          <XAxis 
-            dataKey="month" 
-            tick={{ 
+          <XAxis
+            dataKey="month"
+            tick={{
               fontSize: isMobile ? 9 : isTablet ? 10 : 12,
               fill: "#64748b"
-            }} 
-            height={isMobile ? 50 : 40} 
+            }}
+            height={isMobile ? 50 : 40}
             tickMargin={5}
             angle={isMobile ? -45 : 0}
             textAnchor={isMobile ? "end" : "middle"}
             interval={labelInterval}
           />
-          <YAxis 
+          <YAxis
             width={isMobile ? 25 : isTablet ? 35 : 40}
             tick={{ fontSize: isMobile ? 9 : isTablet ? 10 : 12 }}
             tickFormatter={(value) => (value === 0 ? "0" : value.toString())}
           />
-          <Tooltip 
+          <Tooltip
             content={CustomTooltip}
             wrapperStyle={{ zIndex: 1000 }}
           />
-          <Legend 
+          <Legend
             verticalAlign={isMobile ? "bottom" : "bottom"}
             height={isMobile ? 36 : 40}
             iconSize={isMobile ? 10 : 12}
-            wrapperStyle={{ 
+            wrapperStyle={{
               fontSize: isMobile ? '11px' : isTablet ? '12px' : '14px',
               paddingTop: isMobile ? '5px' : '0px',
-              fontWeight: 500 
+              fontWeight: 500
             }}
           />
-          <Bar 
-            dataKey="maintenance" 
-            fill="#3b82f6" 
+          <Bar
+            dataKey="maintenance"
+            fill="#3b82f6"
             name="Pemeliharaan"
             radius={[3, 3, 0, 0]}
             // Animasi yang lebih cepat untuk perangkat mobile
             animationDuration={isMobile ? 500 : 1000}
           />
-          <Bar 
-            dataKey="calibration" 
-            fill="#8b5cf6" 
+          <Bar
+            dataKey="calibration"
+            fill="#8b5cf6"
             name="Kalibrasi"
-            radius={[3, 3, 0, 0]} 
+            radius={[3, 3, 0, 0]}
             // Animasi yang lebih cepat untuk perangkat mobile
             animationDuration={isMobile ? 500 : 1000}
           />
@@ -305,10 +315,13 @@ export default function DashboardCharts() {
   const [maintenanceStatusData, setMaintenanceStatusData] = useState<any[]>([])
   const [calibrationStatusData, setCalibrationStatusData] = useState<any[]>([])
   const [activeIndex, setActiveIndex] = useState(0)
+  const [summaryData, setSummaryData] = useState<SummaryCountData | null>(null)
+  const [summaryLoading, setSummaryLoading] = useState(true)
 
   useEffect(() => {
     fetchMonthlyRequestData()
     fetchRequestStatusData()
+    fetchSummaryData()
   }, [])
 
   const onPieEnter = (_: any, index: number) => {
@@ -332,7 +345,7 @@ export default function DashboardCharts() {
       }
 
       const responseData = await response.json()
-      
+
       // Periksa apakah response adalah array atau object dengan properti data
       let data: MonthlyRequestData[] = [];
       if (Array.isArray(responseData)) {
@@ -340,12 +353,12 @@ export default function DashboardCharts() {
       } else if (responseData?.data && Array.isArray(responseData.data)) {
         data = responseData.data;
       }
-      
+
       if (data.length === 0) {
         setMonthlyData([])
         return
       }
-      
+
       // Format data untuk chart
       const formattedData = formatDataForChart(data)
       setMonthlyData(formattedData)
@@ -374,13 +387,13 @@ export default function DashboardCharts() {
       }
 
       const responseData = await response.json()
-      
+
       if (!responseData.success || !responseData.data) {
         throw new Error("Invalid response format")
       }
-      
+
       const statusData: RequestStatusResponse = responseData.data
-      
+
       // Format maintenance data for pie chart
       const maintenanceFormatted = statusData.MAINTENANCE.map(item => ({
         name: getStatusLabel(item.status === "Partial" ? "Peringatan" : item.status),
@@ -388,7 +401,7 @@ export default function DashboardCharts() {
         percentage: item.percentage,
         color: getStatusColor(item.status)
       }))
-      
+
       // Format calibration data for pie chart
       const calibrationFormatted = statusData.CALIBRATION.map(item => ({
         name: getStatusLabel(item.status === "Partial" ? "Peringatan" : item.status),
@@ -396,7 +409,7 @@ export default function DashboardCharts() {
         percentage: item.percentage,
         color: getStatusColor(item.status)
       }))
-      
+
       setMaintenanceStatusData(maintenanceFormatted)
       setCalibrationStatusData(calibrationFormatted)
     } catch (error) {
@@ -409,9 +422,9 @@ export default function DashboardCharts() {
       setStatusLoading(false)
     }
   }
-  
+
   const getStatusColor = (status: string) => {
-    switch(status) {
+    switch (status) {
       case "Success":
         return "#22c55e" // green-500
       case "Partial":
@@ -424,7 +437,7 @@ export default function DashboardCharts() {
   }
 
   const getStatusLabel = (status: string) => {
-    switch(status) {
+    switch (status) {
       case "Success":
         return "Sukses"
       case "Partial":
@@ -440,47 +453,47 @@ export default function DashboardCharts() {
     if (!Array.isArray(data) || data.length === 0) {
       return []
     }
-    
+
     try {
       // Buat object untuk menggabungkan data per bulan
       const monthlyAggregates: Record<string, { maintenance: number; calibration: number }> = {};
-      
+
       // Agregasi data per bulan
       data.forEach(item => {
         if (!item.month) return;
-        
+
         const parts = item.month.split('-');
         if (parts.length !== 2) return;
-        
+
         const [year, month] = parts;
         // Gunakan format untuk pengurutan bulan: YYYY-MM
         const monthKey = `${year}-${month}`;
-        
+
         if (!monthlyAggregates[monthKey]) {
           monthlyAggregates[monthKey] = {
             maintenance: 0,
             calibration: 0
           };
         }
-        
+
         monthlyAggregates[monthKey].maintenance += item.MAINTENANCE || 0;
         monthlyAggregates[monthKey].calibration += item.CALIBRATION || 0;
       });
-      
+
       // Konversi agregat menjadi array dan urutkan berdasarkan bulan
       const sortedMonths = Object.keys(monthlyAggregates).sort((a, b) => a.localeCompare(b));
-      
+
       // Format data untuk chart
       return sortedMonths.map(monthKey => {
         const parts = monthKey.split('-');
         const [year, month] = parts;
-        
+
         // Only month name for x-axis (without year)
         const shortMonthName = shortMonthNames[month as keyof typeof shortMonthNames] || month;
-        
+
         // Full month with year for tooltip
         const fullMonthName = `${monthNames[month as keyof typeof monthNames] || month} ${year}`;
-        
+
         return {
           month: shortMonthName,
           fullMonth: fullMonthName,
@@ -510,13 +523,13 @@ export default function DashboardCharts() {
     return (
       <Tabs defaultValue="maintenance">
         <TabsList className="mb-4 bg-gray-100 p-1">
-          <TabsTrigger 
-            value="maintenance" 
+          <TabsTrigger
+            value="maintenance"
             className="data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm data-[state=active]:font-medium"
           >
             Maintenance
           </TabsTrigger>
-          <TabsTrigger 
+          <TabsTrigger
             value="calibration"
             className="data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm data-[state=active]:font-medium"
           >
@@ -546,14 +559,14 @@ export default function DashboardCharts() {
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Legend 
-                  wrapperStyle={{ 
+                <Legend
+                  wrapperStyle={{
                     fontSize: `${legendFontSize}px`,
                     paddingTop: `${paddingTop}px`
                   }}
                 />
-                <Tooltip 
-                  contentStyle={{ 
+                <Tooltip
+                  contentStyle={{
                     fontSize: `${legendFontSize}px`,
                     padding: '8px'
                   }}
@@ -585,14 +598,14 @@ export default function DashboardCharts() {
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Legend 
-                  wrapperStyle={{ 
+                <Legend
+                  wrapperStyle={{
                     fontSize: `${legendFontSize}px`,
                     paddingTop: `${paddingTop}px`
                   }}
                 />
-                <Tooltip 
-                  contentStyle={{ 
+                <Tooltip
+                  contentStyle={{
                     fontSize: `${legendFontSize}px`,
                     padding: '8px'
                   }}
@@ -605,6 +618,38 @@ export default function DashboardCharts() {
     )
   }
 
+  const fetchSummaryData = async () => {
+    try {
+      setSummaryLoading(true)
+      const token = Cookies.get("accessToken")
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/report/summary-count`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch summary data")
+      }
+
+      const responseData = await response.json()
+
+      if (!responseData.success || !responseData.data) {
+        throw new Error("Invalid response format")
+      }
+
+      setSummaryData(responseData.data)
+    } catch (error) {
+      console.error("Error fetching summary data:", error)
+      toast.error("Gagal memuat data ringkasan")
+      setSummaryData(null)
+    } finally {
+      setSummaryLoading(false)
+    }
+  }
+
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Summary Cards */}
@@ -613,14 +658,32 @@ export default function DashboardCharts() {
           <CardContent className="pt-4 sm:pt-6">
             <div className="space-y-1 sm:space-y-2">
               <p className="text-xs sm:text-sm font-medium text-gray-500">Total Pemeliharaan</p>
-              <div className="flex items-baseline justify-between">
-                <h2 className="text-2xl sm:text-3xl font-bold text-blue-600">124</h2>
-                <div className="flex items-center text-xs sm:text-sm text-green-600 bg-green-50 px-2 py-1 rounded-full">
-                  <ArrowUpIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                  <span>+12.5%</span>
+              {summaryLoading ? (
+                <div className="animate-pulse space-y-2">
+                  <div className="h-8 bg-gray-200 rounded w-24"></div>
+                  <div className="h-4 bg-gray-200 rounded w-16"></div>
                 </div>
-              </div>
-              <p className="text-xs text-gray-500">Bulan ini</p>
+              ) : summaryData ? (
+                <>
+                  <div className="flex items-baseline justify-between">
+                    <h2 className="text-2xl sm:text-3xl font-bold text-blue-600">{summaryData.maintenanceCount}</h2>
+                    <div className={`flex items-center text-xs sm:text-sm ${summaryData.maintenancePercentageChange >= 0
+                      ? 'text-green-600 bg-green-50'
+                      : 'text-red-600 bg-red-50'
+                      } px-2 py-1 rounded-full`}>
+                      {summaryData.maintenancePercentageChange >= 0 ? (
+                        <ArrowUpIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                      ) : (
+                        <ArrowDownIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                      )}
+                      <span>{Math.abs(summaryData.maintenancePercentageChange)}%</span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500">Bulan ini</p>
+                </>
+              ) : (
+                <div className="text-sm text-gray-500">Data tidak tersedia</div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -629,14 +692,32 @@ export default function DashboardCharts() {
           <CardContent className="pt-4 sm:pt-6">
             <div className="space-y-1 sm:space-y-2">
               <p className="text-xs sm:text-sm font-medium text-gray-500">Total Kalibrasi</p>
-              <div className="flex items-baseline justify-between">
-                <h2 className="text-2xl sm:text-3xl font-bold text-purple-600">87</h2>
-                <div className="flex items-center text-xs sm:text-sm text-green-600 bg-green-50 px-2 py-1 rounded-full">
-                  <ArrowUpIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                  <span>+5.2%</span>
+              {summaryLoading ? (
+                <div className="animate-pulse space-y-2">
+                  <div className="h-8 bg-gray-200 rounded w-24"></div>
+                  <div className="h-4 bg-gray-200 rounded w-16"></div>
                 </div>
-              </div>
-              <p className="text-xs text-gray-500">Bulan ini</p>
+              ) : summaryData ? (
+                <>
+                  <div className="flex items-baseline justify-between">
+                    <h2 className="text-2xl sm:text-3xl font-bold text-purple-600">{summaryData.calibrationCount}</h2>
+                    <div className={`flex items-center text-xs sm:text-sm ${summaryData.calibrationPercentageChange >= 0
+                      ? 'text-green-600 bg-green-50'
+                      : 'text-red-600 bg-red-50'
+                      } px-2 py-1 rounded-full`}>
+                      {summaryData.calibrationPercentageChange >= 0 ? (
+                        <ArrowUpIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                      ) : (
+                        <ArrowDownIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                      )}
+                      <span>{Math.abs(summaryData.calibrationPercentageChange)}%</span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500">Bulan ini</p>
+                </>
+              ) : (
+                <div className="text-sm text-gray-500">Data tidak tersedia</div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -645,14 +726,32 @@ export default function DashboardCharts() {
           <CardContent className="pt-4 sm:pt-6">
             <div className="space-y-1 sm:space-y-2">
               <p className="text-xs sm:text-sm font-medium text-gray-500">Penggantian Suku Cadang</p>
-              <div className="flex items-baseline justify-between">
-                <h2 className="text-2xl sm:text-3xl font-bold text-amber-600">36</h2>
-                <div className="flex items-center text-xs sm:text-sm text-red-600 bg-red-50 px-2 py-1 rounded-full">
-                  <ArrowDownIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                  <span>-2.1%</span>
+              {summaryLoading ? (
+                <div className="animate-pulse space-y-2">
+                  <div className="h-8 bg-gray-200 rounded w-24"></div>
+                  <div className="h-4 bg-gray-200 rounded w-16"></div>
                 </div>
-              </div>
-              <p className="text-xs text-gray-500">Bulan ini</p>
+              ) : summaryData ? (
+                <>
+                  <div className="flex items-baseline justify-between">
+                    <h2 className="text-2xl sm:text-3xl font-bold text-amber-600">{summaryData.sparePartsCount}</h2>
+                    <div className={`flex items-center text-xs sm:text-sm ${summaryData.sparePartsPercentageChange >= 0
+                      ? 'text-green-600 bg-green-50'
+                      : 'text-red-600 bg-red-50'
+                      } px-2 py-1 rounded-full`}>
+                      {summaryData.sparePartsPercentageChange >= 0 ? (
+                        <ArrowUpIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                      ) : (
+                        <ArrowDownIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                      )}
+                      <span>{Math.abs(summaryData.sparePartsPercentageChange)}%</span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500">Bulan ini</p>
+                </>
+              ) : (
+                <div className="text-sm text-gray-500">Data tidak tersedia</div>
+              )}
             </div>
           </CardContent>
         </Card>
