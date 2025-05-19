@@ -239,7 +239,7 @@ const renderActiveShape = (props: any) => {
 
   return (
     <g>
-      <text x={cx} y={cy} dy={8} textAnchor="middle" fill={fill} fontSize={12} fontWeight="bold">
+      <text x={cx} y={cy} dy={8} textAnchor="middle" fill={fill} fontSize={16} fontWeight="bold">
         {payload.name}
       </text>
       <Sector
@@ -262,7 +262,7 @@ const renderActiveShape = (props: any) => {
       />
       <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={fill} fill="none" />
       <circle cx={ex} cy={ey} r={2} fill={fill} stroke="none" />
-      <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} textAnchor={textAnchor} fill="#333" fontSize={12}>{`${value} (${(percent * 100).toFixed(0)}%)`}</text>
+      <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} textAnchor={textAnchor} fill="#333" fontSize={16}>{`${value} (${(percent * 100).toFixed(0)}%)`}</text>
     </g>
   )
 }
@@ -353,7 +353,7 @@ export default function DashboardCharts() {
       
       // Format maintenance data for pie chart
       const maintenanceFormatted = statusData.MAINTENANCE.map(item => ({
-        name: item.status === "Partial" ? "Warning" : item.status,
+        name: getStatusLabel(item.status === "Partial" ? "Peringatan" : item.status),
         value: item.count,
         percentage: item.percentage,
         color: getStatusColor(item.status)
@@ -361,7 +361,7 @@ export default function DashboardCharts() {
       
       // Format calibration data for pie chart
       const calibrationFormatted = statusData.CALIBRATION.map(item => ({
-        name: item.status === "Partial" ? "Warning" : item.status,
+        name: getStatusLabel(item.status === "Partial" ? "Peringatan" : item.status),
         value: item.count,
         percentage: item.percentage,
         color: getStatusColor(item.status)
@@ -390,6 +390,19 @@ export default function DashboardCharts() {
         return "#ef4444" // red-500
       default:
         return "#8884d8" // default color
+    }
+  }
+
+  const getStatusLabel = (status: string) => {
+    switch(status) {
+      case "Success":
+        return "Sukses"
+      case "Partial":
+        return "Sedang"
+      case "Failed":
+        return "Gagal"
+      default:
+        return status
     }
   }
 
@@ -481,8 +494,8 @@ export default function DashboardCharts() {
                   data={maintenanceStatusData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
+                  innerRadius={70}
+                  outerRadius={95}
                   dataKey="value"
                   onMouseEnter={onPieEnter}
                 >
@@ -490,8 +503,18 @@ export default function DashboardCharts() {
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Legend />
-                <Tooltip />
+                <Legend 
+                  wrapperStyle={{ 
+                    fontSize: '12px',
+                    paddingTop: '15px'
+                  }}
+                />
+                <Tooltip 
+                  contentStyle={{ 
+                    fontSize: '14px',
+                    padding: '8px'
+                  }}
+                />
               </PieChart>
             </ResponsiveContainer>
           )}
@@ -510,8 +533,8 @@ export default function DashboardCharts() {
                   data={calibrationStatusData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
+                  innerRadius={70}
+                  outerRadius={95}
                   dataKey="value"
                   onMouseEnter={onPieEnter}
                 >
@@ -519,8 +542,18 @@ export default function DashboardCharts() {
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Legend />
-                <Tooltip />
+                <Legend 
+                  wrapperStyle={{ 
+                    fontSize: '12px',
+                    paddingTop: '15px'
+                  }}
+                />
+                <Tooltip 
+                  contentStyle={{ 
+                    fontSize: '14px',
+                    padding: '8px'
+                  }}
+                />
               </PieChart>
             </ResponsiveContainer>
           )}
