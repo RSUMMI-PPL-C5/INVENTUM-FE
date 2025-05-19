@@ -59,6 +59,7 @@ const formSchema = z.object({
 		}),
 	status: z.string().min(1, { message: "Status wajib diisi" }),
 	vendor: z.string().optional(),
+	lastLocation: z.string().optional(),
 	createdOn: z.string().optional(),
 	modifiedOn: z.string().optional(),
 });
@@ -132,6 +133,7 @@ export default function MedicalEquipmentEdit() {
 						: "",
 					status: equipmentData.status,
 					vendor: equipmentData.vendor ?? "",
+					lastLocation: equipmentData.lastLocation ?? "",
 					createdOn: formattedCreatedDate,
 					modifiedOn: formattedModifiedDate,
 				});
@@ -175,6 +177,7 @@ export default function MedicalEquipmentEdit() {
 						: null,
 					status: data.status,
 					vendor: data.vendor ?? null,
+          lastLocation: data.lastLocation ?? null,
 				}),
 			}
 		);
@@ -340,6 +343,22 @@ export default function MedicalEquipmentEdit() {
 									<Input
 										{...field}
 										placeholder="Masukkan vendor"
+									/>
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+					<FormField
+						control={form.control}
+						name="lastLocation"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>Lokasi Terakhir</FormLabel>
+								<FormControl>
+									<Input
+										{...field}
+										placeholder="Masukkan lokasi terakhir"
 									/>
 								</FormControl>
 								<FormMessage />
