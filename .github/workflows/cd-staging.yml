@@ -3,7 +3,7 @@ name: Frontend Staging CD
 on:
   push:
     branches:
-      - chore/deployment
+      - chore/Deployment
       - health
 
 jobs:
