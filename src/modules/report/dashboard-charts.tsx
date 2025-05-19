@@ -446,7 +446,7 @@ export default function DashboardCharts() {
       case "pending":
         return "#ef4444" // red-500 for failure
       default:
-        return "#22c55e" // default green
+        return "#8884d8" // default color
     }
   }
 
