@@ -314,15 +314,6 @@ const renderActiveShape = (props: any) => {
   )
 }
 
-/**
- * Komponen DashboardCharts
- * 
- * Menampilkan ringkasan statistik dan grafik untuk:
- * - Total pemeliharaan, kalibrasi, dan penggantian suku cadang
- * - Persentase perubahan untuk setiap metrik
- * - Grafik status permintaan
- * - Grafik permintaan bulanan
- */
 export default function DashboardCharts() {
   const [loading, setLoading] = useState(true)
   const [monthlyData, setMonthlyData] = useState<FormattedChartData[]>([])
@@ -637,6 +628,12 @@ export default function DashboardCharts() {
     try {
       setSummaryLoading(true)
       const token = Cookies.get("accessToken")
+
+      if (!token) {
+        toast.error("Sesi telah berakhir, silakan login kembali")
+        return
+      }
+
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/report/summary-count`, {
         method: "GET",
         headers: {
@@ -652,6 +649,7 @@ export default function DashboardCharts() {
       const responseData = await response.json()
 
       if (!responseData.success || !responseData.data) {
+        toast.error("Format data tidak valid")
         throw new Error("Invalid response format")
       }
 
