@@ -320,7 +320,8 @@ export default function DashboardCharts() {
   const [statusLoading, setStatusLoading] = useState(true)
   const [maintenanceStatusData, setMaintenanceStatusData] = useState<any[]>([])
   const [calibrationStatusData, setCalibrationStatusData] = useState<any[]>([])
-  const [activeIndex, setActiveIndex] = useState(0)
+  const [maintenanceActiveIndex, setMaintenanceActiveIndex] = useState(0)
+  const [calibrationActiveIndex, setCalibrationActiveIndex] = useState(0)
   const [summaryData, setSummaryData] = useState<SummaryCountData | null>(null)
   const [summaryLoading, setSummaryLoading] = useState(true)
 
@@ -330,8 +331,12 @@ export default function DashboardCharts() {
     fetchSummaryData()
   }, [])
 
-  const onPieEnter = (_: any, index: number) => {
-    setActiveIndex(index)
+  const onMaintenancePieEnter = (_: any, index: number) => {
+    setMaintenanceActiveIndex(index)
+  }
+
+  const onCalibrationPieEnter = (_: any, index: number) => {
+    setCalibrationActiveIndex(index)
   }
 
   const fetchMonthlyRequestData = async () => {
@@ -402,7 +407,7 @@ export default function DashboardCharts() {
 
       // Format maintenance data for pie chart
       const maintenanceFormatted = statusData.MAINTENANCE.map(item => ({
-        name: getStatusLabel(item.status === "Partial" ? "Peringatan" : item.status),
+        name: getStatusLabel(item.status),
         value: item.count,
         percentage: item.percentage,
         color: getStatusColor(item.status)
@@ -410,7 +415,7 @@ export default function DashboardCharts() {
 
       // Format calibration data for pie chart
       const calibrationFormatted = statusData.CALIBRATION.map(item => ({
-        name: getStatusLabel(item.status === "Partial" ? "Peringatan" : item.status),
+        name: getStatusLabel(item.status),
         value: item.count,
         percentage: item.percentage,
         color: getStatusColor(item.status)
@@ -533,7 +538,7 @@ export default function DashboardCharts() {
             value="maintenance"
             className="data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm data-[state=active]:font-medium"
           >
-            Maintenance
+            Pemeliharaan
           </TabsTrigger>
           <TabsTrigger
             value="calibration"
@@ -542,7 +547,7 @@ export default function DashboardCharts() {
             Kalibrasi
           </TabsTrigger>
         </TabsList>
-        <TabsContent value="maintenance" className="h-[250px] sm:h-[300px]">
+        <TabsContent value="maintenance" className="h-[220px] sm:h-[280px]">
           {maintenanceStatusData.length === 0 ? (
             <div className="h-full flex items-center justify-center text-muted-foreground">
               Tidak ada data status permintaan untuk ditampilkan
@@ -551,37 +556,33 @@ export default function DashboardCharts() {
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  activeIndex={activeIndex}
+                  activeIndex={maintenanceActiveIndex}
                   activeShape={renderActiveShape}
                   data={maintenanceStatusData}
                   cx="50%"
-                  cy="50%"
+                  cy="56%"
                   innerRadius={innerRadius}
                   outerRadius={outerRadius}
                   dataKey="value"
-                  onMouseEnter={onPieEnter}
+                  onMouseEnter={onMaintenancePieEnter}
                 >
                   {maintenanceStatusData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
+                    <Cell key={`cell-maintenance-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
                 <Legend
                   wrapperStyle={{
                     fontSize: `${legendFontSize}px`,
-                    paddingTop: `${paddingTop}px`
+                    paddingTop: `${paddingTop}px`,
+                    bottom: -12
                   }}
                 />
-                <Tooltip
-                  contentStyle={{
-                    fontSize: `${legendFontSize}px`,
-                    padding: '8px'
-                  }}
-                />
+                <Tooltip />
               </PieChart>
             </ResponsiveContainer>
           )}
         </TabsContent>
-        <TabsContent value="calibration" className="h-[250px] sm:h-[300px]">
+        <TabsContent value="calibration" className="h-[220px] sm:h-[280px]">
           {calibrationStatusData.length === 0 ? (
             <div className="h-full flex items-center justify-center text-muted-foreground">
               Tidak ada data status permintaan untuk ditampilkan
@@ -590,32 +591,28 @@ export default function DashboardCharts() {
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  activeIndex={activeIndex}
+                  activeIndex={calibrationActiveIndex}
                   activeShape={renderActiveShape}
                   data={calibrationStatusData}
                   cx="50%"
-                  cy="50%"
+                  cy="56%"
                   innerRadius={innerRadius}
                   outerRadius={outerRadius}
                   dataKey="value"
-                  onMouseEnter={onPieEnter}
+                  onMouseEnter={onCalibrationPieEnter}
                 >
                   {calibrationStatusData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
+                    <Cell key={`cell-calibration-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
                 <Legend
                   wrapperStyle={{
                     fontSize: `${legendFontSize}px`,
-                    paddingTop: `${paddingTop}px`
+                    paddingTop: `${paddingTop}px`,
+                    bottom: 0
                   }}
                 />
-                <Tooltip
-                  contentStyle={{
-                    fontSize: `${legendFontSize}px`,
-                    padding: '8px'
-                  }}
-                />
+                <Tooltip />
               </PieChart>
             </ResponsiveContainer>
           )}
