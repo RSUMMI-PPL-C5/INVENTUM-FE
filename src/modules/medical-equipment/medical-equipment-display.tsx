@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import Cookies from "js-cookie";
 import { PaginationControls } from "@/components/ui/pagination-control";
 import DeleteDialog from "@/components/general/delete-dialog";
+import { formatDate } from "@/lib/utils";
 
 type MedicalEquipment = {
 	id: string;
@@ -285,16 +286,6 @@ export default function MedicalEquipmentPage() {
 		hasRun.current = true;
 	}, [searchParams]);
 
-	const formatDate = (dateString: string | null) => {
-		if (!dateString) return "-";
-		try {
-			return format(new Date(dateString), "dd MMM yyyy");
-		} catch (_error) {
-			console.error("Error formatting date:", _error);
-			return dateString;
-		}
-	};
-
 	const formatPrice = (price: number | null) => {
 		if (price === null) return "-";
 		return new Intl.NumberFormat("id-ID", {
@@ -316,6 +307,19 @@ export default function MedicalEquipmentPage() {
 				return "bg-gray-100 text-gray-800";
 		}
 	};
+
+	const getStatusText = (status: string) => {
+		switch (status.toLowerCase()) {
+			case "active":
+				return "Aktif";
+			case "inactive":
+				return "Tidak Aktif";
+			case "maintenance":
+				return "Pemeliharaan";
+			default:
+				return status;
+		}
+	}
 
 	const navigateToEquipmentEdit = (equipmentId: string) => {
 		router.push(`/dashboard/medical-equipment/${equipmentId}/edit`);
@@ -437,7 +441,7 @@ export default function MedicalEquipmentPage() {
 														equipment.status
 													)}`}
 												>
-													{equipment.status}
+													{getStatusText(equipment.status)}
 												</span>
 											</TableCell>
 											<TableCell>

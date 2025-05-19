@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -40,12 +40,11 @@ export default function CalibrationRequestCreate() {
 		},
 	});
 
-	const getToken = async () => {
+	const getToken = useCallback(() => {
 		const token = Cookies.get("accessToken");
-
 		if (!token) throw new Error("No token found");
 		return token;
-	};
+	}, []);
 
 	const createCalibrationRequest = async (
 		data: z.infer<typeof formSchema>
@@ -96,11 +95,11 @@ export default function CalibrationRequestCreate() {
 	};
 
 	useEffect(() => {
-		const fetchMedicalEquipmentName = async () => {
+		async function fetchMedicalEquipmentName() {
 			setLoading(true);
 			try {
 				const token = await getToken();
-	
+
 				const response = await fetch(
 					`${process.env.NEXT_PUBLIC_API_URL}/medical-equipment/${equipmentId}`,
 					{
@@ -111,11 +110,11 @@ export default function CalibrationRequestCreate() {
 						},
 					}
 				);
-	
+
 				if (!response.ok) {
 					throw new Error("Failed to fetch medical equipment name");
 				}
-	
+
 				const data = await response.json();
 				form.setValue("medicalEquipment", data.data.name);
 			} catch (error) {
@@ -123,9 +122,10 @@ export default function CalibrationRequestCreate() {
 			} finally {
 				setLoading(false);
 			}
-		};
+		}
+
 		fetchMedicalEquipmentName();
-	}, [equipmentId, form]);
+	}, [equipmentId, form, getToken]);
 
 	return (
 		<>

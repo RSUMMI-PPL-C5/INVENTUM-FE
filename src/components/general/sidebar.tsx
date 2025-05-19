@@ -57,7 +57,7 @@ const menuItems: MenuItem[] = [
         role: ["Admin", "Fasum", "User"],
 	},
 	{
-		label: "Permintaan Maintenance",
+		label: "Permintaan Pemeliharaan",
 		icon: <Setting set="curved" stroke="bold" filled />,
 		route: "/dashboard/maintenance-request",
         role: ["Admin", "Fasum", "User"],

@@ -365,6 +365,19 @@ export default function CalibrationRequestDisplay() {
 		});
 	};
 
+	const getStatusText = (status: string) => {
+		switch (status.toLowerCase()) {
+			case "completed":
+				return "Selesai";
+			case "pending":
+				return "Menunggu";
+			case "on progress":
+				return "Diproses";
+			default:
+				return status;
+		}
+	}
+
 	const handlePageChange = (page: number) => {
 		updateURLParams({
 			page: page.toString(),
@@ -535,7 +548,7 @@ export default function CalibrationRequestDisplay() {
 													)}`}
 													data-testid={`status-button-${request.id}`}
 												>
-													{request.status}
+													{getStatusText(request.status)}
 												</Button>
 											</TableCell>
 
@@ -615,6 +628,7 @@ export default function CalibrationRequestDisplay() {
 					onConfirm={handleStatusChange}
 					isUpdating={isUpdatingStatus}
 					title="Ubah Status Permintaan Kalibrasi"
+					getStatusText={getStatusText}
 				/>
 			)}
 		</div>

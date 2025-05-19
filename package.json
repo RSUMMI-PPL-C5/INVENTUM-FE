@@ -1,6 +1,6 @@
 {
   "name": "pplc5",
-  "version": "1.0.0-staging.2",
+  "version": "1.0.0-staging.3",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -55,6 +55,7 @@
     "@semantic-release/git": "^10.0.1",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
+    "@testing-library/user-event": "^14.6.1",
     "@types/jest": "^29.5.14",
     "@types/node": "^20",
     "@types/react": "^19",

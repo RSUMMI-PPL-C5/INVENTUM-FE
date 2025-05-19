@@ -1,3 +1,10 @@
+# [1.0.0-staging.3](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/compare/v1.0.0-staging.2...v1.0.0-staging.3) (2025-05-18)
+
+
+### Bug Fixes
+
+* Fixed previous addressed issues in the PR descriptions ([a7118d7](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/commit/a7118d75ec811d0d016f44eed88063d32602f945))
+
 # [1.0.0-staging.2](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/compare/v1.0.0-staging.1...v1.0.0-staging.2) (2025-05-08)
 
 

@@ -7,8 +7,10 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { format } from "date-fns"
+import { format, isValid } from "date-fns"
 import { CalendarIcon } from 'lucide-react'
+import { id } from "date-fns/locale"
+import { cn } from "@/lib/utils"
 
 export type MaintenanceHistoryFilters = {
   search: string
@@ -76,7 +78,6 @@ export default function MaintenanceHistoryFilterModal({
                 <SelectValue placeholder="Pilih hasil" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Semua</SelectItem>
                 <SelectItem value="Success">Berhasil</SelectItem>
                 <SelectItem value="Partial">Sebagian</SelectItem>
                 <SelectItem value="Failed">Gagal</SelectItem>
@@ -89,41 +90,62 @@ export default function MaintenanceHistoryFilterModal({
             <div className="col-span-3 flex gap-2">
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start text-left font-normal">
+                  <Button 
+                    variant="outline" 
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !localFilters.maintenanceDateStart && "text-muted-foreground"
+                    )}
+                  >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {localFilters.maintenanceDateStart ? (
-                      format(localFilters.maintenanceDateStart, "dd MMM yyyy")
+                    {localFilters.maintenanceDateStart && isValid(localFilters.maintenanceDateStart) ? (
+                      format(localFilters.maintenanceDateStart, "dd MMM yyyy", { locale: id })
                     ) : (
                       <span>Dari tanggal</span>
                     )}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
+                <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
                     selected={localFilters.maintenanceDateStart || undefined}
                     onSelect={(date) => handleChange("maintenanceDateStart", (date as Date))}
                     initialFocus
+                    locale={id}
+                    weekStartsOn={1}
+                    className="rounded-md border"
                   />
                 </PopoverContent>
               </Popover>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start text-left font-normal">
+                  <Button 
+                    variant="outline" 
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !localFilters.maintenanceDateEnd && "text-muted-foreground"
+                    )}
+                  >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {localFilters.maintenanceDateEnd ? (
-                      format(localFilters.maintenanceDateEnd, "dd MMM yyyy")
+                    {localFilters.maintenanceDateEnd && isValid(localFilters.maintenanceDateEnd) ? (
+                      format(localFilters.maintenanceDateEnd, "dd MMM yyyy", { locale: id })
                     ) : (
                       <span>Sampai tanggal</span>
                     )}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
+                <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
                     selected={localFilters.maintenanceDateEnd || undefined}
                     onSelect={(date) => handleChange("maintenanceDateEnd", (date as Date))}
                     initialFocus
+                    locale={id}
+                    weekStartsOn={1}
+                    className="rounded-md border"
+                    disabled={(date) => 
+                      localFilters.maintenanceDateStart ? date < localFilters.maintenanceDateStart : false
+                    }
                   />
                 </PopoverContent>
               </Popover>
@@ -135,41 +157,62 @@ export default function MaintenanceHistoryFilterModal({
             <div className="col-span-3 flex gap-2">
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start text-left font-normal">
+                  <Button 
+                    variant="outline" 
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !localFilters.createdOnStart && "text-muted-foreground"
+                    )}
+                  >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {localFilters.createdOnStart ? (
-                      format(localFilters.createdOnStart, "dd MMM yyyy")
+                    {localFilters.createdOnStart && isValid(localFilters.createdOnStart) ? (
+                      format(localFilters.createdOnStart, "dd MMM yyyy", { locale: id })
                     ) : (
                       <span>Dari tanggal</span>
                     )}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
+                <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
                     selected={localFilters.createdOnStart || undefined}
                     onSelect={(date) => handleChange("createdOnStart", (date as Date))}
                     initialFocus
+                    locale={id}
+                    weekStartsOn={1}
+                    className="rounded-md border"
                   />
                 </PopoverContent>
               </Popover>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start text-left font-normal">
+                  <Button 
+                    variant="outline" 
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !localFilters.createdOnEnd && "text-muted-foreground"
+                    )}
+                  >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {localFilters.createdOnEnd ? (
-                      format(localFilters.createdOnEnd, "dd MMM yyyy")
+                    {localFilters.createdOnEnd && isValid(localFilters.createdOnEnd) ? (
+                      format(localFilters.createdOnEnd, "dd MMM yyyy", { locale: id })
                     ) : (
                       <span>Sampai tanggal</span>
                     )}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
+                <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
                     selected={localFilters.createdOnEnd || undefined}
                     onSelect={(date) => handleChange("createdOnEnd", (date as Date))}
                     initialFocus
+                    locale={id}
+                    weekStartsOn={1}
+                    className="rounded-md border"
+                    disabled={(date) => 
+                      localFilters.createdOnStart ? date < localFilters.createdOnStart : false
+                    }
                   />
                 </PopoverContent>
               </Popover>
@@ -180,7 +223,7 @@ export default function MaintenanceHistoryFilterModal({
           <Button variant="outline" onClick={handleReset}>
             Reset
           </Button>
-          <Button variant="outline" onClick={onCancel}>
+          <Button variant="destructive" onClick={onCancel}>
             Batal
           </Button>
           <Button onClick={handleConfirm}>Terapkan</Button>

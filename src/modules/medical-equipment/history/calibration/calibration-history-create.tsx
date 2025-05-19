@@ -11,7 +11,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ArrowLeft, CalendarIcon } from "lucide-react"
 import { useRouter, useParams } from "next/navigation"
-import { format } from "date-fns"
+import { format, isValid } from "date-fns"
+import { id } from "date-fns/locale"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
@@ -52,7 +53,6 @@ export default function CalibrationHistoryCreate() {
   const [equipment, setEquipment] = useState<MedicalEquipment | null>(null)
 
   useEffect(() => {
-
     async function fetchMedicalEquipment() {
       try {
         const token = Cookies.get("accessToken")
@@ -63,11 +63,11 @@ export default function CalibrationHistoryCreate() {
             Authorization: token ? `Bearer ${token}` : "",
           },
         })
-  
+
         if (!response.ok) {
           throw new Error("Failed to fetch medical equipment")
         }
-  
+
         const result = await response.json()
         setEquipment(result.data)
       } catch (err) {
@@ -75,10 +75,9 @@ export default function CalibrationHistoryCreate() {
         setError("Gagal memuat detail peralatan medis.")
       }
     }
-    
+
     fetchMedicalEquipment()
   }, [medicalEquipmentId])
-
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -250,13 +249,25 @@ export default function CalibrationHistoryCreate() {
                         variant={"outline"}
                         className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
                       >
-                        {field.value ? format(field.value, "PPP") : <span>Pilih tanggal</span>}
+                        {field.value && isValid(field.value) ? (
+                          format(field.value, "dd MMM yyyy", { locale: id })
+                        ) : (
+                          <span>Pilih tanggal</span>
+                        )}
                         <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                       </Button>
                     </FormControl>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                    <Calendar
+                      mode="single"
+                      selected={field.value}
+                      onSelect={field.onChange}
+                      initialFocus
+                      locale={id}
+                      weekStartsOn={1}
+                      className="rounded-md border"
+                    />
                   </PopoverContent>
                 </Popover>
                 <FormMessage />
@@ -277,13 +288,25 @@ export default function CalibrationHistoryCreate() {
                         variant={"outline"}
                         className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
                       >
-                        {field.value ? format(field.value, "PPP") : <span>Pilih tanggal</span>}
+                        {field.value && isValid(field.value) ? (
+                          format(field.value, "dd MMM yyyy", { locale: id })
+                        ) : (
+                          <span>Pilih tanggal</span>
+                        )}
                         <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                       </Button>
                     </FormControl>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                    <Calendar
+                      mode="single"
+                      selected={field.value}
+                      onSelect={field.onChange}
+                      initialFocus
+                      locale={id}
+                      weekStartsOn={1}
+                      className="rounded-md border"
+                    />
                   </PopoverContent>
                 </Popover>
                 <FormMessage />
