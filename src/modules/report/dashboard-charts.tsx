@@ -407,7 +407,7 @@ export default function DashboardCharts() {
 
       // Format maintenance data for pie chart
       const maintenanceFormatted = statusData.MAINTENANCE.map(item => ({
-        name: getStatusLabel(item.status),
+        name: item.status,
         value: item.count,
         percentage: item.percentage,
         color: getStatusColor(item.status)
@@ -415,7 +415,7 @@ export default function DashboardCharts() {
 
       // Format calibration data for pie chart
       const calibrationFormatted = statusData.CALIBRATION.map(item => ({
-        name: getStatusLabel(item.status),
+        name: item.status,
         value: item.count,
         percentage: item.percentage,
         color: getStatusColor(item.status)
@@ -435,26 +435,32 @@ export default function DashboardCharts() {
   }
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Success":
-        return "#22c55e" // green-500
-      case "Partial":
-        return "#f59e0b" // amber-500
-      case "Failed":
-        return "#ef4444" // red-500
+    switch (status.toLowerCase()) {
+      case "berhasil":
+      case "completed":
+        return "#22c55e" // green-500 for success
+      case "berhasil dengan catatan":
+      case "on progress":
+        return "#f59e0b" // amber-500 for partial success
+      case "gagal dengan catatan":
+      case "pending":
+        return "#ef4444" // red-500 for failure
       default:
-        return "#8884d8" // default color
+        return "#22c55e" // default green
     }
   }
 
   const getStatusLabel = (status: string) => {
-    switch (status) {
-      case "Success":
-        return "Sukses"
-      case "Partial":
-        return "Sedang"
-      case "Failed":
-        return "Gagal"
+    switch (status.toLowerCase()) {
+      case "berhasil":
+      case "completed":
+        return "Selesai"
+      case "berhasil dengan catatan":
+      case "on progress":
+        return "Diproses"
+      case "gagal dengan catatan":
+      case "pending":
+        return "Menunggu"
       default:
         return status
     }
