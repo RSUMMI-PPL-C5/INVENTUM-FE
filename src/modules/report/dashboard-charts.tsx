@@ -35,6 +35,35 @@ const useWindowSize = () => {
   return windowSize;
 };
 
+// Add this function after useWindowSize hook
+const getPieChartDimensions = (width: number) => {
+  if (width < 640) { // mobile
+    return {
+      innerRadius: 50,
+      outerRadius: 70,
+      fontSize: 14,
+      legendFontSize: 10,
+      paddingTop: 10
+    }
+  } else if (width < 1024) { // tablet
+    return {
+      innerRadius: 60,
+      outerRadius: 85,
+      fontSize: 15,
+      legendFontSize: 11,
+      paddingTop: 12
+    }
+  } else { // desktop
+    return {
+      innerRadius: 70,
+      outerRadius: 95,
+      fontSize: 16,
+      legendFontSize: 12,
+      paddingTop: 15
+    }
+  }
+}
+
 // Tipe data untuk respons dari API
 interface MonthlyRequestData {
   month: string
@@ -223,8 +252,10 @@ const renderChartContent = (loading: boolean, monthlyData: FormattedChartData[])
   );
 };
 
-// Custom active shape for pie charts
+// Update renderActiveShape to use dynamic font size
 const renderActiveShape = (props: any) => {
+  const { width } = useWindowSize();
+  const { fontSize } = getPieChartDimensions(width);
   const { cx, cy, midAngle, innerRadius, outerRadius, startAngle, endAngle, fill, payload, value, percent } = props
   const RADIAN = Math.PI / 180
   const sin = Math.sin(-RADIAN * midAngle)
@@ -239,7 +270,7 @@ const renderActiveShape = (props: any) => {
 
   return (
     <g>
-      <text x={cx} y={cy} dy={8} textAnchor="middle" fill={fill} fontSize={16} fontWeight="bold">
+      <text x={cx} y={cy} dy={8} textAnchor="middle" fill={fill} fontSize={fontSize} fontWeight="bold">
         {payload.name}
       </text>
       <Sector
@@ -262,7 +293,7 @@ const renderActiveShape = (props: any) => {
       />
       <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={fill} fill="none" />
       <circle cx={ex} cy={ey} r={2} fill={fill} stroke="none" />
-      <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} textAnchor={textAnchor} fill="#333" fontSize={16}>{`${value} (${(percent * 100).toFixed(0)}%)`}</text>
+      <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} textAnchor={textAnchor} fill="#333" fontSize={fontSize}>{`${value} (${(percent * 100).toFixed(0)}%)`}</text>
     </g>
   )
 }
@@ -321,9 +352,6 @@ export default function DashboardCharts() {
     } catch (error) {
       console.error("Error fetching monthly request data:", error)
       toast.error("Gagal memuat data permintaan bulanan")
-      
-      // Generate dummy data for development
-      generateDummyData();
     } finally {
       setLoading(false)
     }
@@ -466,8 +494,11 @@ export default function DashboardCharts() {
     }
   }
 
-  // Status request card content
+  // Update the pie chart sections in renderStatusRequestCard
   const renderStatusRequestCard = () => {
+    const { width } = useWindowSize();
+    const { innerRadius, outerRadius, legendFontSize, paddingTop } = getPieChartDimensions(width);
+
     if (statusLoading) {
       return (
         <div className="h-[250px] sm:h-[300px] md:h-[350px] flex items-center justify-center">
@@ -478,9 +509,19 @@ export default function DashboardCharts() {
 
     return (
       <Tabs defaultValue="maintenance">
-        <TabsList className="mb-4">
-          <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
-          <TabsTrigger value="calibration">Kalibrasi</TabsTrigger>
+        <TabsList className="mb-4 bg-gray-100 p-1">
+          <TabsTrigger 
+            value="maintenance" 
+            className="data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm data-[state=active]:font-medium"
+          >
+            Maintenance
+          </TabsTrigger>
+          <TabsTrigger 
+            value="calibration"
+            className="data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm data-[state=active]:font-medium"
+          >
+            Kalibrasi
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="maintenance" className="h-[250px] sm:h-[300px]">
           {maintenanceStatusData.length === 0 ? (
@@ -496,8 +537,8 @@ export default function DashboardCharts() {
                   data={maintenanceStatusData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={70}
-                  outerRadius={95}
+                  innerRadius={innerRadius}
+                  outerRadius={outerRadius}
                   dataKey="value"
                   onMouseEnter={onPieEnter}
                 >
@@ -507,13 +548,13 @@ export default function DashboardCharts() {
                 </Pie>
                 <Legend 
                   wrapperStyle={{ 
-                    fontSize: '12px',
-                    paddingTop: '15px'
+                    fontSize: `${legendFontSize}px`,
+                    paddingTop: `${paddingTop}px`
                   }}
                 />
                 <Tooltip 
                   contentStyle={{ 
-                    fontSize: '14px',
+                    fontSize: `${legendFontSize}px`,
                     padding: '8px'
                   }}
                 />
@@ -535,8 +576,8 @@ export default function DashboardCharts() {
                   data={calibrationStatusData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={70}
-                  outerRadius={95}
+                  innerRadius={innerRadius}
+                  outerRadius={outerRadius}
                   dataKey="value"
                   onMouseEnter={onPieEnter}
                 >
@@ -546,13 +587,13 @@ export default function DashboardCharts() {
                 </Pie>
                 <Legend 
                   wrapperStyle={{ 
-                    fontSize: '12px',
-                    paddingTop: '15px'
+                    fontSize: `${legendFontSize}px`,
+                    paddingTop: `${paddingTop}px`
                   }}
                 />
                 <Tooltip 
                   contentStyle={{ 
-                    fontSize: '14px',
+                    fontSize: `${legendFontSize}px`,
                     padding: '8px'
                   }}
                 />
@@ -568,50 +609,50 @@ export default function DashboardCharts() {
     <div className="space-y-4 sm:space-y-6">
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
-        <Card>
+        <Card className="bg-white shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="pt-4 sm:pt-6">
             <div className="space-y-1 sm:space-y-2">
-              <p className="text-xs sm:text-sm font-medium text-muted-foreground">Total Pemeliharaan</p>
+              <p className="text-xs sm:text-sm font-medium text-gray-500">Total Pemeliharaan</p>
               <div className="flex items-baseline justify-between">
-                <h2 className="text-2xl sm:text-3xl font-bold">124</h2>
-                <div className="flex items-center text-xs sm:text-sm text-green-600">
+                <h2 className="text-2xl sm:text-3xl font-bold text-blue-600">124</h2>
+                <div className="flex items-center text-xs sm:text-sm text-green-600 bg-green-50 px-2 py-1 rounded-full">
                   <ArrowUpIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                   <span>+12.5%</span>
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground">Bulan ini</p>
+              <p className="text-xs text-gray-500">Bulan ini</p>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="pt-4 sm:pt-6">
             <div className="space-y-1 sm:space-y-2">
-              <p className="text-xs sm:text-sm font-medium text-muted-foreground">Total Kalibrasi</p>
+              <p className="text-xs sm:text-sm font-medium text-gray-500">Total Kalibrasi</p>
               <div className="flex items-baseline justify-between">
-                <h2 className="text-2xl sm:text-3xl font-bold">87</h2>
-                <div className="flex items-center text-xs sm:text-sm text-green-600">
+                <h2 className="text-2xl sm:text-3xl font-bold text-purple-600">87</h2>
+                <div className="flex items-center text-xs sm:text-sm text-green-600 bg-green-50 px-2 py-1 rounded-full">
                   <ArrowUpIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                   <span>+5.2%</span>
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground">Bulan ini</p>
+              <p className="text-xs text-gray-500">Bulan ini</p>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="sm:col-span-2 md:col-span-1">
+        <Card className="sm:col-span-2 md:col-span-1 bg-white shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="pt-4 sm:pt-6">
             <div className="space-y-1 sm:space-y-2">
-              <p className="text-xs sm:text-sm font-medium text-muted-foreground">Penggantian Suku Cadang</p>
+              <p className="text-xs sm:text-sm font-medium text-gray-500">Penggantian Suku Cadang</p>
               <div className="flex items-baseline justify-between">
-                <h2 className="text-2xl sm:text-3xl font-bold">36</h2>
-                <div className="flex items-center text-xs sm:text-sm text-red-600">
+                <h2 className="text-2xl sm:text-3xl font-bold text-amber-600">36</h2>
+                <div className="flex items-center text-xs sm:text-sm text-red-600 bg-red-50 px-2 py-1 rounded-full">
                   <ArrowDownIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                   <span>-2.1%</span>
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground">Bulan ini</p>
+              <p className="text-xs text-gray-500">Bulan ini</p>
             </div>
           </CardContent>
         </Card>
