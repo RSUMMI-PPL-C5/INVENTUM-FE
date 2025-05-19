@@ -34,6 +34,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { id } from "date-fns/locale";
+import { ImageUpload } from "@/components/spare-part/image-upload";
 
 interface Location {
 	id: number;
@@ -51,7 +52,6 @@ const formSchema = z.object({
 		required_error: "Tanggal alat wajib diisi",
 	}),
 	createdOn: z.string().optional(),
-	image: z.instanceof(File).optional(),
 	imageUrl: z.string().optional(),
 });
 
@@ -69,6 +69,7 @@ export default function SparePartEdit() {
 			price: "",
 			toolLocation: "",
 			createdOn: "",
+			imageUrl: "",
 		}
 	});
 
@@ -145,6 +146,7 @@ export default function SparePartEdit() {
 					toolLocation: sparePartData.toolLocation || "",
 					toolDate: isValid(toolDate) ? toolDate : new Date(),
 					createdOn: formattedCreatedDate,
+					imageUrl: sparePartData.imageUrl || "",
 				});
 
 				console.log("Form values after reset:", form.getValues());
@@ -182,6 +184,7 @@ export default function SparePartEdit() {
 					price: Number.parseFloat(cleanPrice),
 					toolLocation: data.toolLocation,
 					toolDate: data.toolDate.toISOString(),
+					imageUrl: data.imageUrl || null,
 				}),
 			}
 		);
@@ -239,6 +242,24 @@ export default function SparePartEdit() {
 					onSubmit={form.handleSubmit(onSubmit)}
 					className="space-y-6 mt-4"
 				>
+					<FormField
+						control={form.control}
+						name="imageUrl"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>Gambar Spare Part</FormLabel>
+								<FormControl>
+									<ImageUpload
+										onImageSelect={field.onChange}
+										currentImage={field.value}
+										className="max-w-3xl"
+									/>
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+
 					<FormField
 						control={form.control}
 						name="partsName"

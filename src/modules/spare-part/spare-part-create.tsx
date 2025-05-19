@@ -34,6 +34,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { id } from "date-fns/locale";
+import { ImageUpload } from "@/components/spare-part/image-upload";
 
 interface Location {
 	id: number;
@@ -50,7 +51,7 @@ const formSchema = z.object({
 	toolDate: z.date({
 		required_error: "Tanggal alat wajib diisi",
 	}),
-	image: z.instanceof(File).optional(),
+	imageUrl: z.string().optional(),
 });
 
 export default function SparePartCreate() {
@@ -64,7 +65,8 @@ export default function SparePartCreate() {
 			partsName: "",
 			price: "",
 			toolLocation: "",
-		},
+			imageUrl: "",
+		}
 	});
 
 	useEffect(() => {
@@ -103,26 +105,13 @@ export default function SparePartCreate() {
 
 	async function createSparePart(data: z.infer<typeof formSchema>) {
 		const token = Cookies.get("accessToken");
-		const formData = new FormData();
-
-		// Add all form fields to FormData
-		formData.append("partsName", data.partsName);
-		formData.append("purchaseDate", data.purchaseDate.toISOString());
-		formData.append("price", data.price);
-		formData.append("toolLocation", data.toolLocation);
-		formData.append("toolDate", data.toolDate.toISOString());
-		formData.append("createdBy", "1"); // Assuming current user ID
-
-		// Add image if present
-		if (data.image) {
-			formData.append("image", data.image);
-		}
 
 		const response = await fetch(
 			`${process.env.NEXT_PUBLIC_API_URL}/spareparts/`,
 			{
 				method: "POST",
 				headers: {
+					"Content-Type": "application/json",
 					Authorization: token ? `Bearer ${token}` : "",
 				},
 				body: JSON.stringify({
@@ -131,6 +120,7 @@ export default function SparePartCreate() {
 					price: Number.parseFloat(data.price.replace(/\./g, "")),
 					toolLocation: data.toolLocation,
 					toolDate: data.toolDate.toISOString(),
+					imageUrl: data.imageUrl || null,
 				}),
 			}
 		);
@@ -184,6 +174,24 @@ export default function SparePartCreate() {
 					onSubmit={form.handleSubmit(onSubmit)}
 					className="space-y-6 mt-4"
 				>
+					<FormField
+						control={form.control}
+						name="imageUrl"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>Gambar Spare Part</FormLabel>
+								<FormControl>
+									<ImageUpload
+										onImageSelect={field.onChange}
+										currentImage={field.value}
+										className="max-w-3xl"
+									/>
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+
 					<FormField
 						control={form.control}
 						name="partsName"
@@ -407,23 +415,6 @@ export default function SparePartCreate() {
 										/>
 									</PopoverContent>
 								</Popover>
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
-
-					<FormField
-						control={form.control}
-						name="image"
-						render={({ field: { onChange, value, ...field } }) => (
-							<FormItem>
-								<FormLabel>Gambar Spare Part</FormLabel>
-								<FormControl>
-									<ImageUpload
-										onImageSelect={(file) => onChange(file)}
-										className="mt-2"
-									/>
-								</FormControl>
 								<FormMessage />
 							</FormItem>
 						)}
