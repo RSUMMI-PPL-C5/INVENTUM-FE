@@ -8,6 +8,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import Link from "next/link";
 
 interface NotificationBellProps {
   count?: number;
@@ -98,9 +99,12 @@ export function NotificationBell({
           )}
         </div>
         <div className="p-3 border-t text-center">
-          <button className="text-sm text-blue-600 hover:underline">
+          <Link 
+            href="/dashboard/notification" 
+            className="inline-block px-4 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
+          >
             Lihat semua notifikasi
-          </button>
+          </Link>
         </div>
       </PopoverContent>
     </Popover>
