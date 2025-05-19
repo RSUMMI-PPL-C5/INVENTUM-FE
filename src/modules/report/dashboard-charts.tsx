@@ -304,15 +304,20 @@ export default function DashboardCharts() {
   const [statusLoading, setStatusLoading] = useState(true)
   const [maintenanceStatusData, setMaintenanceStatusData] = useState<any[]>([])
   const [calibrationStatusData, setCalibrationStatusData] = useState<any[]>([])
-  const [activeIndex, setActiveIndex] = useState(0)
-
+  const [maintenanceActiveIndex, setMaintenanceActiveIndex] = useState(0)
+  const [calibrationActiveIndex, setCalibrationActiveIndex] = useState(0)
+  
   useEffect(() => {
     fetchMonthlyRequestData()
     fetchRequestStatusData()
   }, [])
 
-  const onPieEnter = (_: any, index: number) => {
-    setActiveIndex(index)
+  const onMaintenancePieEnter = (_: any, index: number) => {
+    setMaintenanceActiveIndex(index)
+  }
+  
+  const onCalibrationPieEnter = (_: any, index: number) => {
+    setCalibrationActiveIndex(index)
   }
 
   const fetchMonthlyRequestData = async () => {
@@ -383,7 +388,7 @@ export default function DashboardCharts() {
       
       // Format maintenance data for pie chart
       const maintenanceFormatted = statusData.MAINTENANCE.map(item => ({
-        name: getStatusLabel(item.status === "Partial" ? "Peringatan" : item.status),
+        name: getStatusLabel(item.status),
         value: item.count,
         percentage: item.percentage,
         color: getStatusColor(item.status)
@@ -391,7 +396,7 @@ export default function DashboardCharts() {
       
       // Format calibration data for pie chart
       const calibrationFormatted = statusData.CALIBRATION.map(item => ({
-        name: getStatusLabel(item.status === "Partial" ? "Peringatan" : item.status),
+        name: getStatusLabel(item.status),
         value: item.count,
         percentage: item.percentage,
         color: getStatusColor(item.status)
@@ -411,26 +416,27 @@ export default function DashboardCharts() {
   }
   
   const getStatusColor = (status: string) => {
-    switch(status) {
-      case "Success":
-        return "#22c55e" // green-500
-      case "Partial":
-        return "#f59e0b" // amber-500
-      case "Failed":
-        return "#ef4444" // red-500
+    switch(status.toLowerCase()) {
+      case "completed":
+        return "#22c55e"
+      case "on progress":
+        return "#f59e0b" 
+      case "pending":
+        return "#60a5fa" 
       default:
         return "#8884d8" // default color
     }
   }
 
+
   const getStatusLabel = (status: string) => {
-    switch(status) {
-      case "Success":
-        return "Sukses"
-      case "Partial":
-        return "Sedang"
-      case "Failed":
-        return "Gagal"
+    switch(status.toLowerCase()) {
+      case "completed":
+        return "Selesai"
+      case "on progress":
+        return "Diproses"
+      case "pending":
+        return "Menunggu"
       default:
         return status
     }
@@ -514,7 +520,7 @@ export default function DashboardCharts() {
             value="maintenance" 
             className="data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm data-[state=active]:font-medium"
           >
-            Maintenance
+            Pemeliharaan
           </TabsTrigger>
           <TabsTrigger 
             value="calibration"
@@ -523,7 +529,7 @@ export default function DashboardCharts() {
             Kalibrasi
           </TabsTrigger>
         </TabsList>
-        <TabsContent value="maintenance" className="h-[250px] sm:h-[300px]">
+        <TabsContent value="maintenance" className="h-[220px] sm:h-[280px]">
           {maintenanceStatusData.length === 0 ? (
             <div className="h-full flex items-center justify-center text-muted-foreground">
               Tidak ada data status permintaan untuk ditampilkan
@@ -532,27 +538,32 @@ export default function DashboardCharts() {
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  activeIndex={activeIndex}
+                  activeIndex={maintenanceActiveIndex}
                   activeShape={renderActiveShape}
                   data={maintenanceStatusData}
                   cx="50%"
-                  cy="50%"
+                  cy="56%"
                   innerRadius={innerRadius}
                   outerRadius={outerRadius}
                   dataKey="value"
-                  onMouseEnter={onPieEnter}
+                  onMouseEnter={onMaintenancePieEnter}
                 >
                   {maintenanceStatusData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
+                    <Cell key={`cell-maintenance-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
                 <Legend 
+                  layout="horizontal"
+                  verticalAlign="bottom"
+                  align="center"
                   wrapperStyle={{ 
                     fontSize: `${legendFontSize}px`,
-                    paddingTop: `${paddingTop}px`
+                    paddingTop: `${paddingTop}px`,
+                    bottom: -12
                   }}
                 />
                 <Tooltip 
+                  formatter={(value, name) => [`${value}`, `${name}`]}
                   contentStyle={{ 
                     fontSize: `${legendFontSize}px`,
                     padding: '8px'
@@ -562,7 +573,7 @@ export default function DashboardCharts() {
             </ResponsiveContainer>
           )}
         </TabsContent>
-        <TabsContent value="calibration" className="h-[250px] sm:h-[300px]">
+        <TabsContent value="calibration" className="h-[220px] sm:h-[280px]">
           {calibrationStatusData.length === 0 ? (
             <div className="h-full flex items-center justify-center text-muted-foreground">
               Tidak ada data status permintaan untuk ditampilkan
@@ -571,7 +582,7 @@ export default function DashboardCharts() {
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  activeIndex={activeIndex}
+                  activeIndex={calibrationActiveIndex}
                   activeShape={renderActiveShape}
                   data={calibrationStatusData}
                   cx="50%"
@@ -579,19 +590,24 @@ export default function DashboardCharts() {
                   innerRadius={innerRadius}
                   outerRadius={outerRadius}
                   dataKey="value"
-                  onMouseEnter={onPieEnter}
+                  onMouseEnter={onCalibrationPieEnter}
                 >
                   {calibrationStatusData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
+                    <Cell key={`cell-calibration-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
                 <Legend 
+                  layout="horizontal"
+                  verticalAlign="bottom"
+                  align="center"
                   wrapperStyle={{ 
                     fontSize: `${legendFontSize}px`,
-                    paddingTop: `${paddingTop}px`
+                    paddingTop: `${paddingTop}px`,
+                    bottom: 0
                   }}
                 />
                 <Tooltip 
+                  formatter={(value, name) => [`${value}`, `${name}`]}
                   contentStyle={{ 
                     fontSize: `${legendFontSize}px`,
                     padding: '8px'

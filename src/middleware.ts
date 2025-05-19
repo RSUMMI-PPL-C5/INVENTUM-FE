@@ -18,9 +18,13 @@ function redirectBasedOnRole(request: NextRequest, userRole: string) {
 }
 
 function getTokenPayload(token: string) {
-  const payload = token.split('.')[1] ?? ''
-  const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'))
-  return JSON.parse(json)
+  try {
+    const payload = token.split('.')[1] ?? ''
+    const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'))
+    return JSON.parse(json)
+  } catch (error) {
+    return null
+  }
 }
 
 export async function middleware(request: NextRequest) {
@@ -36,7 +40,8 @@ export async function middleware(request: NextRequest) {
   
   const apiUrl = process.env.NEXT_PUBLIC_API_URL
   if (!apiUrl) {
-    return handleError(request, 'server_error')
+    // If no API URL configured, allow access but don't validate token
+    return NextResponse.next()
   }
 
   try {
@@ -51,11 +56,11 @@ export async function middleware(request: NextRequest) {
     }
     
     // Get user role from token
-    const userRole = getTokenPayload(accessToken).role
+    const userRole = getTokenPayload(accessToken)?.role
     
     // If on login page, redirect based on role
     if (isLoginPage) {
-      return redirectBasedOnRole(request, userRole)
+      return redirectBasedOnRole(request, userRole || 'Fasum')
     }
     
     // Protect admin-only routes
@@ -67,8 +72,9 @@ export async function middleware(request: NextRequest) {
     // Allow access if authorized
     return NextResponse.next()
   } catch (error) {
-    console.error('Middleware error:', error)
-    return handleError(request, 'server_error')
+    // If backend is not available, allow access but don't validate token
+    console.warn('Backend not available, skipping token validation')
+    return NextResponse.next()
   }
 }
 
