@@ -321,7 +321,9 @@ export default function DashboardCharts() {
     } catch (error) {
       console.error("Error fetching monthly request data:", error)
       toast.error("Gagal memuat data permintaan bulanan")
-      setMonthlyData([])
+      
+      // Generate dummy data for development
+      generateDummyData();
     } finally {
       setLoading(false)
     }
