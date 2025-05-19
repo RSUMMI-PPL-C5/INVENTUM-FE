@@ -23,16 +23,17 @@ import {
 } from "@/components/ui/select";
 import { ArrowLeft, CalendarIcon } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
-import { format, isValid, parseISO } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
+import { cn, formatDate, formatNumberWithDots } from "@/lib/utils";
 import Cookies from "js-cookie";
 import { toast } from "sonner";
+import { id } from "date-fns/locale";
 
 // Schema validasi menggunakan Zod
 const formSchema = z.object({
@@ -102,7 +103,7 @@ export default function MedicalEquipmentEdit() {
 
 				if (!response.ok) {
 					const errorData = await response.json();
-					toast.error(<>Error mengambil data alat medis:<br />{errorData.message || "Gagal mengambil data"}</>);
+					toast.error(<>Error mengambil data alat medis:<br />{errorData.message ?? "Gagal mengambil data"}</>);
 					throw new Error("Failed to fetch medical equipment data");
 				}
 
@@ -113,28 +114,26 @@ export default function MedicalEquipmentEdit() {
 					? parseISO(equipmentData.purchaseDate)
 					: undefined;
 
-				const createdDate = new Date(equipmentData.createdOn);
-				const formattedCreatedDate = isValid(createdDate)
-					? format(createdDate, "dd MMM yyyy")
-					: "Invalid date";
+				const formattedCreatedDate = equipmentData.createdOn
+				? formatDate(equipmentData.createdOn)
+				: "Tidak tersedia";
 
-				const modifiedDate = new Date(equipmentData.modifiedOn);
-				const formattedModifiedDate = isValid(modifiedDate)
-					? format(modifiedDate, "dd MMM yyyy")
-					: "Invalid date";
+				const formattedModifiedDate = equipmentData.modifiedOn
+				? formatDate(equipmentData.modifiedOn)
+				: "Tidak tersedia";
 
 				form.reset({
 					inventorisId: equipmentData.inventorisId,
 					name: equipmentData.name,
-					brandName: equipmentData.brandName || "",
-					modelName: equipmentData.modelName || "",
+					brandName: equipmentData.brandName ?? "",
+					modelName: equipmentData.modelName ?? "",
 					purchaseDate: purchaseDate,
 					purchasePrice: equipmentData.purchasePrice
 						? equipmentData.purchasePrice.toString()
 						: "",
 					status: equipmentData.status,
-					vendor: equipmentData.vendor || "",
-					lastLocation: equipmentData.lastLocation || "",
+					vendor: equipmentData.vendor ?? "",
+					lastLocation: equipmentData.lastLocation ?? "",
 					createdOn: formattedCreatedDate,
 					modifiedOn: formattedModifiedDate,
 				});
@@ -168,8 +167,8 @@ export default function MedicalEquipmentEdit() {
 				body: JSON.stringify({
 					inventorisId: data.inventorisId,
 					name: data.name,
-					brandName: data.brandName || null,
-					modelName: data.modelName || null,
+					brandName: data.brandName ?? null,
+					modelName: data.modelName ?? null,
 					purchaseDate: data.purchaseDate
 						? data.purchaseDate.toISOString()
 						: null,
@@ -177,9 +176,8 @@ export default function MedicalEquipmentEdit() {
 						? Number(data.purchasePrice)
 						: null,
 					status: data.status,
-					vendor: data.vendor || null,
-					lastLocation: data.lastLocation || null,
-					modifiedBy: 1, // Assuming current user ID
+					vendor: data.vendor ?? null,
+          lastLocation: data.lastLocation ?? null,
 				}),
 			}
 		);
@@ -187,7 +185,7 @@ export default function MedicalEquipmentEdit() {
 		const result = await response.json();
 
 		if (!response.ok) {
-			toast.error(<>Error mengubah data alat medis:<br />{result.message || "Gagal mengubah data"}</>);
+			toast.error(<>Error mengubah data alat medis:<br />{result.message ?? "Gagal mengubah data"}</>);
 			return;
 		}
 
@@ -214,6 +212,19 @@ export default function MedicalEquipmentEdit() {
 	if (loading) {
 		return <div>Loading...</div>;
 	}
+
+	const getStatusText = (status: string) => {
+		switch (status.toLowerCase()) {
+			case "active":
+				return "Aktif";
+			case "inactive":
+				return "Tidak Aktif";
+			case "maintenance":
+				return "Pemeliharaan";
+			default:
+				return status;
+		}
+	};
 
 	return (
 		<>
@@ -310,7 +321,12 @@ export default function MedicalEquipmentEdit() {
 									<Input
 										{...field}
 										placeholder="Masukkan harga pembelian"
-										type="number"
+										type="text"
+										value={field.value ? formatNumberWithDots(field.value.toString()) : ""}
+										onChange={(e) => {
+											const rawValue = e.target.value.replace(/[^\d.]/g, "").replace(/\./g, "");
+											field.onChange(rawValue);
+										}}
 									/>
 								</FormControl>
 								<FormMessage />
@@ -370,7 +386,7 @@ export default function MedicalEquipmentEdit() {
 												key={status.id}
 												value={status.id}
 											>
-												{status.name}
+												{getStatusText(status.id)}
 											</SelectItem>
 										))}
 									</SelectContent>
@@ -397,10 +413,7 @@ export default function MedicalEquipmentEdit() {
 												)}
 											>
 												{field.value ? (
-													format(
-														field.value,
-														"yyyy-MM-dd"
-													)
+													format(field.value, "d MMM yyyy", { locale: id })
 												) : (
 													<span>Pilih tanggal</span>
 												)}
@@ -417,6 +430,9 @@ export default function MedicalEquipmentEdit() {
 											selected={field.value}
 											onSelect={field.onChange}
 											initialFocus
+											 locale={id}
+											weekStartsOn={1}
+											className="rounded-md border"
 										/>
 									</PopoverContent>
 								</Popover>
@@ -436,6 +452,7 @@ export default function MedicalEquipmentEdit() {
 											{...field}
 											aria-label="Tanggal Dibuat"
 											disabled
+											value={field.value ?? "Tidak tersedia"}
 										/>
 										<CalendarIcon className="absolute right-3 top-3 w-5 h-5 text-gray-500" />
 									</div>
@@ -456,6 +473,7 @@ export default function MedicalEquipmentEdit() {
 											{...field}
 											aria-label="Tanggal Dimodifikasi"
 											disabled
+											value={field.value ?? "Tidak tersedia"}
 										/>
 										<CalendarIcon className="absolute right-3 top-3 w-5 h-5 text-gray-500" />
 									</div>

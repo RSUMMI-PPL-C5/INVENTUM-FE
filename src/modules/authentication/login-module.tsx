@@ -55,13 +55,23 @@ export default function LoginModule() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'An error occurred during login');
+        throw new Error(errorData.message ?? 'An error occurred during login');
       }
 
       const responseData = await response.json();
       Cookies.set('accessToken', responseData.data.user.token, { expires: 7 });
 
-      router.push('/dashboard/user');
+      // Redirect berdasarkan role
+      const userRole = responseData.data.user.role;
+      
+      if (userRole === "Admin") {
+        router.push('/dashboard/user');
+      } else if (userRole === "User" || userRole === "Fasum") {
+        router.push('/dashboard/medical-equipment');
+      } else {
+        // Fallback untuk role yang tidak dikenali
+        router.push('/dashboard');
+      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'An error occurred during login');
     } finally {

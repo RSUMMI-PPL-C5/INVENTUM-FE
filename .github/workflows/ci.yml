@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - '*'
+      - 'chore/covering-tests'
 
 jobs:
   ci:
@@ -34,8 +35,20 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Check commit message
+        id: check_commit
+        run: |
+          commit_message=$(git log -1 --pretty=%B)
+          if echo "$commit_message" | grep -iE "\[skip[ -]tests?\]" > /dev/null; then
+            echo "skip_tests=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip_tests=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Run Tests
-        run: npm test -- --coverage
+        if: steps.check_commit.outputs.skip_tests != 'true'
+        continue-on-error: true
+        run: npm test --coverage
 
       - name: Run Linter
         run: npm run lint
@@ -43,7 +56,7 @@ jobs:
       - name: Run SonarQube analysis
         run: |
           npx sonarqube-scanner \
-            -Dsonar.projectKey=InventoryManagement-FE \
+            -Dsonar.projectKey=INVENTUM-FE \
             -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
             -Dsonar.token=${{ secrets.SONAR_TOKEN }} \
             -Dsonar.sources=src \

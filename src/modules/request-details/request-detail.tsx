@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { ArrowLeft, Send } from "lucide-react";
-import { format } from "date-fns";
+import { formatDate } from "@/lib/utils";
 
 interface Comment {
   id: string;
@@ -51,7 +51,32 @@ export default function RequestDetail({ id, requestType }: {
   const [newComment, setNewComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  // Fetch request details
+  const getStatusClass = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "completed":
+        return "bg-green-100 text-green-800";
+      case "pending":
+        return "bg-blue-100 text-blue-800";
+      case "on progress":
+        return "bg-yellow-100 text-yellow-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+  
+  const getStatusText = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case "completed":
+        return "Selesai";
+      case "pending":
+        return "Menunggu";
+      case "on progress":
+        return "Diproses";
+      default:
+        return status;
+    }
+  };
+
   useEffect(() => {
     async function fetchRequestDetails() {
       try {
@@ -67,35 +92,31 @@ export default function RequestDetail({ id, requestType }: {
         );
 
         if (!response.ok) {
-          throw new Error("Failed to fetch request details");
+          throw new Error("Gagal mengambil detail permintaan");
         }
 
         const responseData = await response.json();
         
-        // Handle the nested structure from your API
         if (responseData.success && responseData.data) {
           setRequest(responseData.data);
           
-          // If comments are included in the request response, set them too
           if (responseData.data.comments && Array.isArray(responseData.data.comments)) {
             setComments(responseData.data.comments);
-            setLoading(false); // Skip comments fetch if we already have them
+            setLoading(false); // Lewati pengambilan komentar jika sudah ada
           }
         } else {
-          throw new Error("Invalid response format");
+          throw new Error("Format respons tidak valid");
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "An error occurred");
-        toast.error("Failed to load request details");
+        setError(err instanceof Error ? err.message : "Terjadi kesalahan");
+        toast.error("Gagal memuat detail permintaan");
       }
     }
 
     fetchRequestDetails();
   }, [id]);
 
-  // Fetch comments (only if not already loaded from request)
   useEffect(() => {
-    // Skip if we already have comments from the request details
     if (!loading || comments.length > 0) return;
     
     async function fetchComments() {
@@ -112,12 +133,11 @@ export default function RequestDetail({ id, requestType }: {
         );
 
         if (!response.ok) {
-          throw new Error("Failed to fetch comments");
+          throw new Error("Gagal mengambil komentar");
         }
 
         const responseData = await response.json();
         
-        // Handle the nested structure from your API
         if (responseData.success && Array.isArray(responseData.data)) {
           setComments(responseData.data);
         } else if (responseData.data && Array.isArray(responseData.data)) {
@@ -125,12 +145,12 @@ export default function RequestDetail({ id, requestType }: {
         } else if (responseData.data?.comments && Array.isArray(responseData.data.comments)) {
           setComments(responseData.data.comments);
         } else {
-          console.error("Unexpected comment data format:", responseData);
+          console.error("Format data komentar tidak sesuai:", responseData);
           setComments([]);
         }
       } catch (error) {
-        console.error("Error fetching comments:", error);
-        toast.error("Failed to load comments: " + error);
+        console.error("Error mengambil komentar:", error);
+        toast.error("Gagal memuat komentar: " + error);
         setComments([]);
       } finally {
         setLoading(false);
@@ -144,7 +164,7 @@ export default function RequestDetail({ id, requestType }: {
     router.back();
   };
 
-  // Update the handleSubmitComment function
+  // Fungsi untuk mengirim komentar
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newComment.trim()) return;
@@ -168,39 +188,31 @@ export default function RequestDetail({ id, requestType }: {
       );
 
       if (!response.ok) {
-        throw new Error("Failed to post comment");
+        throw new Error("Gagal mengirim komentar");
       }
 
       const responseData = await response.json();
       
-      // Extract the actual comment data from the response
-      const newCommentData = responseData.data || responseData;
+      // Ekstrak data komentar dari respons
+      const newCommentData = responseData.data ?? responseData;
       
-      // Add properly formatted comment to the list
+      // Tambahkan komentar yang terformat dengan baik ke daftar
       setComments(prev => [...prev, newCommentData]);
       setNewComment("");
-      toast.success("Comment added successfully");
+      toast.success("Komentar berhasil ditambahkan");
       
     } catch (error) {
-      console.error("Error posting comment:", error);
-      toast.error("Failed to post comment" + error);
+      console.error("Error mengirim komentar:", error);
+      toast.error("Gagal mengirim komentar: " + error);
     } finally {
       setSubmitting(false);
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    try {
-      return format(new Date(dateString), "dd MMM yyyy, HH:mm");
-    } catch {
-      return dateString;
     }
   };
 
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64" data-testid="loading-state">
-        <p>Loading...</p>
+        <p>Memuat...</p>
       </div>
     );
   }
@@ -209,12 +221,12 @@ export default function RequestDetail({ id, requestType }: {
     return (
       <div className="flex flex-col items-center gap-4">
         <p className="text-red-500">{error}</p>
-        <Button onClick={handleBack}>Go Back</Button>
+        <Button onClick={handleBack}>Kembali</Button>
       </div>
     );
   }
 
-  const requestTypeText = requestType === 'CALIBRATION' ? 'Calibration' : 'Maintenance';
+  const requestTypeText = requestType === 'CALIBRATION' ? 'Kalibrasi' : 'Pemeliharaan';
 
   return (
     <div className="space-y-6 font-plus-jakarta-sans">
@@ -224,7 +236,7 @@ export default function RequestDetail({ id, requestType }: {
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <h1 className="text-header-h5 font-bold font-poppins">
-          {requestTypeText} Request Detail
+          Detail Permintaan {requestTypeText}
         </h1>
       </div>
 
@@ -233,48 +245,40 @@ export default function RequestDetail({ id, requestType }: {
           {/* Request Info */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <p className="text-sm text-muted-foreground">Request ID</p>
+              <p className="text-sm text-muted-foreground font-medium mb-1">ID Permintaan</p>
               <p className="font-medium" data-testid="request-id">{request.id}</p>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Status</p>
+              <p className="text-sm text-muted-foreground font-medium mb-1">Status</p>
               <div className="flex items-center gap-2">
                 <span
-                  className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    request.status === "Pending"
-                      ? "bg-yellow-100 text-yellow-800"
-                      : request.status === "Approved"
-                      ? "bg-green-100 text-green-800"
-                      : request.status === "Rejected"
-                      ? "bg-red-100 text-red-800"
-                      : "bg-gray-100 text-gray-800"
-                  }`}
+                  className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusClass(request.status)}`}
                   data-testid="request-status"
                 >
-                  {request.status}
+                  {getStatusText(request.status)}
                 </span>
               </div>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Requestor</p>
+              <p className="text-sm text-muted-foreground font-medium mb-1">Pengaju</p>
               <p className="font-medium" data-testid="request-user">
-                {request.user?.fullname || request.user?.username || "Unknown"}
+                {request.user?.fullname || request.user?.username || "Tidak diketahui"}
               </p>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Submission Date</p>
+              <p className="text-sm text-muted-foreground font-medium mb-1">Tanggal Pengajuan</p>
               <p className="font-medium" data-testid="request-date">
                 {formatDate(request.createdOn)}
               </p>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Medical Equipment</p>
+              <p className="text-sm text-muted-foreground font-medium mb-1">Alat Medis</p>
               <p className="font-medium" data-testid="request-equipment">
                 {request.medicalEquipment}
               </p>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Last Updated</p>
+              <p className="text-sm text-muted-foreground font-medium mb-1">Terakhir Diperbarui</p>
               <p className="font-medium" data-testid="request-modified">
                 {formatDate(request.modifiedOn)}
               </p>
@@ -283,10 +287,10 @@ export default function RequestDetail({ id, requestType }: {
 
           {/* Complaint */}
           <div>
-            <p className="text-sm text-muted-foreground mb-2">Complaint</p>
+            <p className="text-sm text-muted-foreground font-medium mb-2">Keluhan</p>
             <div className="bg-gray-50 p-4 rounded-md">
               <p data-testid="request-complaint">
-                {request.complaint || "No complaint specified"}
+                {request.complaint || "Tidak ada keluhan yang ditentukan"}
               </p>
             </div>
           </div>
@@ -295,12 +299,12 @@ export default function RequestDetail({ id, requestType }: {
 
       {/* Comments Section */}
       <div className="bg-white rounded-lg shadow-sm p-6">
-        <h2 className="text-lg font-semibold mb-4">Comments</h2>
+        <h2 className="text-lg font-semibold mb-4">Komentar</h2>
 
         {/* Comments List */}
         <div className="space-y-4 mb-6" data-testid="comments-list">
           {comments.length === 0 ? (
-            <p className="text-gray-500 italic">No comments yet</p>
+            <p className="text-gray-500 italic">Belum ada komentar</p>
           ) : (
             comments.map((comment) => (
               <div
@@ -310,7 +314,7 @@ export default function RequestDetail({ id, requestType }: {
               >
                 <div className="flex justify-between items-center">
                   <p className="font-medium">
-                    {comment.user?.fullname || comment.user?.username || "Unknown User"}
+                    {comment.user?.fullname || comment.user?.username || "Pengguna Tidak Diketahui"}
                   </p>
                   <p className="text-xs text-gray-500">
                     {formatDate(comment.createdAt)}
@@ -327,7 +331,7 @@ export default function RequestDetail({ id, requestType }: {
           <div className="flex items-end gap-2">
             <div className="flex-1">
               <Textarea
-                placeholder="Add a comment..."
+                placeholder="Tambahkan komentar..."
                 value={newComment}
                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNewComment(e.target.value)}
                 className="resize-none"
@@ -340,7 +344,7 @@ export default function RequestDetail({ id, requestType }: {
               disabled={submitting || !newComment.trim()}
               data-testid="submit-comment"
             >
-              {submitting ? "Sending..." : <Send className="h-4 w-4" />}
+              {submitting ? "Mengirim..." : <Send className="h-4 w-4" />}
             </Button>
           </div>
         </form>

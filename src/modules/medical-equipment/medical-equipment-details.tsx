@@ -17,6 +17,7 @@ import Cookies from "js-cookie"
 import { toast } from "sonner"
 import { format } from "date-fns"
 import HistoryDetailModal from "@/components/general/history-detail-modal"
+import { formatDate, formatCurrency } from "@/lib/utils"
 
 type MedicalEquipment = {
   id: string
@@ -595,17 +596,6 @@ export default function MedicalEquipmentDetails() {
     }
   }
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return "-"
-    const date = new Date(dateString)
-    return new Intl.DateTimeFormat("id-ID", { day: "2-digit", month: "short", year: "numeric" }).format(date)
-  }
-
-  const formatPrice = (price: number | null) => {
-    if (price == null) return "-"
-    return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(price)
-  }
-
   const getResultClass = (result: string) => {
     switch (result.toLowerCase()) {
       case "success":
@@ -618,6 +608,33 @@ export default function MedicalEquipmentDetails() {
         return "bg-gray-100 text-gray-800"
     }
   }
+
+  // Translate agar konsisten
+  const getResultText = (result: string) => {
+    switch (result.toLowerCase()) {
+      case "success":
+        return "Berhasil"
+      case "partial":
+        return "Sebagian"
+      case "failed":
+        return "Gagal"
+      default:
+        return result
+    }
+  }
+
+  const getStatusText = (status: string) => {
+		switch (status.toLowerCase()) {
+			case "active":
+				return "Aktif";
+			case "inactive":
+				return "Tidak Aktif";
+			case "maintenance":
+				return "Pemeliharaan";
+			default:
+				return status;
+		}
+	}
 
 const handleHistoryRowClick = (
   item: MaintenanceHistory | CalibrationHistory | SparepartHistory
@@ -727,9 +744,9 @@ const handleHistoryRowClick = (
                 <DetailItem label="Model" value={equipment.modelName} />
                 <DetailItem label="Kode Inventaris" value={equipment.inventorisId} />
                 <DetailItem label="Lokasi terakhir" value={equipment.lastLocation} />
-                <DetailItem label="Status" value={equipment.status} />
+                <DetailItem label="Status" value={getStatusText(equipment.status)} />
                 <DetailItem label="Tanggal Pembelian" value={formatDate(equipment.purchaseDate)} />
-                <DetailItem label="Harga Pembelian" value={formatPrice(equipment.purchasePrice)} />
+                <DetailItem label="Harga Pembelian" value={formatCurrency(equipment.purchasePrice)} />
                 <DetailItem label="Vendor" value={equipment.vendor} />
                 <DetailItem label="Dibuat Pada" value={formatDate(equipment.createdOn)} />
                 <DetailItem label="Diperbarui Pada" value={formatDate(equipment.modifiedOn)} />
@@ -739,7 +756,7 @@ const handleHistoryRowClick = (
                 {["Admin", "Fasum"].includes(userRole) && (
                   <>
                     <Button size="sm" className="gap-2 w-full" onClick={handleAddMaintenance}>
-                      <Wrench className="h-4 w-4" /> Tambah Riwayat Maintenance
+                      <Wrench className="h-4 w-4" /> Tambah Riwayat Pemeliharaan
                     </Button>
                     <Button size="sm" className="gap-2 w-full" onClick={handleAddCalibration}>
                       <Sliders className="h-4 w-4" /> Tambah Riwayat Kalibrasi
@@ -752,7 +769,7 @@ const handleHistoryRowClick = (
                 {["Admin", "User"].includes(userRole) && (
                   <>
                     <Button size="sm" className="gap-2 w-full" onClick={handleAddMaintenanceRequest}>
-                      <ClipboardCheck className="h-4 w-4" /> Buat Permintaan Maintenance
+                      <ClipboardCheck className="h-4 w-4" /> Buat Permintaan Pemeliharaan
                     </Button>
                     <Button size="sm" className="gap-2 w-full" onClick={handleAddCalibrationRequest}>
                       <FileCheck className="h-4 w-4" /> Buat Permintaan Kalibrasi
@@ -782,7 +799,7 @@ const handleHistoryRowClick = (
                 }`}
               >
                 {tab === "maintenance"
-                  ? "Riwayat Maintenance"
+                  ? "Riwayat Pemeliharaan"
                   : tab === "kalibrasi"
                     ? "Riwayat Kalibrasi"
                     : "Riwayat Ganti Suku Cadang"}
@@ -1013,7 +1030,7 @@ const handleHistoryRowClick = (
                       <td className="py-3 px-4">{item.technician}</td>
                       <td className="py-3 px-4">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${getResultClass(item.result)}`}>
-                          {item.result}
+                          {getResultText(item.result)}
                         </span>
                       </td>
                       {activeTab === "kalibrasi" && (
@@ -1110,7 +1127,7 @@ function DetailItem({ label, value }: { label: string; value: string | null }) {
   return (
     <div>
       <div className="text-xs text-muted-foreground">{label}</div>
-      <div className="font-medium">{value || "-"}</div>
+      <div className="font-medium">{value ?? "-"}</div>
     </div>
   )
 }
