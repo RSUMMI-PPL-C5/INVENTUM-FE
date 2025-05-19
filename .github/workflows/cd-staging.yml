@@ -13,38 +13,78 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
       
-      - name: Build and Deploy Frontend
+      - name: Load Frontend Environment Variables
+        run: |
+          # Source the frontend environment file
+          if [ -f "/home/noov/inventum/staging/FE/.env" ]; then
+            echo "Loading frontend environment variables..."
+            source /home/noov/inventum/staging/FE/.env
+            
+            # Export them for use in subsequent steps
+            echo "NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL" >> $GITHUB_ENV
+            echo "NEXT_PUBLIC_APP_ENV=$NEXT_PUBLIC_APP_ENV" >> $GITHUB_ENV
+            echo "NEXT_PUBLIC_APP_NAME=$NEXT_PUBLIC_APP_NAME" >> $GITHUB_ENV
+            echo "NEXT_PUBLIC_APP_VERSION=$NEXT_PUBLIC_APP_VERSION" >> $GITHUB_ENV
+            echo "NEXT_PUBLIC_SENTRY_DSN=$NEXT_PUBLIC_SENTRY_DSN" >> $GITHUB_ENV
+            
+            echo " Frontend environment variables loaded"
+          else
+            echo " Frontend environment file not found!"
+            exit 1
+          fi
+      
+      - name: Build Frontend Docker Image
+        run: |
+          # Build the frontend image with environment variables as build args
+          docker build \
+            --build-arg NEXT_PUBLIC_API_URL="${{ env.NEXT_PUBLIC_API_URL }}" \
+            --build-arg NEXT_PUBLIC_APP_ENV="${{ env.NEXT_PUBLIC_APP_ENV }}" \
+            --build-arg NEXT_PUBLIC_APP_NAME="${{ env.NEXT_PUBLIC_APP_NAME }}" \
+            --build-arg NEXT_PUBLIC_APP_VERSION="${{ env.NEXT_PUBLIC_APP_VERSION }}" \
+            --build-arg NEXT_PUBLIC_SENTRY_DSN="${{ env.NEXT_PUBLIC_SENTRY_DSN }}" \
+            --no-cache \
+            -f Dockerfile.frontend \
+            -t inventum-frontend:staging \
+            .
+          
+          echo " Frontend Docker image built successfully"
+      
+      - name: Deploy Frontend
         working-directory: /home/noov/inventum/staging
         run: |
-          # Load environment variables
-          source .env
-          
-          # Create .env.local in the frontend source directory
-          cat > /home/noov/actions-runner/_work/INVENTUM-FE/INVENTUM-FE/.env.local << EOF
-          NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
-          NEXT_PUBLIC_APP_ENV=${NEXT_PUBLIC_APP_ENV}
-          NEXT_PUBLIC_APP_NAME=${NEXT_PUBLIC_APP_NAME}
-          NEXT_PUBLIC_APP_VERSION=${NEXT_PUBLIC_APP_VERSION}
-          EOF
-          
-          # Verify the .env.local file
-          echo "Created .env.local with:"
-          cat /home/noov/actions-runner/_work/INVENTUM-FE/INVENTUM-FE/.env.local
-          
-          # Build the Docker image (Next.js will automatically read .env.local)
-          docker build --no-cache -t inventum-frontend:staging /home/noov/actions-runner/_work/INVENTUM-FE/INVENTUM-FE/
-          
-          # Stop and redeploy frontend
+          # Stop and remove existing frontend container
           docker compose -f docker-compose.staging.yml stop frontend || true
           docker compose -f docker-compose.staging.yml rm -f frontend || true
+          
+          # Start the new frontend container
           docker compose -f docker-compose.staging.yml up -d frontend
           
-          # Clean up the .env.local file
-          rm -f /home/noov/actions-runner/_work/INVENTUM-FE/INVENTUM-FE/.env.local
+          echo " Frontend container deployed"
+      
+      - name: Verify Deployment
+        run: |
+          # Wait for container to start
+          sleep 15
           
-          # Wait and verify
-          sleep 10
-          echo "Deployment verification:"
-          docker exec inventum-frontend-staging printenv | grep NEXT_PUBLIC
+          # Check container status
+          docker ps | grep frontend
           
-          echo "Frontend deployment completed successfully"
+          # Verify environment variables in container
+          echo "Environment variables in container:"
+          docker exec inventum-frontend-staging printenv | grep NEXT_PUBLIC || echo "No NEXT_PUBLIC vars found"
+          
+          # Test frontend accessibility
+          echo "Testing frontend accessibility:"
+          curl -I http://localhost:3000/ || echo "Frontend starting up..."
+          
+          # Test external access
+          echo "Testing external access:"
+          curl -I https://fe.al3l.com/ || echo "External access not ready yet"
+      
+      - name: Reconnect Monitoring Network
+        run: |
+          # Reconnect monitoring services to the inventum network
+          docker network connect inventum-network prometheus 2>/dev/null || true
+          docker network connect inventum-network grafana 2>/dev/null || true
+          
+          echo " Monitoring network reconnected"
