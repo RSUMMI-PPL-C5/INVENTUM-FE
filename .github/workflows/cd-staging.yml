@@ -1,0 +1,42 @@
+name: Frontend Staging CD
+
+on:
+  push:
+    branches:
+      - chore/deployment
+      - health
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        
+      - name: Build Docker image
+        run: |
+          # Navigate to frontend directory if needed
+          # cd frontend  # Uncomment if frontend is in subfolder
+          docker build -t inventum-frontend:staging .
+          
+      - name: Deploy frontend
+        working-directory: /home/noov/inventum/staging
+        run: |
+          # Stop and remove only the frontend container if it exists
+          docker compose -f docker-compose.staging.yml stop frontend || true
+          docker compose -f docker-compose.staging.yml rm -f frontend || true
+          
+          # Start the frontend container
+          docker compose -f docker-compose.staging.yml up -d frontend
+          
+      - name: Reconnect monitoring to network
+        run: |
+          # Reconnect prometheus and grafana to inventum-network
+          docker network connect inventum-network prometheus || true
+          docker network connect inventum-network grafana || true
+          
+      - name: Deployment Info
+        run: |
+          echo "Frontend deployment completed successfully"
+          echo "Frontend available at: http://fe.al3l.com"
