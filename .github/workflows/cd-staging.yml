@@ -43,7 +43,7 @@ jobs:
             --build-arg NEXT_PUBLIC_APP_VERSION="${{ env.NEXT_PUBLIC_APP_VERSION }}" \
             --build-arg NEXT_PUBLIC_SENTRY_DSN="${{ env.NEXT_PUBLIC_SENTRY_DSN }}" \
             --no-cache \
-            -f Dockerfile.frontend \
+            -f Dockerfile \
             -t inventum-frontend:staging \
             .
           
