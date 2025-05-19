@@ -34,7 +34,7 @@ global.confirm = jest.fn();
 
 describe('MedicalEquipmentDetails Component', () => {
   const mockPush = jest.fn();
-  
+
   // Data equipment sederhana untuk testing
   const mockEquipment = {
     id: "6df4d1f3-0696-401b-9a00-511401c929c8",
@@ -49,7 +49,7 @@ describe('MedicalEquipmentDetails Component', () => {
     createdOn: "2025-02-10T08:45:23.951Z",
     modifiedOn: "2025-02-15T14:22:10.123Z"
   };
-  
+
   const falseEquipment = {
     id: "6df4d1f3-0696-401b-9a00-511401c929c8",
     inventorisId: "MED-123",
@@ -66,33 +66,33 @@ describe('MedicalEquipmentDetails Component', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Setup router dan params
     (useRouter as jest.Mock).mockReturnValue({ push: mockPush });
     (useParams as jest.Mock).mockReturnValue({ id: mockEquipment.id });
-    
+
     // Setup fetch success default
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: true,
       json: jest.fn().mockResolvedValue(mockEquipment)
     });
-    
+
     // Default confirm adalah true
     (global.confirm as jest.Mock).mockReturnValue(true);
 
   });
-  
+
   it('should show loading state initially and then display equipment details', async () => {
     render(<MedicalEquipmentDetails />);
-    
+
     // Check loading state
     expect(screen.getByTestId('loading-state')).toBeInTheDocument();
-    
+
     // Wait for details to load
     await waitFor(() => {
       expect(screen.queryByTestId('loading-state')).not.toBeInTheDocument();
     });
-    
+
     // Check basic details are displayed
     expect(screen.getByTestId('equipment-name')).toHaveTextContent('Pulse Oximeter');
     expect(screen.getByTestId('equipment-inventoris-id')).toHaveTextContent('MED-123');
@@ -175,15 +175,15 @@ describe('MedicalEquipmentDetails Component', () => {
       expect(global.fetch).not.toHaveBeenCalled();
     });
   });
-  
+
   it('should handle errors when equipment is not found', async () => {
     // Mock error response
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: false
     });
-    
+
     render(<MedicalEquipmentDetails />);
-    
+
     // Wait for error message
     await waitFor(() => {
       expect(screen.getByTestId('error-state')).toBeInTheDocument();
@@ -203,7 +203,7 @@ describe('MedicalEquipmentDetails Component', () => {
   });
 
   it('should handle error in date formatting', async () => {
-    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
 
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
@@ -215,33 +215,33 @@ describe('MedicalEquipmentDetails Component', () => {
       expect(errorSpy).toHaveBeenCalled();
     });
   });
-  
+
   it('should navigate back when back button is clicked', async () => {
     render(<MedicalEquipmentDetails />);
-    
+
     // Wait for content to load
     await waitFor(() => {
       expect(screen.queryByTestId('loading-state')).not.toBeInTheDocument();
     });
-    
+
     // Click back button
     fireEvent.click(screen.getByTestId('back-button'));
-    
+
     // Check navigation
     expect(mockPush).toHaveBeenCalledWith('/dashboard/medical-equipment');
   });
-  
+
   it('should navigate to edit page when edit button is clicked', async () => {
     render(<MedicalEquipmentDetails />);
-    
+
     // Wait for content to load
     await waitFor(() => {
       expect(screen.queryByTestId('loading-state')).not.toBeInTheDocument();
     });
-    
+
     // Click edit button
     fireEvent.click(screen.getByTestId('edit-button'));
-    
+
     // Check navigation
     expect(mockPush).toHaveBeenCalledWith(`/dashboard/medical-equipment/${mockEquipment.id}/edit`);
   });
@@ -252,91 +252,91 @@ describe('MedicalEquipmentDetails Component', () => {
       if (options && options.method === 'DELETE') {
         return Promise.resolve({ ok: true });
       }
-      
+
       // Default for GET request
       return Promise.resolve({
         ok: true,
         json: () => Promise.resolve(mockEquipment)
       });
     });
-    
+
     render(<MedicalEquipmentDetails />);
-    
+
     // Wait for content to load
     await waitFor(() => {
       expect(screen.queryByTestId('loading-state')).not.toBeInTheDocument();
     });
-    
+
     // Click delete button
     fireEvent.click(screen.getByTestId('delete-button'));
-    
+
     // Check confirmation
     expect(global.confirm).toHaveBeenCalled();
-    
+
     // Wait for redirect
     await waitFor(() => {
       expect(mockPush).toHaveBeenCalledWith('/dashboard/medical-equipment?success=delete');
     });
   });
-  
+
   it('should not delete when user cancels confirmation', async () => {
     // Mock cancel confirmation
     (global.confirm as jest.Mock).mockReturnValueOnce(false);
-    
+
     render(<MedicalEquipmentDetails />);
-    
+
     // Wait for content to load
     await waitFor(() => {
       expect(screen.queryByTestId('loading-state')).not.toBeInTheDocument();
     });
-    
+
     // Click delete button
     fireEvent.click(screen.getByTestId('delete-button'));
-    
+
     // Verify DELETE was not called
     expect(global.fetch).not.toHaveBeenCalledWith(
       expect.stringMatching(/delete/i),
       expect.objectContaining({ method: 'DELETE' })
     );
   });
-  
+
   it('should handle delete failure', async () => {
     // Mock delete failure
-    jest.spyOn(window, 'alert').mockImplementation(() => {});
-    
+    jest.spyOn(window, 'alert').mockImplementation(() => { });
+
     (global.fetch as jest.Mock).mockImplementation((url, options) => {
       if (options && options.method === 'DELETE') {
         return Promise.resolve({ ok: false });
       }
-      
+
       // Default for GET request
       return Promise.resolve({
         ok: true,
         json: () => Promise.resolve(mockEquipment)
       });
     });
-    
+
     render(<MedicalEquipmentDetails />);
-    
+
     // Wait for content to load
     await waitFor(() => {
       expect(screen.queryByTestId('loading-state')).not.toBeInTheDocument();
     });
-    
+
     // Click delete button
     fireEvent.click(screen.getByTestId('delete-button'));
-    
+
     // Verify no redirect happened
     expect(mockPush).not.toHaveBeenCalledWith('/dashboard/medical-equipment');
   });
 
   it('should render all UI elements with correct data', async () => {
     render(<MedicalEquipmentDetails />);
-    
+
     await waitFor(() => {
       expect(screen.queryByTestId('loading-state')).not.toBeInTheDocument();
     });
-    
+
     // Verifikasi semua elemen UI
     expect(screen.getByTestId('back-button')).toBeInTheDocument();
     expect(screen.getByTestId('equipment-name')).toHaveTextContent('Pulse Oximeter');
@@ -364,18 +364,18 @@ describe('MedicalEquipmentDetails Component', () => {
       purchaseDate: null,
       createdOn: null
     };
-    
+
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
       json: jest.fn().mockResolvedValue(equipmentWithMissingData)
     });
-    
+
     render(<MedicalEquipmentDetails />);
-    
+
     await waitFor(() => {
       expect(screen.queryByTestId('loading-state')).not.toBeInTheDocument();
     });
-    
+
     // Verifikasi fallback rendering untuk field yang null
     expect(screen.getByTestId('equipment-brand')).toHaveTextContent('Tidak ada');
     expect(screen.getByTestId('equipment-model')).toHaveTextContent('Tidak ada');
@@ -403,17 +403,17 @@ describe('MedicalEquipmentDetails Component', () => {
         ok: true,
         json: jest.fn().mockResolvedValue(equipmentWithStatus)
       });
-      
+
       render(<MedicalEquipmentDetails />);
-      
+
       await waitFor(() => {
         expect(screen.queryByTestId('loading-state')).not.toBeInTheDocument();
       });
-      
+
       const statusElement = screen.getByTestId('equipment-status').firstChild;
       expect(statusElement).toHaveClass(variant.expectedClass.split(' ')[0]);
       expect(statusElement).toHaveClass(variant.expectedClass.split(' ')[1]);
-      
+
       // Clean up before next test
       document.body.innerHTML = '';
     }
@@ -436,13 +436,13 @@ describe('MedicalEquipmentDetails Component', () => {
         ok: true,
         json: jest.fn().mockResolvedValue(equipmentWithPrice)
       });
-      
+
       render(<MedicalEquipmentDetails />);
-      
+
       await waitFor(() => {
         expect(screen.queryByTestId('loading-state')).not.toBeInTheDocument();
       });
-            
+
       // Clean up before next test
       document.body.innerHTML = '';
     }
