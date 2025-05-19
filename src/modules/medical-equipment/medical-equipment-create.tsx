@@ -58,6 +58,7 @@ const formSchema = z.object({
 		}),
 	status: z.string().min(1, { message: "Status wajib diisi" }),
 	vendor: z.string().optional(),
+	lastLocation: z.string().optional(),
 });
 
 const equipmentStatus = [
@@ -81,6 +82,7 @@ export default function MedicalEquipmentCreate() {
 			purchasePrice: undefined,
 			status: "",
 			vendor: "",
+			lastLocation: "",
 		},
 	});
 
@@ -121,7 +123,8 @@ export default function MedicalEquipmentCreate() {
 						: null,
 					status: data.status,
 					vendor: data.vendor ?? null,
-					createdBy: 1, // Default user ID
+					lastLocation: data.lastLocation ?? null,
+					createdBy: 1,
 				}),
 			}
 		);
@@ -134,7 +137,7 @@ export default function MedicalEquipmentCreate() {
 		}
 
 		toast.success("Alat medis berhasil ditambahkan");
-        router.push("/dashboard/medical-equipment");
+		router.push("/dashboard/medical-equipment");
 		return result;
 	}
 
@@ -268,6 +271,22 @@ export default function MedicalEquipmentCreate() {
 									<Input
 										{...field}
 										placeholder="Masukkan vendor"
+									/>
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+					<FormField
+						control={form.control}
+						name="lastLocation"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>Lokasi Terakhir</FormLabel>
+								<FormControl>
+									<Input
+										{...field}
+										placeholder="Masukkan lokasi terakhir"
 									/>
 								</FormControl>
 								<FormMessage />

@@ -11,16 +11,33 @@ export const formatNumberWithDots = (value: string): string => {
   return cleanValue.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 };
 
-export const formatDate = (dateString: string | null) => {
-    if (!dateString) return "-"
+// Format date string to localized format
+export function formatDate(dateString: string): string {
+  if (!dateString) return '-'
+  
+  try {
     const date = new Date(dateString)
-    return new Intl.DateTimeFormat("id-ID", { day: "2-digit", month: "short", year: "numeric" }).format(date)
+    return new Intl.DateTimeFormat('id-ID', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    }).format(date)
+  } catch (error) {
+    return dateString
   }
+}
 
-export const formatCurrency = (curr: number | null) => {
-    if (curr == null) return "-"
-    return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(curr)
-  }
+// Format currency number to IDR
+export function formatCurrency(amount: number): string {
+  if (amount === undefined || amount === null) return 'Rp -'
+  
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(amount)
+}
 
 export function decodeToken (token: string) {
     try {
