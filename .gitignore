@@ -42,3 +42,7 @@ next-env.d.ts
 
 #test 
 test.txt
+
+# spareparts images
+/public/assets/spareparts/*
+!/public/assets/spareparts/.gitkeep
