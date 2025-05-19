@@ -27,9 +27,9 @@ jobs:
             echo "NEXT_PUBLIC_APP_VERSION=$NEXT_PUBLIC_APP_VERSION" >> $GITHUB_ENV
             echo "NEXT_PUBLIC_SENTRY_DSN=$NEXT_PUBLIC_SENTRY_DSN" >> $GITHUB_ENV
             
-            echo " Frontend environment variables loaded"
+            echo "Frontend environment variables loaded"
           else
-            echo " Frontend environment file not found!"
+            echo "Frontend environment file not found!"
             exit 1
           fi
       
@@ -47,7 +47,7 @@ jobs:
             -t inventum-frontend:staging \
             .
           
-          echo " Frontend Docker image built successfully"
+          echo "Frontend Docker image built successfully"
       
       - name: Deploy Frontend
         working-directory: /home/noov/inventum/staging
@@ -59,7 +59,7 @@ jobs:
           # Start the new frontend container
           docker compose -f docker-compose.staging.yml up -d frontend
           
-          echo " Frontend container deployed"
+          echo "Frontend container deployed"
       
       - name: Verify Deployment
         run: |
@@ -87,4 +87,16 @@ jobs:
           docker network connect inventum-network prometheus 2>/dev/null || true
           docker network connect inventum-network grafana 2>/dev/null || true
           
-          echo " Monitoring network reconnected"
+          echo "Monitoring network reconnected"
+      
+      - name: Deployment Summary
+        run: |
+          echo "Frontend Deployment Complete"
+          echo "==============================="
+          echo "Frontend built with environment variables from FE/.env"
+          echo "Docker image: inventum-frontend:staging"
+          echo "Container: inventum-frontend-staging"
+          echo "Internal URL: http://localhost:3000"
+          echo "External URL: https://fe.al3l.com"
+          echo "API URL: ${{ env.NEXT_PUBLIC_API_URL }}"
+          echo "==============================="
