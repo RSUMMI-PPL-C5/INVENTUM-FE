@@ -29,6 +29,7 @@ type MedicalEquipment = {
   purchasePrice: number | null
   status: string
   vendor: string | null
+  lastLocation: string | null
   createdOn: string | null
   modifiedOn: string
 }
@@ -738,10 +739,11 @@ const handleHistoryRowClick = (
           ) : equipment ? (
             <>
               <h1 className="text-header-h6 font-bold">{equipment.name}</h1>
-              <p className="text-sm text-muted-foreground">{equipment.brandName ?? "-"}</p>
               <div className="grid grid-cols-2 gap-4 text-sm mt-4">
-                <DetailItem label="Kode Inventaris" value={equipment.inventorisId} />
+                <DetailItem label="Brand" value={equipment.brandName} />
                 <DetailItem label="Model" value={equipment.modelName} />
+                <DetailItem label="Kode Inventaris" value={equipment.inventorisId} />
+                <DetailItem label="Lokasi terakhir" value={equipment.lastLocation} />
                 <DetailItem label="Status" value={getStatusText(equipment.status)} />
                 <DetailItem label="Tanggal Pembelian" value={formatDate(equipment.purchaseDate)} />
                 <DetailItem label="Harga Pembelian" value={formatCurrency(equipment.purchasePrice)} />
