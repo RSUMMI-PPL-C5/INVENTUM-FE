@@ -745,10 +745,10 @@ const handleHistoryRowClick = (
                 <DetailItem label="Kode Inventaris" value={equipment.inventorisId} />
                 <DetailItem label="Lokasi terakhir" value={equipment.lastLocation} />
                 <DetailItem label="Status" value={getStatusText(equipment.status)} />
-                <DetailItem label="Tanggal Pembelian" value={formatDate(equipment.purchaseDate)} />
-                <DetailItem label="Harga Pembelian" value={formatCurrency(equipment.purchasePrice)} />
+                <DetailItem label="Tanggal Pembelian" value={equipment.purchaseDate ? formatDate(equipment.purchaseDate) : '-'} />
+                <DetailItem label="Harga Pembelian" value={equipment.purchasePrice ? formatCurrency(equipment.purchasePrice) : '-'} />
                 <DetailItem label="Vendor" value={equipment.vendor} />
-                <DetailItem label="Dibuat Pada" value={formatDate(equipment.createdOn)} />
+                <DetailItem label="Dibuat Pada" value={equipment.createdOn ? formatDate(equipment.createdOn) : '-'} />
                 <DetailItem label="Diperbarui Pada" value={formatDate(equipment.modifiedOn)} />
               </div>
 
