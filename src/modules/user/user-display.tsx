@@ -392,7 +392,7 @@ export default function UsersPage() {
 												{user.divisi?.divisi ?? `-`}
 											</TableCell>
 											<TableCell>
-												{formatDate(user.createdOn)}
+												{user.createdOn ? formatDate(user.createdOn) : "-"}
 											</TableCell>
 											<TableCell
 												className="text-right"
