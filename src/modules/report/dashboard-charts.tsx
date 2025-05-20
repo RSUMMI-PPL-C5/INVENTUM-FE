@@ -407,7 +407,7 @@ export default function DashboardCharts() {
 
       // Format maintenance data for pie chart
       const maintenanceFormatted = statusData.MAINTENANCE.map(item => ({
-        name: item.status,
+        name: getStatusLabel(item.status),
         value: item.count,
         percentage: item.percentage,
         color: getStatusColor(item.status)
@@ -415,7 +415,7 @@ export default function DashboardCharts() {
 
       // Format calibration data for pie chart
       const calibrationFormatted = statusData.CALIBRATION.map(item => ({
-        name: item.status,
+        name: getStatusLabel(item.status),
         value: item.count,
         percentage: item.percentage,
         color: getStatusColor(item.status)
@@ -682,7 +682,7 @@ export default function DashboardCharts() {
               ) : summaryData ? (
                 <>
                   <div className="flex items-baseline justify-between">
-                    <h2 className="text-2xl sm:text-3xl font-bold text-blue-600">{summaryData.maintenanceCount}</h2>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">{summaryData.maintenanceCount}</h2>
                     <div className={`flex items-center text-xs sm:text-sm ${summaryData.maintenancePercentageChange >= 0
                       ? 'text-green-600 bg-green-50'
                       : 'text-red-600 bg-red-50'
@@ -716,7 +716,7 @@ export default function DashboardCharts() {
               ) : summaryData ? (
                 <>
                   <div className="flex items-baseline justify-between">
-                    <h2 className="text-2xl sm:text-3xl font-bold text-purple-600">{summaryData.calibrationCount}</h2>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">{summaryData.calibrationCount}</h2>
                     <div className={`flex items-center text-xs sm:text-sm ${summaryData.calibrationPercentageChange >= 0
                       ? 'text-green-600 bg-green-50'
                       : 'text-red-600 bg-red-50'
@@ -750,7 +750,7 @@ export default function DashboardCharts() {
               ) : summaryData ? (
                 <>
                   <div className="flex items-baseline justify-between">
-                    <h2 className="text-2xl sm:text-3xl font-bold text-amber-600">{summaryData.sparePartsCount}</h2>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">{summaryData.sparePartsCount}</h2>
                     <div className={`flex items-center text-xs sm:text-sm ${summaryData.sparePartsPercentageChange >= 0
                       ? 'text-green-600 bg-green-50'
                       : 'text-red-600 bg-red-50'
