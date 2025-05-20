@@ -1,3 +1,12 @@
+# [1.0.0-staging.5](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/compare/v1.0.0-staging.4...v1.0.0-staging.5) (2025-05-20)
+
+
+### Bug Fixes
+
+* Pie chart color issue ([ce137b8](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/commit/ce137b8d2842a325c4dd9691b5dc3a2b1aade71b))
+* set to former default color ([9e9c383](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/commit/9e9c383f2fefff839c4f81d39caff66ec0a71c5f))
+* some error handling issues ([40c114e](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/commit/40c114e10141302d6f06355f03a3b5b0f970c228))
+
 # [1.0.0-staging.4](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/compare/v1.0.0-staging.3...v1.0.0-staging.4) (2025-05-19)
 
 
