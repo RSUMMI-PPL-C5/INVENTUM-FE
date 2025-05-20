@@ -1,3 +1,10 @@
+# [1.0.0-staging.6](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/compare/v1.0.0-staging.5...v1.0.0-staging.6) (2025-05-20)
+
+
+### Bug Fixes
+
+* notification urls, but still need it to be asynch ([41765ff](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/commit/41765ffe0f48868a144c8178616a3e248da3d2d1))
+
 # [1.0.0-staging.5](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/compare/v1.0.0-staging.4...v1.0.0-staging.5) (2025-05-20)
 
 
