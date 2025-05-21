@@ -93,6 +93,7 @@ export default function SparePartDetails() {
       toast.success("Suku cadang berhasil dihapus")
       router.push("/dashboard/spare-part?success=delete")
     } catch (error) {
+      console.error(error)
       toast.error("Gagal menghapus suku cadang")
       setIsDeleting(false)
     }
