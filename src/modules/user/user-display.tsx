@@ -343,8 +343,8 @@ export default function UsersPage() {
 						<h2 className="text-xl md:text-header-h6 font-bold font-poppins">
 							Pengguna
 						</h2>
-						<p className="text-xs md:text-s-medium">
-							Kelola, pantau, dan atur semua akun pengguna dalam
+						<p className="text-sm md:text-s-medium">
+                            Kelola, pantau, dan atur semua akun pengguna dalam
 							sistem, termasuk pembuatan, pembaruan, penghapusan,
 							serta pengelolaan{" "}
 							<span className="italic">role</span> dan izin akses.
@@ -513,8 +513,8 @@ export default function UsersPage() {
 													}}
 													data-testid={`card-edit-button-${user.id}`}
 												>
-													<Edit className="h-3 w-3 mr-1" />{" "}
-													Edit
+													<Edit className="h-3 w-3" />{" "}
+													
 												</Button>
 												<Button
 													size="sm"
@@ -525,8 +525,8 @@ export default function UsersPage() {
 													}}
 													data-testid={`card-delete-button-${user.id}`}
 												>
-													<Trash2 className="h-3 w-3 mr-1" />{" "}
-													Hapus
+													<Trash2 className="h-3 w-3" />{" "}
+													
 												</Button>
 											</div>
 										</div>

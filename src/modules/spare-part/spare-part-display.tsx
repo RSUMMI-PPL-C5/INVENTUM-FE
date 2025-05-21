@@ -555,8 +555,7 @@ export default function SparepartDisplay() {
 													);
 												}}
 											>
-												<Edit className="h-4 w-4 mr-1" />{" "}
-												Edit
+												<Edit className="h-4 w-4" />{" "}
 											</Button>
 											<Button
 												size="sm"
@@ -566,8 +565,7 @@ export default function SparepartDisplay() {
 													confirmDelete(sparepart.id);
 												}}
 											>
-												<Trash2 className="h-4 w-4 mr-1" />{" "}
-												Hapus
+												<Trash2 className="h-4 w-4" />{" "}
 											</Button>
 										</div>
 									</div>

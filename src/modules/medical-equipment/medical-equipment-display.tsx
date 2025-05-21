@@ -624,8 +624,7 @@ export default function MedicalEquipmentPage() {
 													);
 												}}
 											>
-												<Edit className="h-4 w-4 mr-1" />{" "}
-												Edit
+												<Edit className="h-4 w-4" />{" "}
 											</Button>
 											<Button
 												size="sm"
@@ -635,8 +634,7 @@ export default function MedicalEquipmentPage() {
 													confirmDelete(equipment.id);
 												}}
 											>
-												<Trash2 className="h-4 w-4 mr-1" />{" "}
-												Hapus
+												<Trash2 className="h-4 w-4" />{" "}
 											</Button>
 										</div>
 									</div>

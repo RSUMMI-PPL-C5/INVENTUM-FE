@@ -158,18 +158,14 @@ export default function SideBar() {
 		router.push("/");
 	};
 
-	const toggleSidebar = () => {
-		setIsOpen(!isOpen);
-	};
-
 	// Mobile Sidebar Toggle Button
 	const BurgerButton = () => (
-		<div className="fixed top-4 left-4 z-50 bg-white shadow-md rounded-lg">
+		<div className="fixed top-4 left-4 z-50 bg-primary-solid shadow-md rounded-lg">
 			<Hamburger 
 				toggled={isOpen} 
 				toggle={setIsOpen}
 				size={20}
-				color="#000"
+				color="#fff"
 				rounded
 				label="Show menu"
 				distance="md"
