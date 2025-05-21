@@ -1,6 +1,6 @@
 {
   "name": "pplc5",
-  "version": "1.0.0-staging.6",
+  "version": "1.0.0-staging.7",
   "private": true,
   "scripts": {
     "dev": "next dev",
