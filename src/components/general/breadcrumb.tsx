@@ -1,14 +1,28 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronRight } from 'react-iconly'
+import { ChevronRight, Notification } from 'react-iconly'
 import { usePathname } from "next/navigation";
-import { NotificationBell } from "@/components/ui/notification-bell";
-import { useNotifications } from "@/context/notification-provider";
+import { useEffect, useState } from "react";
 
 const Breadcrumb = () => {
 	const pathname = usePathname();
-	const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
+	const [isMobile, setIsMobile] = useState(false);
+
+	useEffect(() => {
+		const handleResize = () => {
+			setIsMobile(window.innerWidth < 768);
+		};
+
+		// Check on mount
+		handleResize();
+
+		// Add listener for window resize
+		window.addEventListener("resize", handleResize);
+
+		// Cleanup
+		return () => window.removeEventListener("resize", handleResize);
+	}, []);
 
 	const segments = pathname.split("/").filter((segment) => segment !== "").slice(1);
 
@@ -26,9 +40,9 @@ const Breadcrumb = () => {
 	});
 
 	return (
-		<nav aria-label="Breadcrumb" className="flex flex-col gap-4 items-start text-s-medium text-[#7B7B7B]">
-            <div className="flex justify-between w-full">
-                <ol className="flex items-center space-x-2">
+		<nav aria-label="Breadcrumb" className="flex flex-col gap-2 items-start text-s-medium text-[#7B7B7B]">
+            <div className="flex justify-between w-full items-center">
+                <ol className="flex items-center space-x-2 overflow-auto whitespace-nowrap pb-1 max-w-[70vw] md:max-w-full">
                     {breadcrumbItems.map((item, index) => (
                         <li key={item.href} className="flex items-center">
                             {index !== 0 && <span className="mx-2"><ChevronRight size='small'/></span>}
@@ -42,19 +56,7 @@ const Breadcrumb = () => {
                         </li>
                     ))}
                 </ol>
-                <NotificationBell 
-                    count={unreadCount} 
-                    notifications={notifications.map(n => ({
-                        id: n.id,
-                        title: n.title || "Notification",
-                        message: n.message,
-                        timestamp: n.timestamp,
-                        read: n.read,
-                        type: n.type || "info"
-                    }))}
-                    onNotificationClick={markAsRead}
-                    onMarkAllAsRead={markAllAsRead}
-                />
+                <Notification set="curved" stroke="bold" primaryColor="black" size={isMobile ? 'medium' : 'large'} filled />
             </div>
             <hr className="w-full min-w-[3.5rem] border-1 border-[#C2C2C2]" />
 		</nav>
