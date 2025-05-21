@@ -34,6 +34,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { id } from "date-fns/locale";
+import { ImageUpload } from "@/components/spare-part/image-upload";
 
 interface Location {
 	id: number;
@@ -50,6 +51,7 @@ const formSchema = z.object({
 	toolDate: z.date({
 		required_error: "Tanggal alat wajib diisi",
 	}),
+	imageUrl: z.string().optional(),
 });
 
 export default function SparePartCreate() {
@@ -63,7 +65,8 @@ export default function SparePartCreate() {
 			partsName: "",
 			price: "",
 			toolLocation: "",
-		},
+			imageUrl: "",
+		}
 	});
 
 	useEffect(() => {
@@ -114,9 +117,10 @@ export default function SparePartCreate() {
 				body: JSON.stringify({
 					partsName: data.partsName,
 					purchaseDate: data.purchaseDate.toISOString(),
-        			price: Number.parseFloat(data.price.replace(/\./g, "")),
+					price: Number.parseFloat(data.price.replace(/\./g, "")),
 					toolLocation: data.toolLocation,
 					toolDate: data.toolDate.toISOString(),
+					imageUrl: data.imageUrl || null,
 				}),
 			}
 		);
@@ -140,9 +144,9 @@ export default function SparePartCreate() {
 		} catch (error) {
 			console.error("Error creating spare part:", error);
 			toast.error(
-				error instanceof Error ? 
-				<>Error creating spare part:<br />{error.message}</> : 
-				'Error creating spare part'
+				error instanceof Error ?
+					<>Error creating spare part:<br />{error.message}</> :
+					'Error creating spare part'
 			);
 		} finally {
 			setLoading(false);
@@ -172,6 +176,24 @@ export default function SparePartCreate() {
 				>
 					<FormField
 						control={form.control}
+						name="imageUrl"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>Gambar Spare Part</FormLabel>
+								<FormControl>
+									<ImageUpload
+										onImageSelect={field.onChange}
+										currentImage={field.value}
+										className="max-w-3xl"
+									/>
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+
+					<FormField
+						control={form.control}
 						name="partsName"
 						render={({ field }) => (
 							<FormItem>
@@ -192,42 +214,76 @@ export default function SparePartCreate() {
 						name="purchaseDate"
 						render={({ field }) => (
 							<FormItem className="flex flex-col">
-							<FormLabel>Tanggal Pembelian</FormLabel>
-							<Popover>
-								<PopoverTrigger asChild>
-								<FormControl>
-									<Button
-									variant={"outline"}
-									className={cn(
-										"w-full pl-3 text-left font-normal",
-										!field.value && "text-muted-foreground"
-									)}
+								<FormLabel>Tanggal Pembelian</FormLabel>
+								<Popover>
+									<PopoverTrigger asChild>
+										<FormControl>
+											<Button
+												variant={"outline"}
+												className={cn(
+													"w-full pl-3 text-left font-normal",
+													!field.value &&
+													"text-muted-foreground"
+												)}
+											>
+												{field.value ? (
+													format(field.value, "PPP")
+												) : (
+													<span>Pilih tanggal</span>
+												)}
+												<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+											</Button>
+										</FormControl>
+									</PopoverTrigger>
+									<PopoverContent
+										className="w-auto p-0"
+										align="start"
 									>
-									{field.value ? (
-										format(field.value, "dd MMM yyyy", { locale: id })
-									) : (
-										<span>Pilih tanggal</span>
-									)}
-									<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-									</Button>
-								</FormControl>
-								</PopoverTrigger>
-								<PopoverContent
-								className="w-auto p-0"
-								align="start"
-								>
-								<Calendar
-									mode="single"
-									selected={field.value}
-									onSelect={field.onChange}
-									initialFocus
-									locale={id}
-									weekStartsOn={1}
-									className="rounded-md border"
-								/>
-								</PopoverContent>
-							</Popover>
-							<FormMessage />
+										<Calendar
+											mode="single"
+											selected={field.value}
+											onSelect={field.onChange}
+											initialFocus
+										/>
+									</PopoverContent>
+								</Popover>
+								<FormMessage />
+								<FormLabel>Tanggal Pembelian</FormLabel>
+								<Popover>
+									<PopoverTrigger asChild>
+										<FormControl>
+											<Button
+												variant={"outline"}
+												className={cn(
+													"w-full pl-3 text-left font-normal",
+													!field.value && "text-muted-foreground"
+												)}
+											>
+												{field.value ? (
+													format(field.value, "dd MMM yyyy", { locale: id })
+												) : (
+													<span>Pilih tanggal</span>
+												)}
+												<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+											</Button>
+										</FormControl>
+									</PopoverTrigger>
+									<PopoverContent
+										className="w-auto p-0"
+										align="start"
+									>
+										<Calendar
+											mode="single"
+											selected={field.value}
+											onSelect={field.onChange}
+											initialFocus
+											locale={id}
+											weekStartsOn={1}
+											className="rounded-md border"
+										/>
+									</PopoverContent>
+								</Popover>
+								<FormMessage />
 							</FormItem>
 						)}
 					/>
@@ -237,24 +293,24 @@ export default function SparePartCreate() {
 						name="price"
 						render={({ field }) => (
 							<FormItem>
-							<FormLabel>Harga</FormLabel>
-							<FormControl>
-								<Input
-								{...field}
-								placeholder="Masukkan harga"
-								type="text"
-								value={field.value ? formatNumberWithDots(field.value) : ""}
-								onChange={(e) => {
-									// Remove non-digit characters and store raw value
-									const rawValue = e.target.value.replace(/\./g, "").replace(/[^\d]/g, "");
-									field.onChange(rawValue);
-								}}
-								/>
-							</FormControl>
-							<FormMessage />
+								<FormLabel>Harga</FormLabel>
+								<FormControl>
+									<Input
+										{...field}
+										placeholder="Masukkan harga"
+										type="text"
+										value={field.value ? formatNumberWithDots(field.value) : ""}
+										onChange={(e) => {
+											// Remove non-digit characters and store raw value
+											const rawValue = e.target.value.replace(/\./g, "").replace(/[^\d]/g, "");
+											field.onChange(rawValue);
+										}}
+									/>
+								</FormControl>
+								<FormMessage />
 							</FormItem>
 						)}
-						/>
+					/>
 
 					<FormField
 						control={form.control}
@@ -292,40 +348,74 @@ export default function SparePartCreate() {
 						name="toolDate"
 						render={({ field }) => (
 							<FormItem className="flex flex-col">
-							<FormLabel>Tanggal Alat</FormLabel>
-							<Popover>
-								<PopoverTrigger asChild>
-								<FormControl>
-									<Button
-									variant={"outline"}
-									className={cn(
-										"w-full pl-3 text-left font-normal",
-										!field.value && "text-muted-foreground"
-									)}
+								<FormLabel>Tanggal Alat</FormLabel>
+								<Popover>
+									<PopoverTrigger asChild>
+										<FormControl>
+											<Button
+												variant={"outline"}
+												className={cn(
+													"w-full pl-3 text-left font-normal",
+													!field.value &&
+													"text-muted-foreground"
+												)}
+											>
+												{field.value ? (
+													format(field.value, "PPP")
+												) : (
+													<span>Pilih tanggal</span>
+												)}
+												<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+											</Button>
+										</FormControl>
+									</PopoverTrigger>
+									<PopoverContent
+										className="w-auto p-0"
+										align="start"
 									>
-									{field.value ? (
-										// Format dengan locale Indonesia
-										format(field.value, "dd MMM yyyy", { locale: id })
-									) : (
-										<span>Pilih tanggal</span>
-									)}
-									<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-									</Button>
-								</FormControl>
-								</PopoverTrigger>
-								<PopoverContent className="w-auto p-0" align="start">
-								<Calendar
-									mode="single"
-									selected={field.value}
-									onSelect={field.onChange}
-									initialFocus
-									locale={id}
-									weekStartsOn={1}
-									className="rounded-md border"
-								/>
-								</PopoverContent>
-							</Popover>
-							<FormMessage />
+										<Calendar
+											mode="single"
+											selected={field.value}
+											onSelect={field.onChange}
+											initialFocus
+										/>
+									</PopoverContent>
+								</Popover>
+								<FormMessage />
+								<FormLabel>Tanggal Alat</FormLabel>
+								<Popover>
+									<PopoverTrigger asChild>
+										<FormControl>
+											<Button
+												variant={"outline"}
+												className={cn(
+													"w-full pl-3 text-left font-normal",
+													!field.value && "text-muted-foreground"
+												)}
+											>
+												{field.value ? (
+													// Format dengan locale Indonesia
+													format(field.value, "dd MMM yyyy", { locale: id })
+												) : (
+													<span>Pilih tanggal</span>
+												)}
+												<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+											</Button>
+										</FormControl>
+									</PopoverTrigger>
+									<PopoverContent className="w-auto p-0" align="start">
+										<Calendar
+											mode="single"
+											selected={field.value}
+											onSelect={field.onChange}
+											initialFocus
+											locale={id}
+											weekStartsOn={1}
+											className="rounded-md border"
+										/>
+									</PopoverContent>
+								</Popover>
+								<FormMessage />
 							</FormItem>
 						)}
 					/>

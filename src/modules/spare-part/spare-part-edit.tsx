@@ -34,6 +34,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { id } from "date-fns/locale";
+import { ImageUpload } from "@/components/spare-part/image-upload";
 
 interface Location {
 	id: number;
@@ -51,6 +52,7 @@ const formSchema = z.object({
 		required_error: "Tanggal alat wajib diisi",
 	}),
 	createdOn: z.string().optional(),
+	imageUrl: z.string().optional(),
 });
 
 export default function SparePartEdit() {
@@ -67,6 +69,7 @@ export default function SparePartEdit() {
 			price: "",
 			toolLocation: "",
 			createdOn: "",
+			imageUrl: "",
 		}
 	});
 
@@ -130,7 +133,7 @@ export default function SparePartEdit() {
 				const purchaseDate = new Date(sparePartData.purchaseDate);
 				const toolDate = new Date(sparePartData.toolDate);
 				const createdDate = new Date(sparePartData.createdOn);
-				
+
 				const formattedCreatedDate = isValid(createdDate)
 					? format(createdDate, "dd MMM yyyy", { locale: id })
 					: "Invalid date";
@@ -143,15 +146,16 @@ export default function SparePartEdit() {
 					toolLocation: sparePartData.toolLocation || "",
 					toolDate: isValid(toolDate) ? toolDate : new Date(),
 					createdOn: formattedCreatedDate,
+					imageUrl: sparePartData.imageUrl || "",
 				});
-				
+
 				console.log("Form values after reset:", form.getValues());
 			} catch (error) {
 				console.error("Error fetching spare part data:", error);
 				toast.error(
-					error instanceof Error ? 
-					<>Error fetching spare part data:<br />{error.message}</> : 
-					'Error fetching spare part data'
+					error instanceof Error ?
+						<>Error fetching spare part data:<br />{error.message}</> :
+						'Error fetching spare part data'
 				);
 			} finally {
 				setLoading(false);
@@ -180,6 +184,7 @@ export default function SparePartEdit() {
 					price: Number.parseFloat(cleanPrice),
 					toolLocation: data.toolLocation,
 					toolDate: data.toolDate.toISOString(),
+					imageUrl: data.imageUrl || null,
 				}),
 			}
 		);
@@ -203,9 +208,9 @@ export default function SparePartEdit() {
 		} catch (error) {
 			console.error("Error updating spare part:", error);
 			toast.error(
-				error instanceof Error ? 
-				<>Error updating spare part:<br />{error.message}</> : 
-				'Error updating spare part'
+				error instanceof Error ?
+					<>Error updating spare part:<br />{error.message}</> :
+					'Error updating spare part'
 			);
 		} finally {
 			setSubmitting(false);
@@ -239,6 +244,24 @@ export default function SparePartEdit() {
 				>
 					<FormField
 						control={form.control}
+						name="imageUrl"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>Gambar Spare Part</FormLabel>
+								<FormControl>
+									<ImageUpload
+										onImageSelect={field.onChange}
+										currentImage={field.value}
+										className="max-w-3xl"
+									/>
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+
+					<FormField
+						control={form.control}
 						name="partsName"
 						render={({ field }) => (
 							<FormItem>
@@ -259,40 +282,40 @@ export default function SparePartEdit() {
 						name="purchaseDate"
 						render={({ field }) => (
 							<FormItem className="flex flex-col">
-							<FormLabel>Tanggal Pembelian</FormLabel>
-							<Popover>
-								<PopoverTrigger asChild>
-								<FormControl>
-									<Button
-									variant={"outline"}
-									className={cn(
-										"w-full pl-3 text-left font-normal",
-										!field.value && "text-muted-foreground"
-									)}
-									>
-									{field.value && isValid(field.value) ? (
-										// Format dengan locale Indonesia
-										format(field.value, "dd MMM yyyy", { locale: id })
-									) : (
-										<span>Pilih tanggal</span>
-									)}
-									<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-									</Button>
-								</FormControl>
-								</PopoverTrigger>
-								<PopoverContent className="w-auto p-0" align="start">
-								<Calendar
-									mode="single"
-									selected={field.value}
-									onSelect={field.onChange}
-									initialFocus
-									locale={id}
-									weekStartsOn={1}
-									className="rounded-md border"
-								/>
-								</PopoverContent>
-							</Popover>
-							<FormMessage />
+								<FormLabel>Tanggal Pembelian</FormLabel>
+								<Popover>
+									<PopoverTrigger asChild>
+										<FormControl>
+											<Button
+												variant={"outline"}
+												className={cn(
+													"w-full pl-3 text-left font-normal",
+													!field.value && "text-muted-foreground"
+												)}
+											>
+												{field.value && isValid(field.value) ? (
+													// Format dengan locale Indonesia
+													format(field.value, "dd MMM yyyy", { locale: id })
+												) : (
+													<span>Pilih tanggal</span>
+												)}
+												<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+											</Button>
+										</FormControl>
+									</PopoverTrigger>
+									<PopoverContent className="w-auto p-0" align="start">
+										<Calendar
+											mode="single"
+											selected={field.value}
+											onSelect={field.onChange}
+											initialFocus
+											locale={id}
+											weekStartsOn={1}
+											className="rounded-md border"
+										/>
+									</PopoverContent>
+								</Popover>
+								<FormMessage />
 							</FormItem>
 						)}
 					/>
@@ -358,40 +381,40 @@ export default function SparePartEdit() {
 						name="toolDate"
 						render={({ field }) => (
 							<FormItem className="flex flex-col">
-							<FormLabel>Tanggal Alat</FormLabel>
-							<Popover>
-								<PopoverTrigger asChild>
-								<FormControl>
-									<Button
-									variant={"outline"}
-									className={cn(
-										"w-full pl-3 text-left font-normal",
-										!field.value && "text-muted-foreground"
-									)}
-									>
-									{field.value && isValid(field.value) ? (
-										// Format dengan locale Indonesia
-										format(field.value, "dd MMM yyyy", { locale: id })
-									) : (
-										<span>Pilih tanggal</span>
-									)}
-									<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-									</Button>
-								</FormControl>
-								</PopoverTrigger>
-								<PopoverContent className="w-auto p-0" align="start">
-								<Calendar
-									mode="single"
-									selected={field.value}
-									onSelect={field.onChange}
-									initialFocus
-									locale={id}
-									weekStartsOn={1}
-									className="rounded-md border"
-								/>
-								</PopoverContent>
-							</Popover>
-							<FormMessage />
+								<FormLabel>Tanggal Alat</FormLabel>
+								<Popover>
+									<PopoverTrigger asChild>
+										<FormControl>
+											<Button
+												variant={"outline"}
+												className={cn(
+													"w-full pl-3 text-left font-normal",
+													!field.value && "text-muted-foreground"
+												)}
+											>
+												{field.value && isValid(field.value) ? (
+													// Format dengan locale Indonesia
+													format(field.value, "dd MMM yyyy", { locale: id })
+												) : (
+													<span>Pilih tanggal</span>
+												)}
+												<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+											</Button>
+										</FormControl>
+									</PopoverTrigger>
+									<PopoverContent className="w-auto p-0" align="start">
+										<Calendar
+											mode="single"
+											selected={field.value}
+											onSelect={field.onChange}
+											initialFocus
+											locale={id}
+											weekStartsOn={1}
+											className="rounded-md border"
+										/>
+									</PopoverContent>
+								</Popover>
+								<FormMessage />
 							</FormItem>
 						)}
 					/>

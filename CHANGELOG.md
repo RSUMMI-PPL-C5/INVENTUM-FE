@@ -1,3 +1,11 @@
+# [1.0.0-staging.7](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/compare/v1.0.0-staging.6...v1.0.0-staging.7) (2025-05-21)
+
+
+### Features
+
+* Implement image upload field form ([36b02ae](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/commit/36b02ae7fc93e2f5a8c6fc558d53de5a46240399))
+* Implement new image upload field ([09904bd](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/commit/09904bd8300a732b64fec287be15fb7e9085593a))
+
 # [1.0.0-staging.6](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/compare/v1.0.0-staging.5...v1.0.0-staging.6) (2025-05-20)
 
 

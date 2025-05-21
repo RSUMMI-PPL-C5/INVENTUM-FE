@@ -20,6 +20,7 @@ interface Sparepart {
   purchaseDate: string
   price: number
   toolLocation: string
+  imageUrl?: string
 }
 
 interface PaginationMeta {
@@ -53,10 +54,10 @@ export default function SparepartDisplay() {
   const updateURLParams = (newParams: Record<string, string | string[] | null | undefined>) => {
     const params = new URLSearchParams(searchParams.toString())
 
-    // Clear existing params to avoid duplicates
-    ;["search", "page", "partsName"].forEach((param) => {
-      params.delete(param)
-    })
+      // Clear existing params to avoid duplicates
+      ;["search", "page", "partsName"].forEach((param) => {
+        params.delete(param)
+      })
 
     // Add new params
     Object.entries(newParams).forEach(([key, value]) => {
@@ -214,23 +215,23 @@ export default function SparepartDisplay() {
     })
   }
 
-const handleApplyFilter = (filters: Record<string, string>) => {
-  if (Object.keys(filters).length === 0) {
-    const params = new URLSearchParams();
-    if (search) {
-      params.set("search", search);
+  const handleApplyFilter = (filters: Record<string, string>) => {
+    if (Object.keys(filters).length === 0) {
+      const params = new URLSearchParams();
+      if (search) {
+        params.set("search", search);
+      }
+      params.set("page", "1");
+
+      router.push(`/dashboard/spare-part?${params.toString()}`, { scroll: false });
+    } else {
+      updateURLParams({
+        ...filters,
+        search: search || null,
+        page: "1",
+      });
     }
-    params.set("page", "1");
-    
-    router.push(`/dashboard/spare-part?${params.toString()}`, { scroll: false });
-  } else {
-    updateURLParams({
-      ...filters,
-      search: search || null,
-      page: "1",
-    });
   }
-}
 
   const handlePageChange = (page: number) => {
     updateURLParams({
@@ -307,10 +308,11 @@ const handleApplyFilter = (filters: Record<string, string>) => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Nama Suku Cadang</TableHead>
+                  <TableHead>Gambar</TableHead>
+                  <TableHead>Nama Spare Part</TableHead>
                   <TableHead>Tanggal Pembelian</TableHead>
                   <TableHead>Harga</TableHead>
-                  <TableHead>Lokasi</TableHead>
+                  <TableHead>Lokasi Alat</TableHead>
                   <TableHead className="text-right">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
@@ -323,6 +325,19 @@ const handleApplyFilter = (filters: Record<string, string>) => {
                       onClick={() => navigateToViewDetails(sparepart.id)}
                       data-testid={`sparepart-row-${sparepart.id}`}
                     >
+                      <TableCell>
+                        {sparepart.imageUrl ? (
+                          <img
+                            src={sparepart.imageUrl}
+                            alt={sparepart.partsName}
+                            className="w-12 h-12 object-cover rounded-lg"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center">
+                            <span className="text-xs text-muted-foreground">No image</span>
+                          </div>
+                        )}
+                      </TableCell>
                       <TableCell className="font-medium">{sparepart.partsName}</TableCell>
                       <TableCell>{formatDate(sparepart.purchaseDate)}</TableCell>
                       <TableCell>{formatCurrency(sparepart.price)}</TableCell>
@@ -359,14 +374,14 @@ const handleApplyFilter = (filters: Record<string, string>) => {
                   <TableRow>
                     <TableCell colSpan={5} className="text-center">
                       {search ||
-                      searchParams.has("purchaseDateStart") ||
-                      searchParams.has("purchaseDateEnd") ||
-                      searchParams.has("priceMin") ||
-                      searchParams.has("priceMax") ||
-                      searchParams.has("createdOnStart") ||
-                      searchParams.has("createdOnEnd") ||
-                      searchParams.has("modifiedOnStart") ||
-                      searchParams.has("modifiedOnEnd")
+                        searchParams.has("purchaseDateStart") ||
+                        searchParams.has("purchaseDateEnd") ||
+                        searchParams.has("priceMin") ||
+                        searchParams.has("priceMax") ||
+                        searchParams.has("createdOnStart") ||
+                        searchParams.has("createdOnEnd") ||
+                        searchParams.has("modifiedOnStart") ||
+                        searchParams.has("modifiedOnEnd")
                         ? "Tidak ada suku cadang yang cocok dengan pencarian atau filter Anda"
                         : "Tidak ada data suku cadang"}
                     </TableCell>

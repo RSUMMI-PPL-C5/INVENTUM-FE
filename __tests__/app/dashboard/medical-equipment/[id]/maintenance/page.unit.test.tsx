@@ -669,4 +669,126 @@ describe("MaintenanceHistoryCreate Component", () => {
     global.fetch = originalFetch
     consoleErrorSpy.mockRestore()
   })
+
+  // Tambahkan dua test case ini dalam describe block yang sama
+
+  it("successfully submits form with 'Berhasil dengan Catatan' result option", async () => {
+    const user = userEvent.setup()
+
+    // Mock successful equipment fetch and form submission
+    ;(global.fetch as jest.Mock).mockReset()
+    ;(global.fetch as jest.Mock)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: {
+            id: "test-equipment-id",
+            name: "MRI Machine",
+            brandName: "GE", 
+            modelName: "Model X",
+          },
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true }),
+      })
+
+    render(<MaintenanceHistoryCreate />)
+
+    await waitFor(() => {
+      expect(screen.getByText("Tambah Riwayat Pemeliharaan")).toBeInTheDocument()
+    })
+
+    // Fill form
+    await user.type(screen.getByLabelText("Tindakan yang Dilakukan"), "Pembersihan komponen internal")
+    await user.type(screen.getByLabelText("Teknisi"), "Jane Smith")
+
+    // Select "Berhasil dengan Catatan" result
+    const resultSelect = screen.getByText("Pilih hasil")
+    await user.click(resultSelect)
+    await waitFor(() => {
+      expect(screen.getByText("Berhasil dengan Catatan")).toBeInTheDocument()
+    })
+    await user.click(screen.getByText("Berhasil dengan Catatan"))
+
+    // Select date
+    const dateButton = screen.getByText("Pilih tanggal")
+    await user.click(dateButton)
+    const dateCell = document.querySelector('[role="gridcell"]:not([aria-disabled="true"])')
+    if (dateCell) {
+      await user.click(dateCell)
+    }
+
+    // Submit form
+    await user.click(screen.getByText("Simpan"))
+
+    // Verify form submission with correct result value
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledTimes(2)
+      const lastCallBody = JSON.parse((global.fetch as jest.Mock).mock.calls[1][1].body)
+      expect(lastCallBody.result).toBe("Success with Issues")
+      expect(toast.success).toHaveBeenCalledWith("Riwayat pemeliharaan berhasil dibuat")
+    })
+  })
+
+  it("successfully submits form with 'Gagal dengan Catatan' result option", async () => {
+    const user = userEvent.setup()
+
+    // Mock successful equipment fetch and form submission
+    ;(global.fetch as jest.Mock).mockReset()
+    ;(global.fetch as jest.Mock)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: {
+            id: "test-equipment-id",
+            name: "MRI Machine",
+            brandName: "GE",
+            modelName: "Model X",
+          },
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true }),
+      })
+
+    render(<MaintenanceHistoryCreate />)
+
+    await waitFor(() => {
+      expect(screen.getByText("Tambah Riwayat Pemeliharaan")).toBeInTheDocument()
+    })
+
+    // Fill form
+    await user.type(screen.getByLabelText("Tindakan yang Dilakukan"), "Perbaikan sensor tekanan")
+    await user.type(screen.getByLabelText("Teknisi"), "Alex Brown")
+
+    // Select "Gagal dengan Catatan" result
+    const resultSelect = screen.getByText("Pilih hasil")
+    await user.click(resultSelect)
+    await waitFor(() => {
+      expect(screen.getByText("Gagal dengan Catatan")).toBeInTheDocument()
+    })
+    await user.click(screen.getByText("Gagal dengan Catatan"))
+
+    // Select date
+    const dateButton = screen.getByText("Pilih tanggal")
+    await user.click(dateButton)
+    const dateCell = document.querySelector('[role="gridcell"]:not([aria-disabled="true"])')
+    if (dateCell) {
+      await user.click(dateCell)
+    }
+
+    // Submit form
+    await user.click(screen.getByText("Simpan"))
+
+    // Verify form submission with correct result value
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledTimes(2)
+      const lastCallBody = JSON.parse((global.fetch as jest.Mock).mock.calls[1][1].body)
+      expect(lastCallBody.result).toBe("Failed with Issues")
+      expect(toast.success).toHaveBeenCalledWith("Riwayat pemeliharaan berhasil dibuat")
+    })
+  })
 })
