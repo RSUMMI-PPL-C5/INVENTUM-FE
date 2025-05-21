@@ -1,3 +1,10 @@
+# [1.0.0-staging.9](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/compare/v1.0.0-staging.8...v1.0.0-staging.9) (2025-05-21)
+
+
+### Bug Fixes
+
+* modal height fix ([783412c](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/commit/783412cd03ddabc07bb1baf113b76d77dc565c18))
+
 # [1.0.0-staging.8](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/compare/v1.0.0-staging.7...v1.0.0-staging.8) (2025-05-21)
 
 
