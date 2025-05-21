@@ -24,7 +24,7 @@ export function ImageUpload({ onImageSelect, currentImage, className }: ImageUpl
                 // Generate filename
                 const timestamp = new Date().getTime()
                 const filename = `sparepart-${timestamp}.png`
-                const publicPath = `/assets/spareparts/${filename}`
+                const publicPath = `/uploads/spareparts/${filename}`
 
                 // Create preview URL
                 const previewUrl = URL.createObjectURL(file)
