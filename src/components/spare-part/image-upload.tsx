@@ -36,7 +36,7 @@ export function ImageUpload({ onImageSelect, currentImage, className }: ImageUpl
                 formData.append('filename', filename)
 
                 // Upload file
-                const response = await fetch('/api/upload', {
+                const response = await fetch('/next-api/upload', {
                     method: 'POST',
                     body: formData
                 })
