@@ -1,3 +1,10 @@
+# [1.0.0-staging.12](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/compare/v1.0.0-staging.11...v1.0.0-staging.12) (2025-05-21)
+
+
+### Bug Fixes
+
+* next-api for upload ([1670fd9](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/commit/1670fd9166801d3745cc86a7f4c86cf944e2f2fd))
+
 # [1.0.0-staging.11](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/compare/v1.0.0-staging.10...v1.0.0-staging.11) (2025-05-21)
 
 
