@@ -1,5 +1,9 @@
 # Stage 1: Build
 FROM node:22 AS builder
+
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
 WORKDIR /app
 
 # Copy package files first to optimize cache
