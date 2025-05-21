@@ -66,7 +66,7 @@ export default function SparePartCreate() {
 			price: "",
 			toolLocation: "",
 			imageUrl: "",
-		}
+		},
 	});
 
 	useEffect(() => {
@@ -92,14 +92,24 @@ export default function SparePartCreate() {
 			const result = await response.json();
 
 			if (!response.ok) {
-				toast.error(<>Error fetching locations:<br />{result.message}</>);
+				toast.error(
+					<>
+						Error fetching locations:
+						<br />
+						{result.message}
+					</>
+				);
 				return;
 			}
 
 			setLocations(result);
 		} catch (error) {
 			console.error("Error fetching locations:", error);
-			toast.error(error instanceof Error ? error.message : 'Error fetching locations');
+			toast.error(
+				error instanceof Error
+					? error.message
+					: "Error fetching locations"
+			);
 		}
 	}
 
@@ -128,7 +138,13 @@ export default function SparePartCreate() {
 		const result = await response.json();
 
 		if (!response.ok) {
-			toast.error(<>Error creating spare part:<br />{result.message}</>);
+			toast.error(
+				<>
+					Error creating spare part:
+					<br />
+					{result.message}
+				</>
+			);
 			return;
 		}
 
@@ -144,9 +160,15 @@ export default function SparePartCreate() {
 		} catch (error) {
 			console.error("Error creating spare part:", error);
 			toast.error(
-				error instanceof Error ?
-					<>Error creating spare part:<br />{error.message}</> :
-					'Error creating spare part'
+				error instanceof Error ? (
+					<>
+						Error creating spare part:
+						<br />
+						{error.message}
+					</>
+				) : (
+					"Error creating spare part"
+				)
 			);
 		} finally {
 			setLoading(false);
@@ -159,7 +181,7 @@ export default function SparePartCreate() {
 				<Button
 					variant="outline"
 					onClick={() => router.push("/dashboard/spare-part")}
-					className="mr-4"
+					className="mr-4 w-full sm:w-auto"
 				>
 					<ArrowLeft className="mr-2 h-4 w-4" />
 					Kembali
@@ -172,7 +194,7 @@ export default function SparePartCreate() {
 			<Form {...form}>
 				<form
 					onSubmit={form.handleSubmit(onSubmit)}
-					className="space-y-6 mt-4"
+					className="space-y-6 mt-4 max-w-3xl"
 				>
 					<FormField
 						control={form.control}
@@ -223,7 +245,7 @@ export default function SparePartCreate() {
 												className={cn(
 													"w-full pl-3 text-left font-normal",
 													!field.value &&
-													"text-muted-foreground"
+														"text-muted-foreground"
 												)}
 											>
 												{field.value ? (
@@ -256,11 +278,16 @@ export default function SparePartCreate() {
 												variant={"outline"}
 												className={cn(
 													"w-full pl-3 text-left font-normal",
-													!field.value && "text-muted-foreground"
+													!field.value &&
+														"text-muted-foreground"
 												)}
 											>
 												{field.value ? (
-													format(field.value, "dd MMM yyyy", { locale: id })
+													format(
+														field.value,
+														"dd MMM yyyy",
+														{ locale: id }
+													)
 												) : (
 													<span>Pilih tanggal</span>
 												)}
@@ -299,10 +326,18 @@ export default function SparePartCreate() {
 										{...field}
 										placeholder="Masukkan harga"
 										type="text"
-										value={field.value ? formatNumberWithDots(field.value) : ""}
+										value={
+											field.value
+												? formatNumberWithDots(
+														field.value
+												  )
+												: ""
+										}
 										onChange={(e) => {
 											// Remove non-digit characters and store raw value
-											const rawValue = e.target.value.replace(/\./g, "").replace(/[^\d]/g, "");
+											const rawValue = e.target.value
+												.replace(/\./g, "")
+												.replace(/[^\d]/g, "");
 											field.onChange(rawValue);
 										}}
 									/>
@@ -357,7 +392,7 @@ export default function SparePartCreate() {
 												className={cn(
 													"w-full pl-3 text-left font-normal",
 													!field.value &&
-													"text-muted-foreground"
+														"text-muted-foreground"
 												)}
 											>
 												{field.value ? (
@@ -390,12 +425,17 @@ export default function SparePartCreate() {
 												variant={"outline"}
 												className={cn(
 													"w-full pl-3 text-left font-normal",
-													!field.value && "text-muted-foreground"
+													!field.value &&
+														"text-muted-foreground"
 												)}
 											>
 												{field.value ? (
 													// Format dengan locale Indonesia
-													format(field.value, "dd MMM yyyy", { locale: id })
+													format(
+														field.value,
+														"dd MMM yyyy",
+														{ locale: id }
+													)
 												) : (
 													<span>Pilih tanggal</span>
 												)}
@@ -403,7 +443,10 @@ export default function SparePartCreate() {
 											</Button>
 										</FormControl>
 									</PopoverTrigger>
-									<PopoverContent className="w-auto p-0" align="start">
+									<PopoverContent
+										className="w-auto p-0"
+										align="start"
+									>
 										<Calendar
 											mode="single"
 											selected={field.value}
@@ -420,15 +463,20 @@ export default function SparePartCreate() {
 						)}
 					/>
 
-					<div className="flex justify-end space-x-4">
+					<div className="flex flex-col sm:flex-row gap-2 sm:gap-4 sm:justify-end">
 						<Button
 							type="button"
 							variant="destructive"
 							onClick={() => router.back()}
+							className="w-full sm:w-auto order-1 sm:order-none"
 						>
 							Batalkan
 						</Button>
-						<Button type="submit" disabled={loading}>
+						<Button
+							type="submit"
+							disabled={loading}
+							className="w-full sm:w-auto"
+						>
 							{loading ? "Menyimpan..." : "Simpan"}
 						</Button>
 					</div>
