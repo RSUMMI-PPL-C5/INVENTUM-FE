@@ -278,12 +278,12 @@ export default function UserEdit() {
 				<Button
 					variant="outline"
 					onClick={() => router.push("/dashboard/user")}
-					className="mr-4"
+					className="mr-4 w-full sm:w-auto"
 				>
 					<ArrowLeft className="mr-2 h-4 w-4" />
 					Kembali
 				</Button>
-				<span className="text-xl md:text-header-h5 font-bold font-poppins">
+				<span className="text-header-h5 font-bold font-poppins">
 					Ubah Pengguna
 				</span>
 			</div>
@@ -298,7 +298,7 @@ export default function UserEdit() {
 				<Form {...form}>
 					<form
 						onSubmit={form.handleSubmit(onSubmit)}
-						className="space-y-4 md:space-y-6 mt-4"
+						className="space-y-4 md:space-y-6 mt-4 max-w-3xl"
 					>
 						<FormField
 							control={form.control}

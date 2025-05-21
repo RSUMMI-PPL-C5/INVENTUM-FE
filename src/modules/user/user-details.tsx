@@ -134,7 +134,7 @@ export default function UserDetails() {
 				<Button
 					variant="outline"
 					onClick={handleGoBack}
-					className="mb-6"
+					className="mb-6 w-full sm:w-auto"
 				>
 					<ArrowLeft className="mr-2 h-4 w-4" /> Kembali
 				</Button>
@@ -163,6 +163,7 @@ export default function UserDetails() {
 					variant="outline"
 					onClick={handleGoBack}
 					data-testid="back-button"
+					className="w-full sm:w-auto"
 				>
 					<ArrowLeft className="mr-2 h-4 w-4" /> Kembali
 				</Button>
@@ -178,6 +179,7 @@ export default function UserDetails() {
 				variant="outline"
 				onClick={handleGoBack}
 				data-testid="back-button"
+				className="w-full sm:w-auto"
 			>
 				<ArrowLeft className="mr-2 h-4 w-4" /> Kembali
 			</Button>

@@ -188,7 +188,7 @@ export default function UserFilterModal({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={(open) => !open && onCancel()}>
-			<DialogContent className="w-fit max-w-[90vw]">
+			<DialogContent className="max-w-[90vw]">
 				<DialogHeader>
 					<DialogTitle>Filter Pengguna</DialogTitle>
 					<DialogDescription>
@@ -516,7 +516,7 @@ export default function UserFilterModal({
 					</div>
 				</div>
 
-				<DialogFooter className="flex flex-col sm:flex-row w-full sm:justify-between gap-4">
+				<DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-4 sm:justify-end">
 					<Button
 						variant="outline"
 						onClick={resetFilters}
@@ -525,21 +525,19 @@ export default function UserFilterModal({
 					>
 						Reset
 					</Button>
-					<div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-						<Button
-							variant="destructive"
-							onClick={onCancel}
-							className="w-full sm:w-auto"
-						>
-							Batal
-						</Button>
-						<Button
-							onClick={() => onConfirm(localFilters)}
-							className="w-full sm:w-auto"
-						>
-							Terapkan
-						</Button>
-					</div>
+					<Button
+						variant="destructive"
+						onClick={onCancel}
+						className="w-full sm:w-auto"
+					>
+						Batal
+					</Button>
+					<Button
+						onClick={() => onConfirm(localFilters)}
+						className="w-full sm:w-auto"
+					>
+						Terapkan
+					</Button>
 				</DialogFooter>
 			</DialogContent>
 		</Dialog>
