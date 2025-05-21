@@ -1,28 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronRight, Notification } from 'react-iconly'
+import { ChevronRight } from 'react-iconly'
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { NotificationBell } from "@/components/ui/notification-bell";
+import { useNotifications } from "@/context/notification-provider";
 
 const Breadcrumb = () => {
 	const pathname = usePathname();
-	const [isMobile, setIsMobile] = useState(false);
-
-	useEffect(() => {
-		const handleResize = () => {
-			setIsMobile(window.innerWidth < 768);
-		};
-
-		// Check on mount
-		handleResize();
-
-		// Add listener for window resize
-		window.addEventListener("resize", handleResize);
-
-		// Cleanup
-		return () => window.removeEventListener("resize", handleResize);
-	}, []);
+    const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
 
 	const segments = pathname.split("/").filter((segment) => segment !== "").slice(1);
 
@@ -56,7 +42,19 @@ const Breadcrumb = () => {
                         </li>
                     ))}
                 </ol>
-                <Notification set="curved" stroke="bold" primaryColor="black" size={isMobile ? 'medium' : 'large'} filled />
+                <NotificationBell 
+                    count={unreadCount} 
+                    notifications={notifications.map(n => ({
+                        id: n.id,
+                        title: n.title || "Notification",
+                        message: n.message,
+                        timestamp: n.timestamp,
+                        read: n.read,
+                        type: n.type || "info"
+                    }))}
+                    onNotificationClick={markAsRead}
+                    onMarkAllAsRead={markAllAsRead}
+                />
             </div>
             <hr className="w-full min-w-[3.5rem] border-1 border-[#C2C2C2]" />
 		</nav>

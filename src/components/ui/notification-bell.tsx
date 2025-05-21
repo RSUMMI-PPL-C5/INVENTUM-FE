@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { Bell } from "lucide-react";
-import { cn } from "@/lib/utils";
+import React, { useEffect, useState } from "react";
+import { Notification } from 'react-iconly'
 import {
   Popover,
   PopoverContent,
@@ -32,6 +31,24 @@ export function NotificationBell({
 }: NotificationBellProps) {
   const [open, setOpen] = useState(false);
 
+  const [isMobile, setIsMobile] = useState(false);
+
+    // Check if the screen is mobile size
+	useEffect(() => {
+		const handleResize = () => {
+			setIsMobile(window.innerWidth < 768);
+		};
+
+		// Check on mount
+		handleResize();
+
+		// Add listener for window resize
+		window.addEventListener("resize", handleResize);
+
+		// Cleanup
+		return () => window.removeEventListener("resize", handleResize);
+	}, []);
+
   // Filter to only show unread notifications in the dropdown
   const unreadNotifications = notifications.filter(n => !n.read);
   
@@ -42,7 +59,7 @@ export function NotificationBell({
           className="relative p-2 rounded-full hover:bg-gray-100 transition-colors"
           aria-label="Notifications"
         >
-          <Bell className="h-6 w-6" />
+          <Notification set="curved" stroke="bold" primaryColor="black" size={isMobile ? 'medium' : 'large'} filled />
           {count > 0 && (
             <span className="absolute top-0 right-0 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full">
               {count > 99 ? "99+" : count}
