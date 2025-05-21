@@ -1,3 +1,10 @@
+# [1.0.0-staging.11](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/compare/v1.0.0-staging.10...v1.0.0-staging.11) (2025-05-21)
+
+
+### Bug Fixes
+
+* sparepart delete modal ([bcaa54d](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/commit/bcaa54d396570786f4d73cccfb2e3cf10871bbdb))
+
 # [1.0.0-staging.10](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/compare/v1.0.0-staging.9...v1.0.0-staging.10) (2025-05-21)
 
 
