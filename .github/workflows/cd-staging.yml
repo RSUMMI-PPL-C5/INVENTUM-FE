@@ -5,6 +5,7 @@ on:
     branches:
       - chore/Deployment
       - health
+      - staging
 
 jobs:
   deploy:
