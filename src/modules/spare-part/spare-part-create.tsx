@@ -33,7 +33,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { id } from "date-fns/locale";
 import { ImageUpload } from "@/components/spare-part/image-upload";
 
 interface Location {
