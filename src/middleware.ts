@@ -19,29 +19,39 @@ function redirectBasedOnRole(request: NextRequest, userRole: string) {
 
 function getTokenPayload(token: string) {
   try {
+    // First try with base64url encoding
     const payload = token.split('.')[1] ?? ''
-    const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'))
+    const base64Url = payload.replace(/-/g, '+').replace(/_/g, '/')
+    const base64 = base64Url.padEnd(base64Url.length + (4 - (base64Url.length % 4)) % 4, '=')
+    const json = atob(base64)
     return JSON.parse(json)
   } catch (error) {
-    return null
+    // Fallback to regular base64 if the first attempt fails
+    try {
+      const payload = token.split('.')[1] ?? ''
+      const json = atob(payload)
+      return JSON.parse(json)
+    } catch (error) {
+      console.error('Failed to parse token payload:', error)
+      return {}
+    }
   }
 }
 
 export async function middleware(request: NextRequest) {
   const isLoginPage = request.nextUrl.pathname === '/'
   const accessToken = request.cookies.get('accessToken')?.value
-  
+
   // If no token and accessing protected route, redirect to login
   if (!accessToken) {
-    return isLoginPage 
+    return isLoginPage
       ? NextResponse.next()
       : NextResponse.redirect(new URL('/?error=unauthorized', request.url))
   }
-  
+
   const apiUrl = process.env.NEXT_PUBLIC_API_URL
   if (!apiUrl) {
-    // If no API URL configured, allow access but don't validate token
-    return NextResponse.next()
+    return handleError(request, 'server_error')
   }
 
   try {
@@ -52,28 +62,37 @@ export async function middleware(request: NextRequest) {
 
     // Handle invalid token
     if (!apiResponse.ok) {
-      return handleError(request, 'token_expired')
+      const errorData = await apiResponse.json().catch(() => ({}))
+      if (errorData.message?.includes('expired')) {
+        return handleError(request, 'token_expired')
+      }
+      return handleError(request, 'invalid_token')
     }
-    
-    // Get user role from token
-    const userRole = getTokenPayload(accessToken)?.role
-    
+
+    // Get user role and validate from token
+    const tokenData = getTokenPayload(accessToken)
+    if (!tokenData || !tokenData.role) {
+      return handleError(request, 'invalid_token')
+    }
+
+    const userRole = tokenData.role
+
     // If on login page, redirect based on role
     if (isLoginPage) {
       return redirectBasedOnRole(request, userRole || 'Fasum')
     }
-    
+
     // Protect admin-only routes
     const path = request.nextUrl.pathname
     if (path.startsWith('/dashboard/user') && userRole !== 'Admin') {
       return NextResponse.redirect(new URL('/dashboard/medical-equipment', request.url))
     }
-    
+
     // Allow access if authorized
     return NextResponse.next()
   } catch (error) {
     // If backend is not available, allow access but don't validate token
-    console.warn('Backend not available, skipping token validation')
+    console.warn('Backend not available, skipping token validation:', error)
     return NextResponse.next()
   }
 }
