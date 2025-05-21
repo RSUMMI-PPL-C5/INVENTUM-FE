@@ -26,6 +26,7 @@ function getTokenPayload(token: string) {
     const json = atob(base64)
     return JSON.parse(json)
   } catch (error) {
+      console.error('Failed to parse token with base64url encoding:', error)
     // Fallback to regular base64 if the first attempt fails
     try {
       const payload = token.split('.')[1] ?? ''

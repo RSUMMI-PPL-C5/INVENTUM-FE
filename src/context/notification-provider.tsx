@@ -4,6 +4,21 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Cookies from 'js-cookie';
 
+interface ApiNotification {
+  id: string;
+  message: string;
+  createdOn: string;
+  isRead: boolean;
+  requestId?: string;
+  request?: {
+    requestType: 'MAINTENANCE' | 'CALIBRATION' | string;
+  };
+  user?: {
+    id: string;
+    name: string;
+  };
+}
+
 interface Notification {
   id: string;
   title?: string;
@@ -86,7 +101,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       }
 
       const data = await response.json();
-      const formattedNotifications = data.data.map((n: any) => ({
+      const formattedNotifications = data.data.map((n: ApiNotification) => ({
         id: n.id,
         title: n.request?.requestType === 'MAINTENANCE' ? 'Permintaan Pemeliharaan' : 'Permintaan Kalibrasi',
         message: n.message,

@@ -25,6 +25,20 @@ import { formatDate } from "@/lib/utils";
 import Cookies from "js-cookie";
 import { toast } from "sonner";
 
+interface CommentApiResponse {
+	id: string;
+	request?: {
+		medicalEquipment?: string;
+		requestType?: string;
+	};
+	createdAt?: string;
+	text?: string;
+	user?: {
+		fullname?: string;
+		role?: string;
+	};
+}
+
 interface CommentData {
 	id: string;
 	equipment: string;
@@ -106,16 +120,18 @@ export default function CommentsReport() {
 			const result = await response.json();
 
 			if (result.success && Array.isArray(result.data)) {
-				// Add proper type annotation for the item parameter
-				const formattedComments = result.data.map((item: any) => ({
-					id: item.id,
-					equipment: item.request?.medicalEquipment || "Unknown",
-					requestType: item.request?.requestType || "Unknown",
-					date: item.createdAt || "",
-					comment: item.text || "",
-					user: item.user?.fullname || "Unknown",
-					userRole: item.user?.role || "Unknown",
-				}));
+				// Use the proper CommentApiResponse type for the item parameter
+				const formattedComments = result.data.map(
+					(item: CommentApiResponse) => ({
+						id: item.id,
+						equipment: item.request?.medicalEquipment || "Unknown",
+						requestType: item.request?.requestType || "Unknown",
+						date: item.createdAt || "",
+						comment: item.text || "",
+						user: item.user?.fullname || "Unknown",
+						userRole: item.user?.role || "Unknown",
+					})
+				);
 				setData(formattedComments);
 			} else {
 				console.warn("API returned unexpected structure:", result);

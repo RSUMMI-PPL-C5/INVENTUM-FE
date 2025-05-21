@@ -23,6 +23,7 @@ export function formatDate(dateString: string): string {
       year: 'numeric'
     }).format(date)
   } catch (error) {
+    console.error("Error decoding token:", error)
     return dateString
   }
 }

@@ -17,6 +17,29 @@ import { formatDate, formatCurrency } from "@/lib/utils";
 import Cookies from "js-cookie";
 import { toast } from "sonner";
 
+// Define the API response structure
+interface PartsHistoryResponse {
+	id: string;
+	medicalEquipmentId: string;
+	sparepartId: string | null;
+	replacementDate: string | null;
+	date: string | null;
+	actionPerformed: string | null;
+	technician: string | null;
+	result: string | null;
+	createdBy: string | null;
+	createdOn: string | null;
+	medicalEquipment?: {
+		id: string;
+		name: string | null;
+	} | null;
+	sparepart?: {
+		id: string;
+		partsName: string | null;
+		price: number | null;
+	} | null;
+}
+
 interface PartReportItem {
 	id: string;
 	equipment: string;
@@ -98,15 +121,17 @@ export default function PartsReport() {
 
 			if (result.success && Array.isArray(result.data)) {
 				// Add proper type annotation for the item parameter
-				const formattedData = result.data.map((item: any) => ({
-					id: item.id,
-					equipment: item.medicalEquipment?.name || "Unknown",
-					partName: item.sparepart?.partsName || "Unknown Part",
-					quantity: 1, // Default to 1 if not specified
-					date: item.replacementDate || item.date || "",
-					technician: item.technician || "Unknown",
-					cost: item.sparepart?.price || 0,
-				}));
+				const formattedData = result.data.map(
+					(item: PartsHistoryResponse) => ({
+						id: item.id,
+						equipment: item.medicalEquipment?.name || "Unknown",
+						partName: item.sparepart?.partsName || "Unknown Part",
+						quantity: 1, // Default to 1 if not specified
+						date: item.replacementDate || item.date || "",
+						technician: item.technician || "Unknown",
+						cost: item.sparepart?.price || 0,
+					})
+				);
 				setData(formattedData);
 			} else {
 				console.warn(

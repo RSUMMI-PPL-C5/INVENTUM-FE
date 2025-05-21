@@ -28,8 +28,11 @@ export default function NotificationPage() {
         const [month, day, year] = datePart.split('/').map(Number);
         
         // Parse the time part (H:MM:SS AM/PM)
-        let [time, period] = timePart.split(' ');
-        let [hours, minutes, seconds] = time.split(':').map(Number);
+        const [time, period] = timePart.split(' ');
+        const timeParts = time.split(':').map(Number);
+        let hours = timeParts[0];
+        const minutes = timeParts[1];
+        const seconds = timeParts[2];
         
         // Adjust hours for PM
         if (period === 'PM' && hours < 12) {
