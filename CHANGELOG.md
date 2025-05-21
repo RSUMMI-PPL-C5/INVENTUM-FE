@@ -1,3 +1,10 @@
+# [1.0.0-staging.8](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/compare/v1.0.0-staging.7...v1.0.0-staging.8) (2025-05-21)
+
+
+### Bug Fixes
+
+* add env var to Dockerfile ([02771d6](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/commit/02771d6e4cf58388c262c34b281c9d895bcdc70d))
+
 # [1.0.0-staging.7](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/compare/v1.0.0-staging.6...v1.0.0-staging.7) (2025-05-21)
 
 

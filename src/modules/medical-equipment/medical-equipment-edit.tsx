@@ -103,7 +103,13 @@ export default function MedicalEquipmentEdit() {
 
 				if (!response.ok) {
 					const errorData = await response.json();
-					toast.error(<>Error mengambil data alat medis:<br />{errorData.message ?? "Gagal mengambil data"}</>);
+					toast.error(
+						<>
+							Error mengambil data alat medis:
+							<br />
+							{errorData.message ?? "Gagal mengambil data"}
+						</>
+					);
 					throw new Error("Failed to fetch medical equipment data");
 				}
 
@@ -115,12 +121,12 @@ export default function MedicalEquipmentEdit() {
 					: undefined;
 
 				const formattedCreatedDate = equipmentData.createdOn
-				? formatDate(equipmentData.createdOn)
-				: "Tidak tersedia";
+					? formatDate(equipmentData.createdOn)
+					: "Tidak tersedia";
 
 				const formattedModifiedDate = equipmentData.modifiedOn
-				? formatDate(equipmentData.modifiedOn)
-				: "Tidak tersedia";
+					? formatDate(equipmentData.modifiedOn)
+					: "Tidak tersedia";
 
 				form.reset({
 					inventorisId: equipmentData.inventorisId,
@@ -139,7 +145,17 @@ export default function MedicalEquipmentEdit() {
 				});
 			} catch (error) {
 				console.error("Error fetching medical equipment data:", error);
-				toast.error(error instanceof Error ? <>Error mengambil data:<br />{error.message}</> : 'Error mengambil data alat medis');
+				toast.error(
+					error instanceof Error ? (
+						<>
+							Error mengambil data:
+							<br />
+							{error.message}
+						</>
+					) : (
+						"Error mengambil data alat medis"
+					)
+				);
 			} finally {
 				setLoading(false);
 			}
@@ -177,7 +193,7 @@ export default function MedicalEquipmentEdit() {
 						: null,
 					status: data.status,
 					vendor: data.vendor ?? null,
-          lastLocation: data.lastLocation ?? null,
+					lastLocation: data.lastLocation ?? null,
 				}),
 			}
 		);
@@ -185,7 +201,13 @@ export default function MedicalEquipmentEdit() {
 		const result = await response.json();
 
 		if (!response.ok) {
-			toast.error(<>Error mengubah data alat medis:<br />{result.message ?? "Gagal mengubah data"}</>);
+			toast.error(
+				<>
+					Error mengubah data alat medis:
+					<br />
+					{result.message ?? "Gagal mengubah data"}
+				</>
+			);
 			return;
 		}
 
@@ -195,7 +217,7 @@ export default function MedicalEquipmentEdit() {
 
 	async function onSubmit(values: z.infer<typeof formSchema>) {
 		setSubmitting(true);
-		
+
 		try {
 			const result = await updateMedicalEquipment(values);
 			if (result) {
@@ -203,7 +225,17 @@ export default function MedicalEquipmentEdit() {
 			}
 		} catch (error) {
 			console.error("Failed to update medical equipment:", error);
-			toast.error(error instanceof Error ? <>Error mengubah data:<br />{error.message}</> : 'Error mengubah data alat medis');
+			toast.error(
+				error instanceof Error ? (
+					<>
+						Error mengubah data:
+						<br />
+						{error.message}
+					</>
+				) : (
+					"Error mengubah data alat medis"
+				)
+			);
 		} finally {
 			setSubmitting(false);
 		}
@@ -232,7 +264,7 @@ export default function MedicalEquipmentEdit() {
 				<Button
 					variant="outline"
 					onClick={() => router.push("/dashboard/medical-equipment")}
-					className="mr-4"
+					className="mr-4 w-full sm:w-auto"
 				>
 					<ArrowLeft className="mr-2 h-4 w-4" />
 					Kembali
@@ -245,7 +277,7 @@ export default function MedicalEquipmentEdit() {
 			<Form {...form}>
 				<form
 					onSubmit={form.handleSubmit(onSubmit)}
-					className="space-y-6 mt-4"
+					className="space-y-6 mt-4 max-w-3xl"
 				>
 					<FormField
 						control={form.control}
@@ -322,9 +354,17 @@ export default function MedicalEquipmentEdit() {
 										{...field}
 										placeholder="Masukkan harga pembelian"
 										type="text"
-										value={field.value ? formatNumberWithDots(field.value.toString()) : ""}
+										value={
+											field.value
+												? formatNumberWithDots(
+														field.value.toString()
+												  )
+												: ""
+										}
 										onChange={(e) => {
-											const rawValue = e.target.value.replace(/[^\d.]/g, "").replace(/\./g, "");
+											const rawValue = e.target.value
+												.replace(/[^\d.]/g, "")
+												.replace(/\./g, "");
 											field.onChange(rawValue);
 										}}
 									/>
@@ -413,7 +453,11 @@ export default function MedicalEquipmentEdit() {
 												)}
 											>
 												{field.value ? (
-													format(field.value, "d MMM yyyy", { locale: id })
+													format(
+														field.value,
+														"d MMM yyyy",
+														{ locale: id }
+													)
 												) : (
 													<span>Pilih tanggal</span>
 												)}
@@ -430,7 +474,7 @@ export default function MedicalEquipmentEdit() {
 											selected={field.value}
 											onSelect={field.onChange}
 											initialFocus
-											 locale={id}
+											locale={id}
 											weekStartsOn={1}
 											className="rounded-md border"
 										/>
@@ -452,7 +496,9 @@ export default function MedicalEquipmentEdit() {
 											{...field}
 											aria-label="Tanggal Dibuat"
 											disabled
-											value={field.value ?? "Tidak tersedia"}
+											value={
+												field.value ?? "Tidak tersedia"
+											}
 										/>
 										<CalendarIcon className="absolute right-3 top-3 w-5 h-5 text-gray-500" />
 									</div>
@@ -473,7 +519,9 @@ export default function MedicalEquipmentEdit() {
 											{...field}
 											aria-label="Tanggal Dimodifikasi"
 											disabled
-											value={field.value ?? "Tidak tersedia"}
+											value={
+												field.value ?? "Tidak tersedia"
+											}
 										/>
 										<CalendarIcon className="absolute right-3 top-3 w-5 h-5 text-gray-500" />
 									</div>
@@ -482,15 +530,20 @@ export default function MedicalEquipmentEdit() {
 							</FormItem>
 						)}
 					/>
-					<div className="flex justify-end space-x-4">
+					<div className="flex flex-col sm:flex-row gap-2 sm:gap-4 sm:justify-end">
 						<Button
 							type="button"
 							variant="destructive"
 							onClick={() => router.back()}
+							className="w-full sm:w-auto order-1 sm:order-none"
 						>
 							Batalkan
 						</Button>
-						<Button type="submit" disabled={submitting}>
+						<Button
+							type="submit"
+							disabled={submitting}
+							className="w-full sm:w-auto"
+						>
 							{submitting ? "Menyimpan..." : "Simpan"}
 						</Button>
 					</div>

@@ -86,7 +86,7 @@ export default function CalibrationRequestCreate() {
 				`/dashboard/medical-equipment/${equipmentId}?success=true`
 			);
 		} catch (error) {
-            console.error("Failed to create calibration request:", error);
+			console.error("Failed to create calibration request:", error);
 			setError("Failed to create calibration request");
 			setErrorModalOpen(true);
 		} finally {
@@ -133,7 +133,7 @@ export default function CalibrationRequestCreate() {
 				<Button
 					variant="outline"
 					onClick={() => router.back()}
-					className="mr-4"
+					className="mr-4 w-full sm:w-auto"
 				>
 					<ArrowLeft className="mr-2 h-4 w-4" />
 					Kembali
@@ -204,15 +204,20 @@ export default function CalibrationRequestCreate() {
 						)}
 					/>
 
-					<div className="flex justify-end space-x-4">
+					<div className="flex flex-col sm:flex-row gap-2 sm:gap-4 sm:justify-end">
 						<Button
 							type="button"
 							variant="destructive"
 							onClick={() => router.back()}
+							className="w-full sm:w-auto order-1 sm:order-none"
 						>
 							Batalkan
 						</Button>
-						<Button type="submit" disabled={loading}>
+						<Button
+							type="submit"
+							disabled={loading}
+							className="w-full sm:w-auto"
+						>
 							{loading ? "Menyimpan..." : "Simpan"}
 						</Button>
 					</div>

@@ -49,48 +49,64 @@ export default function MedicalEquipmentPage() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 
-    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-    const [equipmentToDelete, setEquipmentToDelete] = useState<string | null>(null);
-    const [isDeleting, setIsDeleting] = useState(false);
-	
+	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+	const [equipmentToDelete, setEquipmentToDelete] = useState<string | null>(
+		null
+	);
+	const [isDeleting, setIsDeleting] = useState(false);
+
 	// Initialize state from URL params
-	const [medicalEquipments, setMedicalEquipments] = useState<MedicalEquipment[]>([]);
+	const [medicalEquipments, setMedicalEquipments] = useState<
+		MedicalEquipment[]
+	>([]);
 	const [paginationMeta, setPaginationMeta] = useState<PaginationMeta>({
 		total: 0,
-		page: searchParams.get("page") ? parseInt(searchParams.get("page") as string) : 1,
+		page: searchParams.get("page")
+			? parseInt(searchParams.get("page") as string)
+			: 1,
 		limit: 10,
 		totalPages: 1,
 	});
 	const [search, setSearch] = useState(searchParams.get("search") || "");
 	const [showFilterModal, setShowFilterModal] = useState(false);
 	const [loading, setLoading] = useState(true);
-	
+
 	// Initialize filters from URL params
 	const [filters, setFilters] = useState<Filters>(() => {
 		const initialFilters: Filters = {
 			status: searchParams.getAll("status"),
-			createdOnStart: searchParams.get("createdOnStart") 
-				? new Date(searchParams.get("createdOnStart") as string) 
+			createdOnStart: searchParams.get("createdOnStart")
+				? new Date(searchParams.get("createdOnStart") as string)
 				: null,
-			createdOnEnd: searchParams.get("createdOnEnd") 
-				? new Date(searchParams.get("createdOnEnd") as string) 
+			createdOnEnd: searchParams.get("createdOnEnd")
+				? new Date(searchParams.get("createdOnEnd") as string)
 				: null,
-			modifiedOnStart: searchParams.get("modifiedOnStart") 
-				? new Date(searchParams.get("modifiedOnStart") as string) 
+			modifiedOnStart: searchParams.get("modifiedOnStart")
+				? new Date(searchParams.get("modifiedOnStart") as string)
 				: null,
-			modifiedOnEnd: searchParams.get("modifiedOnEnd") 
-				? new Date(searchParams.get("modifiedOnEnd") as string) 
+			modifiedOnEnd: searchParams.get("modifiedOnEnd")
+				? new Date(searchParams.get("modifiedOnEnd") as string)
 				: null,
 		};
 		return initialFilters;
 	});
 
 	// Function to update URL with current filters, search and pagination
-	const updateURLParams = (newParams: Record<string, string | string[] | null | undefined>) => {
+	const updateURLParams = (
+		newParams: Record<string, string | string[] | null | undefined>
+	) => {
 		const params = new URLSearchParams(searchParams.toString());
-		
+
 		// Clear existing filter params to avoid duplicates
-		["search", "page", "status", "createdOnStart", "createdOnEnd", "modifiedOnStart", "modifiedOnEnd"].forEach(param => {
+		[
+			"search",
+			"page",
+			"status",
+			"createdOnStart",
+			"createdOnEnd",
+			"modifiedOnStart",
+			"modifiedOnEnd",
+		].forEach((param) => {
 			params.delete(param);
 		});
 
@@ -99,9 +115,9 @@ export default function MedicalEquipmentPage() {
 			if (value === null || value === undefined || value === "") {
 				return;
 			}
-			
+
 			if (Array.isArray(value)) {
-				value.forEach(val => {
+				value.forEach((val) => {
 					if (val) params.append(key, val);
 				});
 			} else {
@@ -110,12 +126,14 @@ export default function MedicalEquipmentPage() {
 		});
 
 		// Update URL without refreshing page
-		router.push(`/dashboard/medical-equipment?${params.toString()}`, { scroll: false });
+		router.push(`/dashboard/medical-equipment?${params.toString()}`, {
+			scroll: false,
+		});
 	};
 
 	const buildQueryParams = (filters: Filters): string => {
 		const params = new URLSearchParams();
-		
+
 		filters.status.forEach((status) => {
 			params.append("status", status);
 		});
@@ -174,89 +192,116 @@ export default function MedicalEquipmentPage() {
 			const response = await fetch(url, {
 				headers: {
 					"Content-Type": "application/json",
-                    Authorization: token ? `Bearer ${token}` : "",
+					Authorization: token ? `Bearer ${token}` : "",
 				},
 			});
 
 			const result = await response.json();
 
-            if (!response.ok) {
-                toast.error(<>Error fetching medical equipment:<br />{result.message}</>);                
-                return;
-            }
+			if (!response.ok) {
+				toast.error(
+					<>
+						Error fetching medical equipment:
+						<br />
+						{result.message}
+					</>
+				);
+				return;
+			}
 
 			setMedicalEquipments(result.data);
 			setPaginationMeta(result.meta);
-
 		} catch (error) {
 			console.error("Error fetching medical equipment:", error);
-            toast.error(error instanceof Error ? error.message : 'Error fetching medical equipment');
+			toast.error(
+				error instanceof Error
+					? error.message
+					: "Error fetching medical equipment"
+			);
 		} finally {
 			setLoading(false);
 		}
 	};
 
 	const confirmDelete = (equipmentId: string) => {
-        setEquipmentToDelete(equipmentId);
-        setShowDeleteDialog(true);
-    };
-    
-    const handleDelete = async () => {
-        if (!equipmentToDelete) return;
-    
-        setIsDeleting(true); // Start deletion process
-        try {
-            const token = Cookies.get("accessToken");
-    
-            const response = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/medical-equipment/${equipmentToDelete}`,
-                {
-                    method: "DELETE",
-                    headers: {
-                        Authorization: token ? `Bearer ${token}` : "",
-                        "Content-Type": "application/json",
-                    },
-                }
-            );
-    
-            const result = await response.json();
-    
-            if (!response.ok) {
-                toast.error(<>Error deleting medical equipment:<br />{result.message}</>);
-                return;
-            }
-    
-            fetchMedicalEquipments();
-            toast.info("Alat medis berhasil dihapus");
-        } catch (error) {
-            console.error("Error deleting medical equipment:", error);
-            toast.error(error instanceof Error ? error.message : "Error deleting medical equipment");
-        } finally {
-            setIsDeleting(false);
-            setShowDeleteDialog(false);
-            setEquipmentToDelete(null);
-        }
-    };
+		setEquipmentToDelete(equipmentId);
+		setShowDeleteDialog(true);
+	};
+
+	const handleDelete = async () => {
+		if (!equipmentToDelete) return;
+
+		setIsDeleting(true); // Start deletion process
+		try {
+			const token = Cookies.get("accessToken");
+
+			const response = await fetch(
+				`${process.env.NEXT_PUBLIC_API_URL}/medical-equipment/${equipmentToDelete}`,
+				{
+					method: "DELETE",
+					headers: {
+						Authorization: token ? `Bearer ${token}` : "",
+						"Content-Type": "application/json",
+					},
+				}
+			);
+
+			const result = await response.json();
+
+			if (!response.ok) {
+				toast.error(
+					<>
+						Error deleting medical equipment:
+						<br />
+						{result.message}
+					</>
+				);
+				return;
+			}
+
+			fetchMedicalEquipments();
+			toast.info("Alat medis berhasil dihapus");
+		} catch (error) {
+			console.error("Error deleting medical equipment:", error);
+			toast.error(
+				error instanceof Error
+					? error.message
+					: "Error deleting medical equipment"
+			);
+		} finally {
+			setIsDeleting(false);
+			setShowDeleteDialog(false);
+			setEquipmentToDelete(null);
+		}
+	};
 
 	const handleSearchChange = (value: string) => {
 		setSearch(value);
 		updateURLParams({
 			search: value || null,
-			page: "1"
+			page: "1",
 		});
 	};
 
 	const handleFilterApply = (newFilters: Filters) => {
 		setFilters(newFilters);
 		setShowFilterModal(false);
-		
+
 		updateURLParams({
 			status: newFilters.status,
-			createdOnStart: newFilters.createdOnStart ? format(newFilters.createdOnStart, "yyyy-MM-dd") : null,
-			createdOnEnd: newFilters.createdOnEnd ? format(newFilters.createdOnEnd, "yyyy-MM-dd") : null,
-			modifiedOnStart: newFilters.modifiedOnStart ? format(newFilters.modifiedOnStart, "yyyy-MM-dd") : null,
-			modifiedOnEnd: newFilters.modifiedOnEnd ? format(newFilters.modifiedOnEnd, "yyyy-MM-dd") : null,
-			page: "1", 
+			createdOnStart: newFilters.createdOnStart
+				? format(newFilters.createdOnStart, "yyyy-MM-dd")
+				: null,
+			createdOnEnd: newFilters.createdOnEnd
+				? format(newFilters.createdOnEnd, "yyyy-MM-dd")
+				: null,
+			modifiedOnStart: newFilters.modifiedOnStart
+				? format(newFilters.modifiedOnStart, "yyyy-MM-dd")
+				: null,
+			modifiedOnEnd: newFilters.modifiedOnEnd
+				? format(newFilters.modifiedOnEnd, "yyyy-MM-dd")
+				: null,
+			page: "1",
 		});
 	};
 
@@ -319,7 +364,7 @@ export default function MedicalEquipmentPage() {
 			default:
 				return status;
 		}
-	}
+	};
 
 	const navigateToEquipmentEdit = (equipmentId: string) => {
 		router.push(`/dashboard/medical-equipment/${equipmentId}/edit`);
@@ -340,17 +385,17 @@ export default function MedicalEquipmentPage() {
 			</h1>
 
 			{/* Header Section */}
-			<div className="bg-primary-solid items-center p-2 flex gap-3 h-fit text-white rounded-lg overflow-hidden">
-				<div className="flex items-center justify-center w-[264px] h-[224px] border border-primary-super-light rounded-lg">
+			<div className="bg-primary-solid p-4 md:p-2 flex flex-col md:flex-row items-center gap-3 h-fit text-white rounded-lg overflow-hidden">
+				<div className="hidden md:flex items-center justify-center w-[200px] md:w-[264px] h-[150px] md:h-[224px] border border-primary-super-light rounded-lg shrink-0">
 					illustration
 				</div>
 
-				<div className="flex flex-col gap-6 py-6 px-6">
+				<div className="flex flex-col gap-4 md:gap-6 py-3 md:py-6 px-2 md:px-6 text-left">
 					<div className="space-y-2">
-						<h2 className="text-header-h6 font-bold font-poppins">
+						<h2 className="text-xl md:text-header-h6 font-bold font-poppins">
 							Alat Medis
 						</h2>
-						<p className="text-s-medium">
+						<p className="text-sm md:text-s-medium">
 							Kelola, pantau, dan atur semua alat medis dalam
 							sistem, termasuk penambahan, pembaruan, penghapusan,
 							serta pengelolaan status alat medis.
@@ -358,7 +403,7 @@ export default function MedicalEquipmentPage() {
 					</div>
 					<Button
 						variant="ghost"
-						className="w-fit"
+						className="w-full md:w-fit"
 						onClick={() => navigateToEquipmentCreate()}
 					>
 						<Plus className="mr-2 h-4 w-4" /> Tambah Alat Medis
@@ -402,7 +447,8 @@ export default function MedicalEquipmentPage() {
 			{/* Medical Equipment Table */}
 			{!loading && (
 				<>
-					<div className="border rounded-lg overflow-hidden">
+					{/* Desktop View */}
+					<div className="border rounded-lg overflow-hidden hidden md:block">
 						<Table data-testid="medical-equipments-table">
 							<TableHeader>
 								<TableRow>
@@ -441,7 +487,9 @@ export default function MedicalEquipmentPage() {
 														equipment.status
 													)}`}
 												>
-													{getStatusText(equipment.status)}
+													{getStatusText(
+														equipment.status
+													)}
 												</span>
 											</TableCell>
 											<TableCell>
@@ -479,7 +527,9 @@ export default function MedicalEquipmentPage() {
 														variant="destructive"
 														onClick={(e) => {
 															e.stopPropagation();
-															confirmDelete(equipment.id);
+															confirmDelete(
+																equipment.id
+															);
 														}}
 														data-testid={`delete-button-${equipment.id}`}
 													>
@@ -505,6 +555,100 @@ export default function MedicalEquipmentPage() {
 						</Table>
 					</div>
 
+					{/* Mobile Card View */}
+					<div className="md:hidden">
+						<div className="grid grid-cols-1 gap-4">
+							{medicalEquipments.length > 0 ? (
+								medicalEquipments.map((equipment) => (
+									<div
+										key={`card-${equipment.id}`}
+										className="border rounded-lg p-4 cursor-pointer shadow-sm hover:shadow-md transition-shadow"
+										onClick={() =>
+											navigateToEquipmentDetail(
+												equipment.id
+											)
+										}
+										data-testid={`equipment-card-${equipment.id}`}
+									>
+										<div className="flex justify-between items-start mb-2">
+											<div>
+												<h3 className="font-medium text-gray-900">
+													{equipment.name}
+												</h3>
+												<p className="text-sm text-gray-500">
+													{equipment.inventorisId}
+												</p>
+											</div>
+											<span
+												className={`px-2.5 py-1 rounded-full text-xs font-medium ${getStatusClass(
+													equipment.status
+												)}`}
+											>
+												{getStatusText(
+													equipment.status
+												)}
+											</span>
+										</div>
+										<div className="mt-4 flex flex-col gap-2 text-sm">
+											<div className="flex justify-between">
+												<span className="text-gray-500">
+													Harga:
+												</span>
+												<span>
+													{formatPrice(
+														equipment.purchasePrice
+													)}
+												</span>
+											</div>
+											<div className="flex justify-between">
+												<span className="text-gray-500">
+													Tanggal Pembelian:
+												</span>
+												<span>
+													{equipment.purchaseDate
+														? formatDate(
+																equipment.purchaseDate
+														  )
+														: "-"}
+												</span>
+											</div>
+										</div>
+										<div className="mt-4 flex justify-end gap-2">
+											<Button
+												size="sm"
+												variant="outline"
+												onClick={(e) => {
+													e.stopPropagation();
+													navigateToEquipmentEdit(
+														equipment.id
+													);
+												}}
+											>
+												<Edit className="h-4 w-4" />{" "}
+											</Button>
+											<Button
+												size="sm"
+												variant="destructive"
+												onClick={(e) => {
+													e.stopPropagation();
+													confirmDelete(equipment.id);
+												}}
+											>
+												<Trash2 className="h-4 w-4" />{" "}
+											</Button>
+										</div>
+									</div>
+								))
+							) : (
+								<div className="text-center p-4 border rounded-lg">
+									{search
+										? "Tidak ada alat medis yang cocok dengan pencarian Anda"
+										: "Tidak ada alat medis yang ditemukan"}
+								</div>
+							)}
+						</div>
+					</div>
+
 					<PaginationControls
 						currentPage={paginationMeta.page}
 						totalPages={paginationMeta.totalPages}
@@ -523,16 +667,16 @@ export default function MedicalEquipmentPage() {
 				/>
 			)}
 
-            <DeleteDialog
-                open={showDeleteDialog}
-                onOpenChange={setShowDeleteDialog}
-                title="Hapus Alat Medis"
-                description="Apakah Anda yakin ingin menghapus alat medis ini? Tindakan ini tidak dapat dibatalkan."
-                onConfirm={handleDelete}
-                isDeleting={isDeleting}
-                deleteButtonText="Hapus"
-                cancelButtonText="Batal"
-            />
+			<DeleteDialog
+				open={showDeleteDialog}
+				onOpenChange={setShowDeleteDialog}
+				title="Hapus Alat Medis"
+				description="Apakah Anda yakin ingin menghapus alat medis ini? Tindakan ini tidak dapat dibatalkan."
+				onConfirm={handleDelete}
+				isDeleting={isDeleting}
+				deleteButtonText="Hapus"
+				cancelButtonText="Batal"
+			/>
 		</div>
 	);
 }

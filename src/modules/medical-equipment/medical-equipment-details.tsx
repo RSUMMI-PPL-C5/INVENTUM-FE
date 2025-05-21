@@ -732,8 +732,8 @@ const handleHistoryRowClick = (
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="col-span-1 bg-blue-50 p-6 rounded-lg space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 space-y-4 md:gap-6">
+        <div className="col-span-1 bg-blue-50 p-6 rounded-lg">
           {loading ? (
             <div className="h-6 bg-muted animate-pulse w-1/2 rounded" />
           ) : equipment ? (

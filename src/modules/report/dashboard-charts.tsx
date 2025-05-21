@@ -1,802 +1,999 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { CartesianGrid, Legend, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Sector } from "recharts"
-import { ArrowUpIcon, ArrowDownIcon } from "lucide-react"
-import Cookies from "js-cookie"
-import { toast } from "sonner"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useEffect, useState } from "react";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import {
+	CartesianGrid,
+	Legend,
+	BarChart,
+	Bar,
+	XAxis,
+	YAxis,
+	Tooltip,
+	ResponsiveContainer,
+	PieChart,
+	Pie,
+	Cell,
+	Sector,
+} from "recharts";
+import { ArrowUpIcon, ArrowDownIcon } from "lucide-react";
+import Cookies from "js-cookie";
+import { toast } from "sonner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-// Hook untuk mengukur ukuran layar secara responsif
-const useWindowSize = () => {
-  const [windowSize, setWindowSize] = useState({
-    width: typeof window !== 'undefined' ? window.innerWidth : 1200,
-    height: typeof window !== 'undefined' ? window.innerHeight : 800,
-  });
-
-  useEffect(() => {
-    const handleResize = () => {
-      setWindowSize({
-        width: window.innerWidth,
-        height: window.innerHeight,
-      });
-    };
-
-    // Hanya jalankan di browser
-    if (typeof window !== 'undefined') {
-      window.addEventListener("resize", handleResize);
-      handleResize(); // Set ukuran awal
-
-      return () => window.removeEventListener("resize", handleResize);
-    }
-  }, []);
-
-  return windowSize;
+// Utility function to get window width safely (without hooks)
+const getWindowWidth = (): number => {
+	return typeof window !== "undefined" ? window.innerWidth : 1200;
 };
 
-// Add this function after useWindowSize hook
+// Function to get window dimensions safely
+
+
+// Function to get pie chart dimensions based on screen width
 const getPieChartDimensions = (width: number) => {
-  if (width < 640) { // mobile
-    return {
-      innerRadius: 50,
-      outerRadius: 70,
-      fontSize: 14,
-      legendFontSize: 10,
-      paddingTop: 10
-    }
-  } else if (width < 1024) { // tablet
-    return {
-      innerRadius: 60,
-      outerRadius: 85,
-      fontSize: 15,
-      legendFontSize: 11,
-      paddingTop: 12
-    }
-  } else { // desktop
-    return {
-      innerRadius: 70,
-      outerRadius: 95,
-      fontSize: 16,
-      legendFontSize: 12,
-      paddingTop: 15
-    }
-  }
-}
+	if (width < 640) {
+		// mobile
+		return {
+			innerRadius: 50,
+			outerRadius: 70,
+			fontSize: 14,
+			legendFontSize: 10,
+			paddingTop: 10,
+		};
+	} else if (width < 1024) {
+		// tablet
+		return {
+			innerRadius: 60,
+			outerRadius: 85,
+			fontSize: 15,
+			legendFontSize: 11,
+			paddingTop: 12,
+		};
+	} else {
+		// desktop
+		return {
+			innerRadius: 70,
+			outerRadius: 95,
+			fontSize: 16,
+			legendFontSize: 12,
+			paddingTop: 15,
+		};
+	}
+};
 
 // Tipe data untuk respons dari API
 interface MonthlyRequestData {
-  month: string
-  MAINTENANCE: number
-  CALIBRATION: number
+	month: string;
+	MAINTENANCE: number;
+	CALIBRATION: number;
 }
 
 // Tipe data untuk chart yang lebih ramah pengguna
 interface FormattedChartData {
-  month: string
-  fullMonth: string
-  maintenance: number
-  calibration: number
+	month: string;
+	fullMonth: string;
+	maintenance: number;
+	calibration: number;
 }
 
 // Tipe data untuk status permintaan
 interface RequestStatusData {
-  status: string
-  count: number
-  percentage: number
+	status: string;
+	count: number;
+	percentage: number;
 }
 
 // Tipe data untuk respons status permintaan dari API
 interface RequestStatusResponse {
-  MAINTENANCE: RequestStatusData[]
-  CALIBRATION: RequestStatusData[]
-  total: {
-    success: number
-    warning: number
-    failed: number
-    total: number
-  }
+	MAINTENANCE: RequestStatusData[];
+	CALIBRATION: RequestStatusData[];
+	total: {
+		success: number;
+		warning: number;
+		failed: number;
+		total: number;
+	};
 }
 
 // Interface untuk data statistik ringkasan dari API
 interface SummaryCountData {
-  /** Jumlah total pemeliharaan */
-  maintenanceCount: number
-  /** Jumlah total kalibrasi */
-  calibrationCount: number
-  /** Jumlah total penggantian suku cadang */
-  sparePartsCount: number
-  /** Persentase perubahan jumlah pemeliharaan dibanding periode sebelumnya */
-  maintenancePercentageChange: number
-  /** Persentase perubahan jumlah kalibrasi dibanding periode sebelumnya */
-  calibrationPercentageChange: number
-  /** Persentase perubahan jumlah penggantian suku cadang dibanding periode sebelumnya */
-  sparePartsPercentageChange: number
+	/** Jumlah total pemeliharaan */
+	maintenanceCount: number;
+	/** Jumlah total kalibrasi */
+	calibrationCount: number;
+	/** Jumlah total penggantian suku cadang */
+	sparePartsCount: number;
+	/** Persentase perubahan jumlah pemeliharaan dibanding periode sebelumnya */
+	maintenancePercentageChange: number;
+	/** Persentase perubahan jumlah kalibrasi dibanding periode sebelumnya */
+	calibrationPercentageChange: number;
+	/** Persentase perubahan jumlah penggantian suku cadang dibanding periode sebelumnya */
+	sparePartsPercentageChange: number;
+}
+
+// Interface for tooltip props
+interface CustomTooltipProps {
+	active?: boolean;
+	payload?: Array<{
+		value: number;
+		name: string;
+		dataKey: string;
+	}>;
+	label?: string;
+}
+
+// Using the PieSectorDataItem type from recharts
+interface ActiveShapeProps {
+	cx: number;
+	cy: number;
+	midAngle: number;
+	innerRadius: number;
+	outerRadius: number;
+	startAngle: number;
+	endAngle: number;
+	fill: string;
+	payload: {
+		name: string;
+		value: number;
+	};
+	value: number;
+	percent: number;
+	// Use a more specific type union for additional Recharts properties
+	[key: string]: number | string | boolean | object | undefined;
 }
 
 // Nama bulan lengkap untuk tampilan yang lebih baik
 const monthNames = {
-  "01": "Januari",
-  "02": "Februari",
-  "03": "Maret",
-  "04": "April",
-  "05": "Mei",
-  "06": "Juni",
-  "07": "Juli",
-  "08": "Agustus",
-  "09": "September",
-  "10": "Oktober",
-  "11": "November",
-  "12": "Desember"
-}
+	"01": "Januari",
+	"02": "Februari",
+	"03": "Maret",
+	"04": "April",
+	"05": "Mei",
+	"06": "Juni",
+	"07": "Juli",
+	"08": "Agustus",
+	"09": "September",
+	"10": "Oktober",
+	"11": "November",
+	"12": "Desember",
+};
 
 // Nama bulan pendek untuk XAxis
 const shortMonthNames = {
-  "01": "Jan",
-  "02": "Feb",
-  "03": "Mar",
-  "04": "Apr",
-  "05": "Mei",
-  "06": "Jun",
-  "07": "Jul",
-  "08": "Agu",
-  "09": "Sep",
-  "10": "Okt",
-  "11": "Nov",
-  "12": "Des"
-}
-
-// Fungsi untuk menampilkan konten chart berdasarkan state
-const renderChartContent = (loading: boolean, monthlyData: FormattedChartData[]) => {
-  const { width } = useWindowSize();
-
-  // Menentukan konfigurasi responsif berdasarkan lebar layar
-  const isMobile = width < 640;
-  const isTablet = width >= 640 && width < 1024;
-
-  if (loading) {
-    return (
-      <div className="h-[250px] sm:h-[300px] md:h-[350px] flex items-center justify-center">
-        <p>Memuat data...</p>
-      </div>
-    );
-  }
-
-  if (monthlyData.length === 0) {
-    return (
-      <div className="h-[250px] sm:h-[300px] md:h-[350px] flex items-center justify-center text-muted-foreground">
-        Tidak ada data permintaan untuk ditampilkan
-      </div>
-    );
-  }
-
-  // Custom tooltip yang responsif
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload?.length) {
-      const currentData = monthlyData.find(data => data.month === label);
-
-      return (
-        <div className="bg-white p-2 sm:p-3 border rounded shadow-sm">
-          <p className="font-medium text-xs sm:text-sm">{currentData?.fullMonth ?? label}</p>
-          <p className={`text-xs sm:text-sm text-blue-600 ${isMobile ? 'mt-0.5' : 'mt-1'}`}>
-            Pemeliharaan: {payload[0].value}
-          </p>
-          <p className={`text-xs sm:text-sm text-purple-600 ${isMobile ? 'mt-0.5' : 'mt-1'}`}>
-            Kalibrasi: {payload[1].value}
-          </p>
-        </div>
-      );
-    }
-    return null;
-  };
-
-  // Konfigurasikan margin berdasarkan ukuran layar
-  const chartMargin = isMobile
-    ? { top: 5, right: 10, left: 5, bottom: 40 }
-    : isTablet
-      ? { top: 5, right: 20, left: 15, bottom: 30 }
-      : { top: 5, right: 30, left: 20, bottom: 25 };
-
-  // Konfigurasi interval label berdasarkan jumlah data dan lebar layar
-  // Untuk menghindari tumpang tindih pada layar kecil
-  const labelInterval = isMobile
-    ? Math.max(1, Math.floor(monthlyData.length / 4))
-    : isTablet
-      ? Math.max(0, Math.floor(monthlyData.length / 6))
-      : 0;
-
-  return (
-    <div className="h-[250px] sm:h-[300px] md:h-[350px] flex justify-center">
-      <ResponsiveContainer width="95%" height="100%">
-        <BarChart
-          data={monthlyData}
-          margin={{ top: 5, right: 20, left: 20, bottom: 25 }}
-          barGap={isMobile ? 3 : 8}
-          barSize={isMobile ? 15 : isTablet ? 25 : 35}
-        >
-          <CartesianGrid strokeDasharray="3 3" vertical={!isMobile} />
-          <XAxis
-            dataKey="month"
-            tick={{
-              fontSize: isMobile ? 9 : isTablet ? 10 : 12,
-              fill: "#64748b"
-            }}
-            height={isMobile ? 50 : 40}
-            tickMargin={5}
-            angle={isMobile ? -45 : 0}
-            textAnchor={isMobile ? "end" : "middle"}
-            interval={labelInterval}
-          />
-          <YAxis
-            width={isMobile ? 25 : isTablet ? 35 : 40}
-            tick={{ fontSize: isMobile ? 9 : isTablet ? 10 : 12 }}
-            tickFormatter={(value) => (value === 0 ? "0" : value.toString())}
-          />
-          <Tooltip
-            content={CustomTooltip}
-            wrapperStyle={{ zIndex: 1000 }}
-          />
-          <Legend
-            verticalAlign={isMobile ? "bottom" : "bottom"}
-            height={isMobile ? 36 : 40}
-            iconSize={isMobile ? 10 : 12}
-            wrapperStyle={{
-              fontSize: isMobile ? '11px' : isTablet ? '12px' : '14px',
-              paddingTop: isMobile ? '5px' : '0px',
-              fontWeight: 500
-            }}
-          />
-          <Bar
-            dataKey="maintenance"
-            fill="#3b82f6"
-            name="Pemeliharaan"
-            radius={[3, 3, 0, 0]}
-            // Animasi yang lebih cepat untuk perangkat mobile
-            animationDuration={isMobile ? 500 : 1000}
-          />
-          <Bar
-            dataKey="calibration"
-            fill="#8b5cf6"
-            name="Kalibrasi"
-            radius={[3, 3, 0, 0]}
-            // Animasi yang lebih cepat untuk perangkat mobile
-            animationDuration={isMobile ? 500 : 1000}
-          />
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
-  );
+	"01": "Jan",
+	"02": "Feb",
+	"03": "Mar",
+	"04": "Apr",
+	"05": "Mei",
+	"06": "Jun",
+	"07": "Jul",
+	"08": "Agu",
+	"09": "Sep",
+	"10": "Okt",
+	"11": "Nov",
+	"12": "Des",
 };
 
-// Update renderActiveShape to use dynamic font size
-const renderActiveShape = (props: any) => {
-  const { width } = useWindowSize();
-  const { fontSize } = getPieChartDimensions(width);
-  const { cx, cy, midAngle, innerRadius, outerRadius, startAngle, endAngle, fill, payload, value, percent } = props
-  const RADIAN = Math.PI / 180
-  const sin = Math.sin(-RADIAN * midAngle)
-  const cos = Math.cos(-RADIAN * midAngle)
-  const sx = cx + (outerRadius + 10) * cos
-  const sy = cy + (outerRadius + 10) * sin
-  const mx = cx + (outerRadius + 30) * cos
-  const my = cy + (outerRadius + 30) * sin
-  const ex = mx + (cos >= 0 ? 1 : -1) * 22
-  const ey = my
-  const textAnchor = cos >= 0 ? "start" : "end"
-
-  return (
-    <g>
-      <text x={cx} y={cy} dy={8} textAnchor="middle" fill={fill} fontSize={fontSize} fontWeight="bold">
-        {payload.name}
-      </text>
-      <Sector
-        cx={cx}
-        cy={cy}
-        innerRadius={innerRadius}
-        outerRadius={outerRadius}
-        startAngle={startAngle}
-        endAngle={endAngle}
-        fill={fill}
-      />
-      <Sector
-        cx={cx}
-        cy={cy}
-        startAngle={startAngle}
-        endAngle={endAngle}
-        innerRadius={outerRadius + 6}
-        outerRadius={outerRadius + 10}
-        fill={fill}
-      />
-      <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={fill} fill="none" />
-      <circle cx={ex} cy={ey} r={2} fill={fill} stroke="none" />
-      <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} textAnchor={textAnchor} fill="#333" fontSize={fontSize}>{`${value} (${(percent * 100).toFixed(0)}%)`}</text>
-    </g>
-  )
-}
-
 export default function DashboardCharts() {
-  const [loading, setLoading] = useState(true)
-  const [monthlyData, setMonthlyData] = useState<FormattedChartData[]>([])
-  const [statusLoading, setStatusLoading] = useState(true)
-  const [maintenanceStatusData, setMaintenanceStatusData] = useState<any[]>([])
-  const [calibrationStatusData, setCalibrationStatusData] = useState<any[]>([])
-  const [maintenanceActiveIndex, setMaintenanceActiveIndex] = useState(0)
-  const [calibrationActiveIndex, setCalibrationActiveIndex] = useState(0)
-  const [summaryData, setSummaryData] = useState<SummaryCountData | null>(null)
-  const [summaryLoading, setSummaryLoading] = useState(true)
+	const [loading, setLoading] = useState(true);
+	const [monthlyData, setMonthlyData] = useState<FormattedChartData[]>([]);
+	const [statusLoading, setStatusLoading] = useState(true);
+	const [maintenanceStatusData, setMaintenanceStatusData] = useState<
+		Array<{
+			name: string;
+			value: number;
+			percentage: number;
+			color: string;
+		}>
+	>([]);
+	const [calibrationStatusData, setCalibrationStatusData] = useState<
+		Array<{
+			name: string;
+			value: number;
+			percentage: number;
+			color: string;
+		}>
+	>([]);
+	const [maintenanceActiveIndex, setMaintenanceActiveIndex] = useState(0);
+	const [calibrationActiveIndex, setCalibrationActiveIndex] = useState(0);
+	const [summaryData, setSummaryData] = useState<SummaryCountData | null>(
+		null
+	);
+	const [summaryLoading, setSummaryLoading] = useState(true);
 
-  useEffect(() => {
-    fetchMonthlyRequestData()
-    fetchRequestStatusData()
-    fetchSummaryData()
-  }, [])
+	// Get current window dimensions - updated on component render
 
-  const onMaintenancePieEnter = (_: any, index: number) => {
-    setMaintenanceActiveIndex(index)
-  }
+	useEffect(() => {
+		fetchMonthlyRequestData();
+		fetchRequestStatusData();
+		fetchSummaryData();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []); // These functions depend on state but we only want to load data once
 
-  const onCalibrationPieEnter = (_: any, index: number) => {
-    setCalibrationActiveIndex(index)
-  }
+	const onMaintenancePieEnter = (_: unknown, index: number) => {
+		setMaintenanceActiveIndex(index);
+	};
 
-  const fetchMonthlyRequestData = async () => {
-    try {
-      setLoading(true)
-      const token = Cookies.get("accessToken")
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/report/monthly-requests`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
-        },
-      })
+	const onCalibrationPieEnter = (_: unknown, index: number) => {
+		setCalibrationActiveIndex(index);
+	};
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch monthly request data")
-      }
+	// Custom tooltip component for bar chart
+	const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
+		const isMobile = getWindowWidth() < 640;
 
-      const responseData = await response.json()
+		if (active && payload?.length) {
+			const currentData = monthlyData.find(
+				(data) => data.month === label
+			);
 
-      // Periksa apakah response adalah array atau object dengan properti data
-      let data: MonthlyRequestData[] = [];
-      if (Array.isArray(responseData)) {
-        data = responseData;
-      } else if (responseData?.data && Array.isArray(responseData.data)) {
-        data = responseData.data;
-      }
+			return (
+				<div className="bg-white p-2 sm:p-3 border rounded shadow-sm">
+					<p className="font-medium text-xs sm:text-sm">
+						{currentData?.fullMonth ?? label}
+					</p>
+					<p
+						className={`text-xs sm:text-sm text-blue-600 ${
+							isMobile ? "mt-0.5" : "mt-1"
+						}`}
+					>
+						Pemeliharaan: {payload[0].value}
+					</p>
+					<p
+						className={`text-xs sm:text-sm text-purple-600 ${
+							isMobile ? "mt-0.5" : "mt-1"
+						}`}
+					>
+						Kalibrasi: {payload[1].value}
+					</p>
+				</div>
+			);
+		}
+		return null;
+	};
+	// Active shape renderer for pie chart
+	const renderActiveShape = (props: unknown) => {
+		const { fontSize } = getPieChartDimensions(getWindowWidth());
+		const {
+			cx,
+			cy,
+			midAngle,
+			innerRadius,
+			outerRadius,
+			startAngle,
+			endAngle,
+			fill,
+			payload,
+			value,
+			percent,
+		} = props as ActiveShapeProps;
+		const RADIAN = Math.PI / 180;
+		const sin = Math.sin(-RADIAN * midAngle);
+		const cos = Math.cos(-RADIAN * midAngle);
+		const sx = cx + (outerRadius + 10) * cos;
+		const sy = cy + (outerRadius + 10) * sin;
+		const mx = cx + (outerRadius + 30) * cos;
+		const my = cy + (outerRadius + 30) * sin;
+		const ex = mx + (cos >= 0 ? 1 : -1) * 22;
+		const ey = my;
+		const textAnchor = cos >= 0 ? "start" : "end";
 
-      if (data.length === 0) {
-        setMonthlyData([])
-        return
-      }
+		return (
+			<g>
+				<text
+					x={cx}
+					y={cy}
+					dy={8}
+					textAnchor="middle"
+					fill={fill}
+					fontSize={fontSize}
+					fontWeight="bold"
+				>
+					{payload.name}
+				</text>
+				<Sector
+					cx={cx}
+					cy={cy}
+					innerRadius={innerRadius}
+					outerRadius={outerRadius}
+					startAngle={startAngle}
+					endAngle={endAngle}
+					fill={fill}
+				/>
+				<Sector
+					cx={cx}
+					cy={cy}
+					startAngle={startAngle}
+					endAngle={endAngle}
+					innerRadius={outerRadius + 6}
+					outerRadius={outerRadius + 10}
+					fill={fill}
+				/>
+				<path
+					d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`}
+					stroke={fill}
+					fill="none"
+				/>
+				<circle cx={ex} cy={ey} r={2} fill={fill} stroke="none" />
+				<text
+					x={ex + (cos >= 0 ? 1 : -1) * 12}
+					y={ey}
+					textAnchor={textAnchor}
+					fill="#333"
+					fontSize={fontSize}
+				>{`${value} (${(percent * 100).toFixed(0)}%)`}</text>
+			</g>
+		);
+	};
 
-      // Format data untuk chart
-      const formattedData = formatDataForChart(data)
-      setMonthlyData(formattedData)
-    } catch (error) {
-      console.error("Error fetching monthly request data:", error)
-      toast.error("Gagal memuat data permintaan bulanan")
-    } finally {
-      setLoading(false)
-    }
-  }
+	const fetchMonthlyRequestData = async () => {
+		try {
+			setLoading(true);
+			const token = Cookies.get("accessToken");
+			const response = await fetch(
+				`${process.env.NEXT_PUBLIC_API_URL}/report/monthly-requests`,
+				{
+					method: "GET",
+					headers: {
+						"Content-Type": "application/json",
+						Authorization: token ? `Bearer ${token}` : "",
+					},
+				}
+			);
 
-  const fetchRequestStatusData = async () => {
-    try {
-      setStatusLoading(true)
-      const token = Cookies.get("accessToken")
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/report/request-status`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
-        },
-      })
+			if (!response.ok) {
+				throw new Error("Failed to fetch monthly request data");
+			}
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch request status data")
-      }
+			const responseData = await response.json();
 
-      const responseData = await response.json()
+			// Periksa apakah response adalah array atau object dengan properti data
+			let data: MonthlyRequestData[] = [];
+			if (Array.isArray(responseData)) {
+				data = responseData;
+			} else if (responseData?.data && Array.isArray(responseData.data)) {
+				data = responseData.data;
+			}
 
-      if (!responseData.success || !responseData.data) {
-        throw new Error("Invalid response format")
-      }
+			if (data.length === 0) {
+				setMonthlyData([]);
+				return;
+			}
 
-      const statusData: RequestStatusResponse = responseData.data
+			// Format data untuk chart
+			const formattedData = formatDataForChart(data);
+			setMonthlyData(formattedData);
+		} catch (error) {
+			console.error("Error fetching monthly request data:", error);
+			toast.error("Gagal memuat data permintaan bulanan");
+		} finally {
+			setLoading(false);
+		}
+	};
 
-      // Format maintenance data for pie chart
-      const maintenanceFormatted = statusData.MAINTENANCE.map(item => ({
-        name: getStatusLabel(item.status),
-        value: item.count,
-        percentage: item.percentage,
-        color: getStatusColor(item.status)
-      }))
+	const fetchRequestStatusData = async () => {
+		try {
+			setStatusLoading(true);
+			const token = Cookies.get("accessToken");
+			const response = await fetch(
+				`${process.env.NEXT_PUBLIC_API_URL}/report/request-status`,
+				{
+					method: "GET",
+					headers: {
+						"Content-Type": "application/json",
+						Authorization: token ? `Bearer ${token}` : "",
+					},
+				}
+			);
 
-      // Format calibration data for pie chart
-      const calibrationFormatted = statusData.CALIBRATION.map(item => ({
-        name: getStatusLabel(item.status),
-        value: item.count,
-        percentage: item.percentage,
-        color: getStatusColor(item.status)
-      }))
+			if (!response.ok) {
+				throw new Error("Failed to fetch request status data");
+			}
 
-      setMaintenanceStatusData(maintenanceFormatted)
-      setCalibrationStatusData(calibrationFormatted)
-    } catch (error) {
-      console.error("Error fetching request status data:", error)
-      toast.error("Gagal memuat data status permintaan")
-      // Set default empty data
-      setMaintenanceStatusData([])
-      setCalibrationStatusData([])
-    } finally {
-      setStatusLoading(false)
-    }
-  }
+			const responseData = await response.json();
 
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "berhasil":
-      case "completed":
-        return "#22c55e" // green-500 for success
-      case "berhasil dengan catatan":
-      case "on progress":
-        return "#f59e0b" // amber-500 for partial success
-      case "gagal dengan catatan":
-      case "pending":
-        return "#ef4444" // red-500 for failure
-      default:
-        return "#8884d8" // default color
-    }
-  }
+			if (!responseData.success || !responseData.data) {
+				throw new Error("Invalid response format");
+			}
 
-  const getStatusLabel = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "berhasil":
-      case "completed":
-        return "Selesai"
-      case "berhasil dengan catatan":
-      case "on progress":
-        return "Diproses"
-      case "gagal dengan catatan":
-      case "pending":
-        return "Menunggu"
-      default:
-        return status
-    }
-  }
+			const statusData: RequestStatusResponse = responseData.data;
 
-  const formatDataForChart = (data: MonthlyRequestData[]): FormattedChartData[] => {
-    if (!Array.isArray(data) || data.length === 0) {
-      return []
-    }
+			// Format maintenance data for pie chart
+			const maintenanceFormatted = statusData.MAINTENANCE.map((item) => ({
+				name: getStatusLabel(item.status),
+				value: item.count,
+				percentage: item.percentage,
+				color: getStatusColor(item.status),
+			}));
 
-    try {
-      // Buat object untuk menggabungkan data per bulan
-      const monthlyAggregates: Record<string, { maintenance: number; calibration: number }> = {};
+			// Format calibration data for pie chart
+			const calibrationFormatted = statusData.CALIBRATION.map((item) => ({
+				name: getStatusLabel(item.status),
+				value: item.count,
+				percentage: item.percentage,
+				color: getStatusColor(item.status),
+			}));
 
-      // Agregasi data per bulan
-      data.forEach(item => {
-        if (!item.month) return;
+			setMaintenanceStatusData(maintenanceFormatted);
+			setCalibrationStatusData(calibrationFormatted);
+		} catch (error) {
+			console.error("Error fetching request status data:", error);
+			toast.error("Gagal memuat data status permintaan");
+			// Set default empty data
+			setMaintenanceStatusData([]);
+			setCalibrationStatusData([]);
+		} finally {
+			setStatusLoading(false);
+		}
+	};
 
-        const parts = item.month.split('-');
-        if (parts.length !== 2) return;
+	const getStatusColor = (status: string) => {
+		switch (status.toLowerCase()) {
+			case "berhasil":
+			case "completed":
+				return "#22c55e"; // green-500 for success
+			case "berhasil dengan catatan":
+			case "on progress":
+				return "#f59e0b"; // amber-500 for partial success
+			case "gagal dengan catatan":
+			case "pending":
+				return "#ef4444"; // red-500 for failure
+			default:
+				return "#8884d8"; // default color
+		}
+	};
 
-        const [year, month] = parts;
-        // Gunakan format untuk pengurutan bulan: YYYY-MM
-        const monthKey = `${year}-${month}`;
+	const getStatusLabel = (status: string) => {
+		switch (status.toLowerCase()) {
+			case "berhasil":
+			case "completed":
+				return "Selesai";
+			case "berhasil dengan catatan":
+			case "on progress":
+				return "Diproses";
+			case "gagal dengan catatan":
+			case "pending":
+				return "Menunggu";
+			default:
+				return status;
+		}
+	};
 
-        if (!monthlyAggregates[monthKey]) {
-          monthlyAggregates[monthKey] = {
-            maintenance: 0,
-            calibration: 0
-          };
-        }
+	const formatDataForChart = (
+		data: MonthlyRequestData[]
+	): FormattedChartData[] => {
+		if (!Array.isArray(data) || data.length === 0) {
+			return [];
+		}
 
-        monthlyAggregates[monthKey].maintenance += item.MAINTENANCE || 0;
-        monthlyAggregates[monthKey].calibration += item.CALIBRATION || 0;
-      });
+		try {
+			// Buat object untuk menggabungkan data per bulan
+			const monthlyAggregates: Record<
+				string,
+				{ maintenance: number; calibration: number }
+			> = {};
 
-      // Konversi agregat menjadi array dan urutkan berdasarkan bulan
-      const sortedMonths = Object.keys(monthlyAggregates).sort((a, b) => a.localeCompare(b));
+			// Agregasi data per bulan
+			data.forEach((item) => {
+				if (!item.month) return;
 
-      // Format data untuk chart
-      return sortedMonths.map(monthKey => {
-        const parts = monthKey.split('-');
-        const [year, month] = parts;
+				const parts = item.month.split("-");
+				if (parts.length !== 2) return;
 
-        // Only month name for x-axis (without year)
-        const shortMonthName = shortMonthNames[month as keyof typeof shortMonthNames] || month;
+				const [year, month] = parts;
+				// Gunakan format untuk pengurutan bulan: YYYY-MM
+				const monthKey = `${year}-${month}`;
 
-        // Full month with year for tooltip
-        const fullMonthName = `${monthNames[month as keyof typeof monthNames] || month} ${year}`;
+				if (!monthlyAggregates[monthKey]) {
+					monthlyAggregates[monthKey] = {
+						maintenance: 0,
+						calibration: 0,
+					};
+				}
 
-        return {
-          month: shortMonthName,
-          fullMonth: fullMonthName,
-          maintenance: monthlyAggregates[monthKey].maintenance,
-          calibration: monthlyAggregates[monthKey].calibration
-        };
-      });
-    } catch (error) {
-      console.error("Error formatting chart data:", error)
-      return []
-    }
-  }
+				monthlyAggregates[monthKey].maintenance +=
+					item.MAINTENANCE || 0;
+				monthlyAggregates[monthKey].calibration +=
+					item.CALIBRATION || 0;
+			});
 
-  // Update the pie chart sections in renderStatusRequestCard
-  const renderStatusRequestCard = () => {
-    const { width } = useWindowSize();
-    const { innerRadius, outerRadius, legendFontSize, paddingTop } = getPieChartDimensions(width);
+			// Konversi agregat menjadi array dan urutkan berdasarkan bulan
+			const sortedMonths = Object.keys(monthlyAggregates).sort((a, b) =>
+				a.localeCompare(b)
+			);
 
-    if (statusLoading) {
-      return (
-        <div className="h-[250px] sm:h-[300px] md:h-[350px] flex items-center justify-center">
-          <p>Memuat data...</p>
-        </div>
-      )
-    }
+			// Format data untuk chart
+			return sortedMonths.map((monthKey) => {
+				const parts = monthKey.split("-");
+				const [year, month] = parts;
 
-    return (
-      <Tabs defaultValue="maintenance">
-        <TabsList className="mb-4 bg-gray-100 p-1">
-          <TabsTrigger
-            value="maintenance"
-            className="data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm data-[state=active]:font-medium"
-          >
-            Pemeliharaan
-          </TabsTrigger>
-          <TabsTrigger
-            value="calibration"
-            className="data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm data-[state=active]:font-medium"
-          >
-            Kalibrasi
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="maintenance" className="h-[220px] sm:h-[280px]">
-          {maintenanceStatusData.length === 0 ? (
-            <div className="h-full flex items-center justify-center text-muted-foreground">
-              Tidak ada data status permintaan untuk ditampilkan
-            </div>
-          ) : (
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  activeIndex={maintenanceActiveIndex}
-                  activeShape={renderActiveShape}
-                  data={maintenanceStatusData}
-                  cx="50%"
-                  cy="56%"
-                  innerRadius={innerRadius}
-                  outerRadius={outerRadius}
-                  dataKey="value"
-                  onMouseEnter={onMaintenancePieEnter}
-                >
-                  {maintenanceStatusData.map((entry, index) => (
-                    <Cell key={`cell-maintenance-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Legend
-                  wrapperStyle={{
-                    fontSize: `${legendFontSize}px`,
-                    paddingTop: `${paddingTop}px`,
-                    bottom: -12
-                  }}
-                />
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          )}
-        </TabsContent>
-        <TabsContent value="calibration" className="h-[220px] sm:h-[280px]">
-          {calibrationStatusData.length === 0 ? (
-            <div className="h-full flex items-center justify-center text-muted-foreground">
-              Tidak ada data status permintaan untuk ditampilkan
-            </div>
-          ) : (
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  activeIndex={calibrationActiveIndex}
-                  activeShape={renderActiveShape}
-                  data={calibrationStatusData}
-                  cx="50%"
-                  cy="56%"
-                  innerRadius={innerRadius}
-                  outerRadius={outerRadius}
-                  dataKey="value"
-                  onMouseEnter={onCalibrationPieEnter}
-                >
-                  {calibrationStatusData.map((entry, index) => (
-                    <Cell key={`cell-calibration-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Legend
-                  wrapperStyle={{
-                    fontSize: `${legendFontSize}px`,
-                    paddingTop: `${paddingTop}px`,
-                    bottom: 0
-                  }}
-                />
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          )}
-        </TabsContent>
-      </Tabs>
-    )
-  }
+				// Only month name for x-axis (without year)
+				const shortMonthName =
+					shortMonthNames[month as keyof typeof shortMonthNames] ||
+					month;
 
-  const fetchSummaryData = async () => {
-    try {
-      setSummaryLoading(true)
-      const token = Cookies.get("accessToken")
+				// Full month with year for tooltip
+				const fullMonthName = `${
+					monthNames[month as keyof typeof monthNames] || month
+				} ${year}`;
 
-      if (!token) {
-        toast.error("Sesi telah berakhir, silakan login kembali")
-        return
-      }
+				return {
+					month: shortMonthName,
+					fullMonth: fullMonthName,
+					maintenance: monthlyAggregates[monthKey].maintenance,
+					calibration: monthlyAggregates[monthKey].calibration,
+				};
+			});
+		} catch (error) {
+			console.error("Error formatting chart data:", error);
+			return [];
+		}
+	};
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/report/summary-count`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
-        },
-      })
+	const fetchSummaryData = async () => {
+		try {
+			setSummaryLoading(true);
+			const token = Cookies.get("accessToken");
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch summary data")
-      }
+			if (!token) {
+				toast.error("Sesi telah berakhir, silakan login kembali");
+				return;
+			}
 
-      const responseData = await response.json()
+			const response = await fetch(
+				`${process.env.NEXT_PUBLIC_API_URL}/report/summary-count`,
+				{
+					method: "GET",
+					headers: {
+						"Content-Type": "application/json",
+						Authorization: token ? `Bearer ${token}` : "",
+					},
+				}
+			);
 
-      if (!responseData.success || !responseData.data) {
-        toast.error("Format data tidak valid")
-        throw new Error("Invalid response format")
-      }
+			if (!response.ok) {
+				throw new Error("Failed to fetch summary data");
+			}
 
-      setSummaryData(responseData.data)
-    } catch (error) {
-      console.error("Error fetching summary data:", error)
-      toast.error("Gagal memuat data ringkasan")
-      setSummaryData(null)
-    } finally {
-      setSummaryLoading(false)
-    }
-  }
+			const responseData = await response.json();
 
-  return (
-    <div className="space-y-4 sm:space-y-6">
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
-        <Card className="bg-white shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="pt-4 sm:pt-6">
-            <div className="space-y-1 sm:space-y-2">
-              <p className="text-xs sm:text-sm font-medium text-gray-500">Total Pemeliharaan</p>
-              {summaryLoading ? (
-                <div className="animate-pulse space-y-2">
-                  <div className="h-8 bg-gray-200 rounded w-24"></div>
-                  <div className="h-4 bg-gray-200 rounded w-16"></div>
-                </div>
-              ) : summaryData ? (
-                <>
-                  <div className="flex items-baseline justify-between">
-                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">{summaryData.maintenanceCount}</h2>
-                    <div className={`flex items-center text-xs sm:text-sm ${summaryData.maintenancePercentageChange >= 0
-                      ? 'text-green-600 bg-green-50'
-                      : 'text-red-600 bg-red-50'
-                      } px-2 py-1 rounded-full`}>
-                      {summaryData.maintenancePercentageChange >= 0 ? (
-                        <ArrowUpIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                      ) : (
-                        <ArrowDownIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                      )}
-                      <span>{Math.abs(summaryData.maintenancePercentageChange)}%</span>
-                    </div>
-                  </div>
-                  <p className="text-xs text-gray-500">Bulan ini</p>
-                </>
-              ) : (
-                <div className="text-sm text-gray-500">Data tidak tersedia</div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+			if (!responseData.success || !responseData.data) {
+				toast.error("Format data tidak valid");
+				throw new Error("Invalid response format");
+			}
 
-        <Card className="bg-white shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="pt-4 sm:pt-6">
-            <div className="space-y-1 sm:space-y-2">
-              <p className="text-xs sm:text-sm font-medium text-gray-500">Total Kalibrasi</p>
-              {summaryLoading ? (
-                <div className="animate-pulse space-y-2">
-                  <div className="h-8 bg-gray-200 rounded w-24"></div>
-                  <div className="h-4 bg-gray-200 rounded w-16"></div>
-                </div>
-              ) : summaryData ? (
-                <>
-                  <div className="flex items-baseline justify-between">
-                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">{summaryData.calibrationCount}</h2>
-                    <div className={`flex items-center text-xs sm:text-sm ${summaryData.calibrationPercentageChange >= 0
-                      ? 'text-green-600 bg-green-50'
-                      : 'text-red-600 bg-red-50'
-                      } px-2 py-1 rounded-full`}>
-                      {summaryData.calibrationPercentageChange >= 0 ? (
-                        <ArrowUpIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                      ) : (
-                        <ArrowDownIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                      )}
-                      <span>{Math.abs(summaryData.calibrationPercentageChange)}%</span>
-                    </div>
-                  </div>
-                  <p className="text-xs text-gray-500">Bulan ini</p>
-                </>
-              ) : (
-                <div className="text-sm text-gray-500">Data tidak tersedia</div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+			setSummaryData(responseData.data);
+		} catch (error) {
+			console.error("Error fetching summary data:", error);
+			toast.error("Gagal memuat data ringkasan");
+			setSummaryData(null);
+		} finally {
+			setSummaryLoading(false);
+		}
+	};
 
-        <Card className="sm:col-span-2 md:col-span-1 bg-white shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="pt-4 sm:pt-6">
-            <div className="space-y-1 sm:space-y-2">
-              <p className="text-xs sm:text-sm font-medium text-gray-500">Penggantian Suku Cadang</p>
-              {summaryLoading ? (
-                <div className="animate-pulse space-y-2">
-                  <div className="h-8 bg-gray-200 rounded w-24"></div>
-                  <div className="h-4 bg-gray-200 rounded w-16"></div>
-                </div>
-              ) : summaryData ? (
-                <>
-                  <div className="flex items-baseline justify-between">
-                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">{summaryData.sparePartsCount}</h2>
-                    <div className={`flex items-center text-xs sm:text-sm ${summaryData.sparePartsPercentageChange >= 0
-                      ? 'text-green-600 bg-green-50'
-                      : 'text-red-600 bg-red-50'
-                      } px-2 py-1 rounded-full`}>
-                      {summaryData.sparePartsPercentageChange >= 0 ? (
-                        <ArrowUpIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                      ) : (
-                        <ArrowDownIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                      )}
-                      <span>{Math.abs(summaryData.sparePartsPercentageChange)}%</span>
-                    </div>
-                  </div>
-                  <p className="text-xs text-gray-500">Bulan ini</p>
-                </>
-              ) : (
-                <div className="text-sm text-gray-500">Data tidak tersedia</div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+	// Render chart content function
+	const renderChartContent = () => {
+		// Menentukan konfigurasi responsif berdasarkan lebar layar
+		const isMobile = getWindowWidth() < 640;
+		const isTablet = getWindowWidth() >= 640 && getWindowWidth() < 1024;
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-        {/* Status Request Pie Chart */}
-        <Card>
-          <CardHeader className="pb-0 sm:pb-2">
-            <CardTitle className="text-base sm:text-lg">Status Permintaan</CardTitle>
-            <CardDescription className="text-xs sm:text-sm">Distribusi status permintaan pemeliharaan dan kalibrasi</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {renderStatusRequestCard()}
-          </CardContent>
-        </Card>
+		if (loading) {
+			return (
+				<div className="h-[250px] sm:h-[300px] md:h-[350px] flex items-center justify-center">
+					<p>Memuat data...</p>
+				</div>
+			);
+		}
 
-        {/* Monthly Requests Bar Chart */}
-        <Card>
-          <CardHeader className="pb-0 sm:pb-1">
-            <CardTitle className="text-base sm:text-lg">Permintaan Bulanan</CardTitle>
-            <CardDescription className="text-xs sm:text-sm">Jumlah permintaan pemeliharaan dan kalibrasi per bulan</CardDescription>
-          </CardHeader>
-          <CardContent className="px-0 sm:px-0 pt-7 pb-0">
-            {renderChartContent(loading, monthlyData)}
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  )
+		if (monthlyData.length === 0) {
+			return (
+				<div className="h-[250px] sm:h-[300px] md:h-[350px] flex items-center justify-center text-muted-foreground">
+					Tidak ada data permintaan untuk ditampilkan
+				</div>
+			);
+		}
+
+		// Konfigurasi interval label berdasarkan jumlah data dan lebar layar
+		// Untuk menghindari tumpang tindih pada layar kecil
+		const labelInterval = isMobile
+			? Math.max(1, Math.floor(monthlyData.length / 4))
+			: isTablet
+			? Math.max(0, Math.floor(monthlyData.length / 6))
+			: 0;
+
+		return (
+			<div className="h-[250px] sm:h-[300px] md:h-[350px] flex justify-center">
+				<ResponsiveContainer width="95%" height="100%">
+					<BarChart
+						data={monthlyData}
+						margin={{ top: 5, right: 20, left: 20, bottom: 25 }}
+						barGap={isMobile ? 3 : 8}
+						barSize={isMobile ? 15 : isTablet ? 25 : 35}
+					>
+						<CartesianGrid
+							strokeDasharray="3 3"
+							vertical={!isMobile}
+						/>
+						<XAxis
+							dataKey="month"
+							tick={{
+								fontSize: isMobile ? 9 : isTablet ? 10 : 12,
+								fill: "#64748b",
+							}}
+							height={isMobile ? 50 : 40}
+							tickMargin={5}
+							angle={isMobile ? -45 : 0}
+							textAnchor={isMobile ? "end" : "middle"}
+							interval={labelInterval}
+						/>
+						<YAxis
+							width={isMobile ? 25 : isTablet ? 35 : 40}
+							tick={{
+								fontSize: isMobile ? 9 : isTablet ? 10 : 12,
+							}}
+							tickFormatter={(value) =>
+								value === 0 ? "0" : value.toString()
+							}
+						/>
+						<Tooltip
+							content={<CustomTooltip />}
+							wrapperStyle={{ zIndex: 1000 }}
+						/>
+						<Legend
+							verticalAlign={isMobile ? "bottom" : "bottom"}
+							height={isMobile ? 36 : 40}
+							iconSize={isMobile ? 10 : 12}
+							wrapperStyle={{
+								fontSize: isMobile
+									? "11px"
+									: isTablet
+									? "12px"
+									: "14px",
+								paddingTop: isMobile ? "5px" : "0px",
+								fontWeight: 500,
+							}}
+						/>
+						<Bar
+							dataKey="maintenance"
+							fill="#3b82f6"
+							name="Pemeliharaan"
+							radius={[3, 3, 0, 0]}
+							// Animasi yang lebih cepat untuk perangkat mobile
+							animationDuration={isMobile ? 500 : 1000}
+						/>
+						<Bar
+							dataKey="calibration"
+							fill="#8b5cf6"
+							name="Kalibrasi"
+							radius={[3, 3, 0, 0]}
+							// Animasi yang lebih cepat untuk perangkat mobile
+							animationDuration={isMobile ? 500 : 1000}
+						/>
+					</BarChart>
+				</ResponsiveContainer>
+			</div>
+		);
+	};
+
+	// Render status request card
+	const renderStatusRequestCard = () => {
+		const { innerRadius, outerRadius, legendFontSize, paddingTop } =
+			getPieChartDimensions(getWindowWidth());
+
+		if (statusLoading) {
+			return (
+				<div className="h-[250px] sm:h-[300px] md:h-[350px] flex items-center justify-center">
+					<p>Memuat data...</p>
+				</div>
+			);
+		}
+
+		return (
+			<Tabs defaultValue="maintenance">
+				<TabsList className="mb-4 bg-gray-100 p-1">
+					<TabsTrigger
+						value="maintenance"
+						className="data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm data-[state=active]:font-medium"
+					>
+						Pemeliharaan
+					</TabsTrigger>
+					<TabsTrigger
+						value="calibration"
+						className="data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm data-[state=active]:font-medium"
+					>
+						Kalibrasi
+					</TabsTrigger>
+				</TabsList>
+				<TabsContent
+					value="maintenance"
+					className="h-[220px] sm:h-[280px]"
+				>
+					{maintenanceStatusData.length === 0 ? (
+						<div className="h-full flex items-center justify-center text-muted-foreground">
+							Tidak ada data status permintaan untuk ditampilkan
+						</div>
+					) : (
+						<ResponsiveContainer width="100%" height="100%">
+							<PieChart>
+								<Pie
+									activeIndex={maintenanceActiveIndex}
+									activeShape={renderActiveShape}
+									data={maintenanceStatusData}
+									cx="50%"
+									cy="56%"
+									innerRadius={innerRadius}
+									outerRadius={outerRadius}
+									dataKey="value"
+									onMouseEnter={onMaintenancePieEnter}
+								>
+									{maintenanceStatusData.map(
+										(entry, index) => (
+											<Cell
+												key={`cell-maintenance-${index}`}
+												fill={entry.color}
+											/>
+										)
+									)}
+								</Pie>
+								<Legend
+									wrapperStyle={{
+										fontSize: `${legendFontSize}px`,
+										paddingTop: `${paddingTop}px`,
+										bottom: -12,
+									}}
+								/>
+								<Tooltip />
+							</PieChart>
+						</ResponsiveContainer>
+					)}
+				</TabsContent>
+				<TabsContent
+					value="calibration"
+					className="h-[220px] sm:h-[280px]"
+				>
+					{calibrationStatusData.length === 0 ? (
+						<div className="h-full flex items-center justify-center text-muted-foreground">
+							Tidak ada data status permintaan untuk ditampilkan
+						</div>
+					) : (
+						<ResponsiveContainer width="100%" height="100%">
+							<PieChart>
+								<Pie
+									activeIndex={calibrationActiveIndex}
+									activeShape={renderActiveShape}
+									data={calibrationStatusData}
+									cx="50%"
+									cy="56%"
+									innerRadius={innerRadius}
+									outerRadius={outerRadius}
+									dataKey="value"
+									onMouseEnter={onCalibrationPieEnter}
+								>
+									{calibrationStatusData.map(
+										(entry, index) => (
+											<Cell
+												key={`cell-calibration-${index}`}
+												fill={entry.color}
+											/>
+										)
+									)}
+								</Pie>
+								<Legend
+									wrapperStyle={{
+										fontSize: `${legendFontSize}px`,
+										paddingTop: `${paddingTop}px`,
+										bottom: 0,
+									}}
+								/>
+								<Tooltip />
+							</PieChart>
+						</ResponsiveContainer>
+					)}
+				</TabsContent>
+			</Tabs>
+		);
+	};
+
+	return (
+		<div className="space-y-4 sm:space-y-6">
+			{/* Summary Cards */}
+			<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+				<Card className="bg-white shadow-sm hover:shadow-md transition-shadow">
+					<CardContent className="pt-4 sm:pt-6">
+						<div className="space-y-1 sm:space-y-2">
+							<p className="text-xs sm:text-sm font-medium text-gray-500">
+								Total Pemeliharaan
+							</p>
+							{summaryLoading ? (
+								<div className="animate-pulse space-y-2">
+									<div className="h-8 bg-gray-200 rounded w-24"></div>
+									<div className="h-4 bg-gray-200 rounded w-16"></div>
+								</div>
+							) : summaryData ? (
+								<>
+									<div className="flex items-baseline justify-between">
+										<h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
+											{summaryData.maintenanceCount}
+										</h2>
+										<div
+											className={`flex items-center text-xs sm:text-sm ${
+												summaryData.maintenancePercentageChange >=
+												0
+													? "text-green-600 bg-green-50"
+													: "text-red-600 bg-red-50"
+											} px-2 py-1 rounded-full`}
+										>
+											{summaryData.maintenancePercentageChange >=
+											0 ? (
+												<ArrowUpIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+											) : (
+												<ArrowDownIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+											)}
+											<span>
+												{Math.abs(
+													summaryData.maintenancePercentageChange
+												)}
+												%
+											</span>
+										</div>
+									</div>
+									<p className="text-xs text-gray-500">
+										Bulan ini
+									</p>
+								</>
+							) : (
+								<div className="text-sm text-gray-500">
+									Data tidak tersedia
+								</div>
+							)}
+						</div>
+					</CardContent>
+				</Card>
+
+				<Card className="bg-white shadow-sm hover:shadow-md transition-shadow">
+					<CardContent className="pt-4 sm:pt-6">
+						<div className="space-y-1 sm:space-y-2">
+							<p className="text-xs sm:text-sm font-medium text-gray-500">
+								Total Kalibrasi
+							</p>
+							{summaryLoading ? (
+								<div className="animate-pulse space-y-2">
+									<div className="h-8 bg-gray-200 rounded w-24"></div>
+									<div className="h-4 bg-gray-200 rounded w-16"></div>
+								</div>
+							) : summaryData ? (
+								<>
+									<div className="flex items-baseline justify-between">
+										<h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
+											{summaryData.calibrationCount}
+										</h2>
+										<div
+											className={`flex items-center text-xs sm:text-sm ${
+												summaryData.calibrationPercentageChange >=
+												0
+													? "text-green-600 bg-green-50"
+													: "text-red-600 bg-red-50"
+											} px-2 py-1 rounded-full`}
+										>
+											{summaryData.calibrationPercentageChange >=
+											0 ? (
+												<ArrowUpIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+											) : (
+												<ArrowDownIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+											)}
+											<span>
+												{Math.abs(
+													summaryData.calibrationPercentageChange
+												)}
+												%
+											</span>
+										</div>
+									</div>
+									<p className="text-xs text-gray-500">
+										Bulan ini
+									</p>
+								</>
+							) : (
+								<div className="text-sm text-gray-500">
+									Data tidak tersedia
+								</div>
+							)}
+						</div>
+					</CardContent>
+				</Card>
+
+				<Card className="sm:col-span-2 md:col-span-1 bg-white shadow-sm hover:shadow-md transition-shadow">
+					<CardContent className="pt-4 sm:pt-6">
+						<div className="space-y-1 sm:space-y-2">
+							<p className="text-xs sm:text-sm font-medium text-gray-500">
+								Penggantian Suku Cadang
+							</p>
+							{summaryLoading ? (
+								<div className="animate-pulse space-y-2">
+									<div className="h-8 bg-gray-200 rounded w-24"></div>
+									<div className="h-4 bg-gray-200 rounded w-16"></div>
+								</div>
+							) : summaryData ? (
+								<>
+									<div className="flex items-baseline justify-between">
+										<h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
+											{summaryData.sparePartsCount}
+										</h2>
+										<div
+											className={`flex items-center text-xs sm:text-sm ${
+												summaryData.sparePartsPercentageChange >=
+												0
+													? "text-green-600 bg-green-50"
+													: "text-red-600 bg-red-50"
+											} px-2 py-1 rounded-full`}
+										>
+											{summaryData.sparePartsPercentageChange >=
+											0 ? (
+												<ArrowUpIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+											) : (
+												<ArrowDownIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+											)}
+											<span>
+												{Math.abs(
+													summaryData.sparePartsPercentageChange
+												)}
+												%
+											</span>
+										</div>
+									</div>
+									<p className="text-xs text-gray-500">
+										Bulan ini
+									</p>
+								</>
+							) : (
+								<div className="text-sm text-gray-500">
+									Data tidak tersedia
+								</div>
+							)}
+						</div>
+					</CardContent>
+				</Card>
+			</div>
+
+			{/* Charts */}
+			<div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+				{/* Status Request Pie Chart */}
+				<Card>
+					<CardHeader className="pb-0 sm:pb-2">
+						<CardTitle className="text-base sm:text-lg">
+							Status Permintaan
+						</CardTitle>
+						<CardDescription className="text-xs sm:text-sm">
+							Distribusi status permintaan pemeliharaan dan
+							kalibrasi
+						</CardDescription>
+					</CardHeader>
+					<CardContent>{renderStatusRequestCard()}</CardContent>
+				</Card>
+
+				{/* Monthly Requests Bar Chart */}
+				<Card>
+					<CardHeader className="pb-0 sm:pb-1">
+						<CardTitle className="text-base sm:text-lg">
+							Permintaan Bulanan
+						</CardTitle>
+						<CardDescription className="text-xs sm:text-sm">
+							Jumlah permintaan pemeliharaan dan kalibrasi per
+							bulan
+						</CardDescription>
+					</CardHeader>
+					<CardContent className="px-0 sm:px-0 pt-7 pb-0">
+						{renderChartContent()}
+					</CardContent>
+				</Card>
+			</div>
+		</div>
+	);
 }

@@ -70,7 +70,7 @@ export default function SparePartEdit() {
 			toolLocation: "",
 			createdOn: "",
 			imageUrl: "",
-		}
+		},
 	});
 
 	useEffect(() => {
@@ -92,14 +92,24 @@ export default function SparePartEdit() {
 				const result = await response.json();
 
 				if (!response.ok) {
-					toast.error(<>Error fetching locations:<br />{result.message}</>);
+					toast.error(
+						<>
+							Error fetching locations:
+							<br />
+							{result.message}
+						</>
+					);
 					return;
 				}
 
 				setLocations(result);
 			} catch (error) {
 				console.error("Error fetching locations:", error);
-				toast.error(error instanceof Error ? error.message : 'Error fetching locations');
+				toast.error(
+					error instanceof Error
+						? error.message
+						: "Error fetching locations"
+				);
 			}
 		}
 
@@ -121,7 +131,13 @@ export default function SparePartEdit() {
 				const result = await response.json();
 
 				if (!response.ok) {
-					toast.error(<>Error fetching spare part data:<br />{result.message}</>);
+					toast.error(
+						<>
+							Error fetching spare part data:
+							<br />
+							{result.message}
+						</>
+					);
 					setLoading(false);
 					return;
 				}
@@ -141,7 +157,9 @@ export default function SparePartEdit() {
 				// Set form values with explicit type handling
 				form.reset({
 					partsName: sparePartData.partsName || "",
-					purchaseDate: isValid(purchaseDate) ? purchaseDate : new Date(),
+					purchaseDate: isValid(purchaseDate)
+						? purchaseDate
+						: new Date(),
 					price: (sparePartData.price || 0).toString(),
 					toolLocation: sparePartData.toolLocation || "",
 					toolDate: isValid(toolDate) ? toolDate : new Date(),
@@ -153,9 +171,15 @@ export default function SparePartEdit() {
 			} catch (error) {
 				console.error("Error fetching spare part data:", error);
 				toast.error(
-					error instanceof Error ?
-						<>Error fetching spare part data:<br />{error.message}</> :
-						'Error fetching spare part data'
+					error instanceof Error ? (
+						<>
+							Error fetching spare part data:
+							<br />
+							{error.message}
+						</>
+					) : (
+						"Error fetching spare part data"
+					)
 				);
 			} finally {
 				setLoading(false);
@@ -192,7 +216,13 @@ export default function SparePartEdit() {
 		const result = await response.json();
 
 		if (!response.ok) {
-			toast.error(<>Error updating spare part:<br />{result.message}</>);
+			toast.error(
+				<>
+					Error updating spare part:
+					<br />
+					{result.message}
+				</>
+			);
 			return;
 		}
 
@@ -208,9 +238,15 @@ export default function SparePartEdit() {
 		} catch (error) {
 			console.error("Error updating spare part:", error);
 			toast.error(
-				error instanceof Error ?
-					<>Error updating spare part:<br />{error.message}</> :
-					'Error updating spare part'
+				error instanceof Error ? (
+					<>
+						Error updating spare part:
+						<br />
+						{error.message}
+					</>
+				) : (
+					"Error updating spare part"
+				)
 			);
 		} finally {
 			setSubmitting(false);
@@ -227,7 +263,7 @@ export default function SparePartEdit() {
 				<Button
 					variant="outline"
 					onClick={() => router.push("/dashboard/spare-part")}
-					className="mr-4"
+					className="mr-4 w-full sm:w-auto"
 				>
 					<ArrowLeft className="mr-2 h-4 w-4" />
 					Kembali
@@ -240,7 +276,7 @@ export default function SparePartEdit() {
 			<Form {...form}>
 				<form
 					onSubmit={form.handleSubmit(onSubmit)}
-					className="space-y-6 mt-4"
+					className="space-y-6 mt-4 max-w-3xl"
 				>
 					<FormField
 						control={form.control}
@@ -290,12 +326,18 @@ export default function SparePartEdit() {
 												variant={"outline"}
 												className={cn(
 													"w-full pl-3 text-left font-normal",
-													!field.value && "text-muted-foreground"
+													!field.value &&
+														"text-muted-foreground"
 												)}
 											>
-												{field.value && isValid(field.value) ? (
+												{field.value &&
+												isValid(field.value) ? (
 													// Format dengan locale Indonesia
-													format(field.value, "dd MMM yyyy", { locale: id })
+													format(
+														field.value,
+														"dd MMM yyyy",
+														{ locale: id }
+													)
 												) : (
 													<span>Pilih tanggal</span>
 												)}
@@ -303,7 +345,10 @@ export default function SparePartEdit() {
 											</Button>
 										</FormControl>
 									</PopoverTrigger>
-									<PopoverContent className="w-auto p-0" align="start">
+									<PopoverContent
+										className="w-auto p-0"
+										align="start"
+									>
 										<Calendar
 											mode="single"
 											selected={field.value}
@@ -331,10 +376,21 @@ export default function SparePartEdit() {
 										{...field}
 										placeholder="Masukkan harga"
 										type="text"
-										value={field.value ? formatNumberWithDots(field.value) : ""}
+										value={
+											field.value
+												? formatNumberWithDots(
+														field.value
+												  )
+												: ""
+										}
 										onChange={(e) => {
-											const rawValue = e.target.value.replace(/[^\d.]/g, "");
-											const numericValue = rawValue.replace(/\./g, "");
+											const rawValue =
+												e.target.value.replace(
+													/[^\d.]/g,
+													""
+												);
+											const numericValue =
+												rawValue.replace(/\./g, "");
 											field.onChange(numericValue);
 										}}
 									/>
@@ -389,12 +445,18 @@ export default function SparePartEdit() {
 												variant={"outline"}
 												className={cn(
 													"w-full pl-3 text-left font-normal",
-													!field.value && "text-muted-foreground"
+													!field.value &&
+														"text-muted-foreground"
 												)}
 											>
-												{field.value && isValid(field.value) ? (
+												{field.value &&
+												isValid(field.value) ? (
 													// Format dengan locale Indonesia
-													format(field.value, "dd MMM yyyy", { locale: id })
+													format(
+														field.value,
+														"dd MMM yyyy",
+														{ locale: id }
+													)
 												) : (
 													<span>Pilih tanggal</span>
 												)}
@@ -402,7 +464,10 @@ export default function SparePartEdit() {
 											</Button>
 										</FormControl>
 									</PopoverTrigger>
-									<PopoverContent className="w-auto p-0" align="start">
+									<PopoverContent
+										className="w-auto p-0"
+										align="start"
+									>
 										<Calendar
 											mode="single"
 											selected={field.value}
@@ -440,15 +505,20 @@ export default function SparePartEdit() {
 						)}
 					/>
 
-					<div className="flex justify-end space-x-4">
+					<div className="flex flex-col sm:flex-row gap-2 sm:gap-4 sm:justify-end">
 						<Button
 							type="button"
 							variant="destructive"
 							onClick={() => router.back()}
+							className="w-full sm:w-auto order-1 sm:order-none"
 						>
 							Batalkan
 						</Button>
-						<Button type="submit" disabled={submitting}>
+						<Button
+							type="submit"
+							disabled={submitting}
+							className="w-full sm:w-auto"
+						>
 							{submitting ? "Menyimpan..." : "Simpan"}
 						</Button>
 					</div>

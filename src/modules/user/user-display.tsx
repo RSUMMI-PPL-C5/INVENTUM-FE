@@ -52,49 +52,62 @@ export default function UsersPage() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 
-    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-    const [userToDelete, setUserToDelete] = useState<string | null>(null);
-    const [isDeleting, setIsDeleting] = useState(false);
-	
+	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+	const [userToDelete, setUserToDelete] = useState<string | null>(null);
+	const [isDeleting, setIsDeleting] = useState(false);
+
 	// Initialize state from URL params
 	const [users, setUsers] = useState<User[]>([]);
 	const [paginationMeta, setPaginationMeta] = useState<PaginationMeta>({
 		total: 0,
-		page: searchParams.get("page") ? parseInt(searchParams.get("page") as string) : 1,
+		page: searchParams.get("page")
+			? parseInt(searchParams.get("page") as string)
+			: 1,
 		limit: 10,
 		totalPages: 1,
 	});
 	const [search, setSearch] = useState(searchParams.get("search") || "");
 	const [showFilterModal, setShowFilterModal] = useState(false);
 	const [loading, setLoading] = useState(true);
-	
+
 	// Initialize filters from URL params
 	const [filters, setFilters] = useState<Filters>(() => {
 		const initialFilters: Filters = {
 			role: searchParams.getAll("role"),
 			division: searchParams.get("divisiId") || "",
-			createdOnStart: searchParams.get("createdOnStart") 
-				? new Date(searchParams.get("createdOnStart") as string) 
+			createdOnStart: searchParams.get("createdOnStart")
+				? new Date(searchParams.get("createdOnStart") as string)
 				: null,
-			createdOnEnd: searchParams.get("createdOnEnd") 
-				? new Date(searchParams.get("createdOnEnd") as string) 
+			createdOnEnd: searchParams.get("createdOnEnd")
+				? new Date(searchParams.get("createdOnEnd") as string)
 				: null,
-			modifiedOnStart: searchParams.get("modifiedOnStart") 
-				? new Date(searchParams.get("modifiedOnStart") as string) 
+			modifiedOnStart: searchParams.get("modifiedOnStart")
+				? new Date(searchParams.get("modifiedOnStart") as string)
 				: null,
-			modifiedOnEnd: searchParams.get("modifiedOnEnd") 
-				? new Date(searchParams.get("modifiedOnEnd") as string) 
+			modifiedOnEnd: searchParams.get("modifiedOnEnd")
+				? new Date(searchParams.get("modifiedOnEnd") as string)
 				: null,
 		};
 		return initialFilters;
 	});
 
 	// Function to update URL with current filters, search and pagination
-	const updateURLParams = (newParams: Record<string, string | string[] | null | undefined>) => {
+	const updateURLParams = (
+		newParams: Record<string, string | string[] | null | undefined>
+	) => {
 		const params = new URLSearchParams(searchParams.toString());
-		
+
 		// Clear existing filter params to avoid duplicates
-		["search", "page", "role", "divisiId", "createdOnStart", "createdOnEnd", "modifiedOnStart", "modifiedOnEnd"].forEach(param => {
+		[
+			"search",
+			"page",
+			"role",
+			"divisiId",
+			"createdOnStart",
+			"createdOnEnd",
+			"modifiedOnStart",
+			"modifiedOnEnd",
+		].forEach((param) => {
 			params.delete(param);
 		});
 
@@ -103,9 +116,9 @@ export default function UsersPage() {
 			if (value === null || value === undefined || value === "") {
 				return;
 			}
-			
+
 			if (Array.isArray(value)) {
-				value.forEach(val => {
+				value.forEach((val) => {
 					if (val) params.append(key, val);
 				});
 			} else {
@@ -119,12 +132,12 @@ export default function UsersPage() {
 
 	const buildQueryParams = (filters: Filters): string => {
 		const params = new URLSearchParams();
-		
+
 		filters.role.forEach((role) => {
 			params.append("role", role);
 		});
 
-        if (filters.division) {
+		if (filters.division) {
 			params.append("divisiId", filters.division);
 		}
 
@@ -182,91 +195,114 @@ export default function UsersPage() {
 			const response = await fetch(url, {
 				headers: {
 					"Content-Type": "application/json",
-                    Authorization: token ? `Bearer ${token}` : "",
+					Authorization: token ? `Bearer ${token}` : "",
 				},
 			});
 
 			const result = await response.json();
 
-            if (!response.ok) {
-                toast.error(<>Error fetching users:<br />{result.message}</>);                
-                return;
-            }
+			if (!response.ok) {
+				toast.error(
+					<>
+						Error fetching users:
+						<br />
+						{result.message}
+					</>
+				);
+				return;
+			}
 
 			setUsers(result.data);
 			setPaginationMeta(result.meta);
-
 		} catch (error) {
 			console.error("Error fetching users:", error);
-            toast.error(error instanceof Error ? error.message : 'Error fetching users');
+			toast.error(
+				error instanceof Error ? error.message : "Error fetching users"
+			);
 		} finally {
 			setLoading(false);
 		}
 	};
 
 	const confirmDelete = (userId: string) => {
-        setUserToDelete(userId);
-        setShowDeleteDialog(true);
-    };
-    
-    const handleDelete = async () => {
-        /* istanbul ignore next */ // NOSONAR
+		setUserToDelete(userId);
+		setShowDeleteDialog(true);
+	};
+
+	const handleDelete = async () => {
+		/* istanbul ignore next */ // NOSONAR
 		if (!userToDelete) return;
-    
-        setIsDeleting(true); // Mulai proses penghapusan
-        try {
-            const token = Cookies.get("accessToken");
-    
-            const response = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/user/${userToDelete}`,
-                {
-                    method: "DELETE",
-                    headers: {
-                        Authorization: token ? `Bearer ${token}` : "",
-                        "Content-Type": "application/json",
-                    },
-                }
-            );
-    
-            const result = await response.json();
-    
-            if (!response.ok) {
-                toast.error(<>Error deleting user:<br />{result.message}</>);
-                return;
-            }
-    
-            fetchUsers();
-            toast.info("Pengguna berhasil dihapus");
-        } catch (error) {
-            console.error("Error deleting user:", error);
-            toast.error(error instanceof Error ? error.message : "Error deleting user");
-        } finally {
-            setIsDeleting(false);
-            setShowDeleteDialog(false);
-            setUserToDelete(null);
-        }
-    };
+
+		setIsDeleting(true); // Mulai proses penghapusan
+		try {
+			const token = Cookies.get("accessToken");
+
+			const response = await fetch(
+				`${process.env.NEXT_PUBLIC_API_URL}/user/${userToDelete}`,
+				{
+					method: "DELETE",
+					headers: {
+						Authorization: token ? `Bearer ${token}` : "",
+						"Content-Type": "application/json",
+					},
+				}
+			);
+
+			const result = await response.json();
+
+			if (!response.ok) {
+				toast.error(
+					<>
+						Error deleting user:
+						<br />
+						{result.message}
+					</>
+				);
+				return;
+			}
+
+			fetchUsers();
+			toast.info("Pengguna berhasil dihapus");
+		} catch (error) {
+			console.error("Error deleting user:", error);
+			toast.error(
+				error instanceof Error ? error.message : "Error deleting user"
+			);
+		} finally {
+			setIsDeleting(false);
+			setShowDeleteDialog(false);
+			setUserToDelete(null);
+		}
+	};
 
 	const handleSearchChange = (value: string) => {
 		setSearch(value);
 		updateURLParams({
 			search: value || null,
-			page: "1"
+			page: "1",
 		});
 	};
 
 	const handleFilterApply = (newFilters: Filters) => {
 		setFilters(newFilters);
 		setShowFilterModal(false);
-		
+
 		updateURLParams({
 			role: newFilters.role,
 			divisiId: newFilters.division || null,
-			createdOnStart: newFilters.createdOnStart ? format(newFilters.createdOnStart, "yyyy-MM-dd") : null,
-			createdOnEnd: newFilters.createdOnEnd ? format(newFilters.createdOnEnd, "yyyy-MM-dd") : null,
-			modifiedOnStart: newFilters.modifiedOnStart ? format(newFilters.modifiedOnStart, "yyyy-MM-dd") : null,
-			modifiedOnEnd: newFilters.modifiedOnEnd ? format(newFilters.modifiedOnEnd, "yyyy-MM-dd") : null,
-			page: "1", 
+			createdOnStart: newFilters.createdOnStart
+				? format(newFilters.createdOnStart, "yyyy-MM-dd")
+				: null,
+			createdOnEnd: newFilters.createdOnEnd
+				? format(newFilters.createdOnEnd, "yyyy-MM-dd")
+				: null,
+			modifiedOnStart: newFilters.modifiedOnStart
+				? format(newFilters.modifiedOnStart, "yyyy-MM-dd")
+				: null,
+			modifiedOnEnd: newFilters.modifiedOnEnd
+				? format(newFilters.modifiedOnEnd, "yyyy-MM-dd")
+				: null,
+			page: "1",
 		});
 	};
 
@@ -296,19 +332,19 @@ export default function UsersPage() {
 		<div className="space-y-6 font-plus-jakarta-sans">
 			<h1 className="text-header-h5 font-bold font-poppins">Pengguna</h1>
 
-			{/* Header Section */}
-			<div className="bg-primary-solid items-center p-2 flex gap-3 h-fit text-white rounded-lg overflow-hidden">
-				<div className="flex items-center justify-center w-[264px] h-[224px] border border-primary-super-light rounded-lg">
+			{/* Header Section - Responsive Design */}
+			<div className="bg-primary-solid p-4 md:p-2 flex flex-col md:flex-row md:items-center gap-3 h-fit text-white rounded-lg overflow-hidden">
+				<div className="hidden md:flex items-center justify-center w-full md:w-[264px] h-[160px] md:h-[224px] border border-primary-super-light rounded-lg">
 					illustration
 				</div>
 
-				<div className="flex flex-col gap-6 py-6 px-6">
+				<div className="flex flex-col gap-4 md:gap-6 py-2 md:py-6 px-2 md:px-6">
 					<div className="space-y-2">
-						<h2 className="text-header-h6 font-bold font-poppins">
+						<h2 className="text-xl md:text-header-h6 font-bold font-poppins">
 							Pengguna
 						</h2>
-						<p className="text-s-medium">
-							Kelola, pantau, dan atur semua akun pengguna dalam
+						<p className="text-sm md:text-s-medium">
+                            Kelola, pantau, dan atur semua akun pengguna dalam
 							sistem, termasuk pembuatan, pembaruan, penghapusan,
 							serta pengelolaan{" "}
 							<span className="italic">role</span> dan izin akses.
@@ -357,10 +393,11 @@ export default function UsersPage() {
 				</div>
 			)}
 
-			{/* Users Table */}
+			{/* Users Table for md and larger screens / Cards for smaller screens */}
 			{!loading && (
 				<>
-					<div className="border rounded-lg overflow-hidden">
+					{/* Desktop Table View (hidden on small screens) */}
+					<div className="border rounded-lg overflow-hidden hidden md:block">
 						<Table data-testid="users-table">
 							<TableHeader>
 								<TableRow>
@@ -377,7 +414,7 @@ export default function UsersPage() {
 								{users.length > 0 ? (
 									users.map((user) => (
 										<TableRow
-											key={user.id}
+											key={`table-${user.id}`}
 											className="cursor-pointer"
 											onClick={() =>
 												navigateToUserDetail(user.id)
@@ -415,16 +452,18 @@ export default function UsersPage() {
 														<Edit className="h-4 w-4" />
 													</Button>
 													<Button
-                                                        size="icon"
-                                                        variant="destructive"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            confirmDelete(user.id);
-                                                        }}
-                                                        data-testid={`delete-button-${user.id}`}
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
+														size="icon"
+														variant="destructive"
+														onClick={(e) => {
+															e.stopPropagation();
+															confirmDelete(
+																user.id
+															);
+														}}
+														data-testid={`delete-button-${user.id}`}
+													>
+														<Trash2 className="h-4 w-4" />
+													</Button>
 												</div>
 											</TableCell>
 										</TableRow>
@@ -445,6 +484,94 @@ export default function UsersPage() {
 						</Table>
 					</div>
 
+					{/* Mobile Card View (shown only on small screens) */}
+					<div className="md:hidden">
+						<div className="grid grid-cols-1 gap-4">
+							{users.length > 0 ? (
+								users.map((user) => (
+									<div
+										key={`card-${user.id}`}
+										className="border rounded-lg p-4 cursor-pointer shadow-sm hover:shadow-md transition-shadow"
+										onClick={() =>
+											navigateToUserDetail(user.id)
+										}
+										data-testid={`user-card-${user.id}`}
+									>
+										<div className="flex justify-between items-start mb-4">
+											<div className="font-medium">
+												{user.fullname ?? user.username}
+											</div>
+											<div className="flex gap-2">
+												<Button
+													size="sm"
+													variant="outline"
+													onClick={(e) => {
+														e.stopPropagation();
+														navigateToUserEdit(
+															user.id
+														);
+													}}
+													data-testid={`card-edit-button-${user.id}`}
+												>
+													<Edit className="h-3 w-3" />{" "}
+													
+												</Button>
+												<Button
+													size="sm"
+													variant="destructive"
+													onClick={(e) => {
+														e.stopPropagation();
+														confirmDelete(user.id);
+													}}
+													data-testid={`card-delete-button-${user.id}`}
+												>
+													<Trash2 className="h-3 w-3" />{" "}
+													
+												</Button>
+											</div>
+										</div>
+										<div className="space-y-1 text-sm">
+											<div className="grid grid-cols-3">
+												<span className="text-muted-foreground">
+													Email:
+												</span>
+												<span className="col-span-2">
+													{user.email}
+												</span>
+											</div>
+											<div className="grid grid-cols-3">
+												<span className="text-muted-foreground">
+													Divisi:
+												</span>
+												<span className="col-span-2">
+													{user.divisi?.divisi ?? "-"}
+												</span>
+											</div>
+											<div className="grid grid-cols-3">
+												<span className="text-muted-foreground">
+													Dibuat:
+												</span>
+												<span className="col-span-2">
+													{user.createdOn
+														? formatDate(
+																user.createdOn
+														  )
+														: "-"}
+												</span>
+											</div>
+										</div>
+									</div>
+								))
+							) : (
+								<div className="text-center p-4 border rounded-lg">
+									{search
+										? "Tidak ada pengguna yang cocok dengan pencarian Anda"
+										: "Tidak ada pengguna yang ditemukan"}
+								</div>
+							)}
+						</div>
+					</div>
+
 					<PaginationControls
 						currentPage={paginationMeta.page}
 						totalPages={paginationMeta.totalPages}
@@ -463,16 +590,16 @@ export default function UsersPage() {
 				/>
 			)}
 
-            <DeleteDialog
-                open={showDeleteDialog}
-                onOpenChange={setShowDeleteDialog}
-                title="Hapus Pengguna"
-                description="Apakah Anda yakin ingin menghapus pengguna ini? Tindakan ini tidak dapat dibatalkan."
-                onConfirm={handleDelete}
-                isDeleting={isDeleting}
-                deleteButtonText="Hapus"
-                cancelButtonText="Batal"
-            />
+			<DeleteDialog
+				open={showDeleteDialog}
+				onOpenChange={setShowDeleteDialog}
+				title="Hapus Pengguna"
+				description="Apakah Anda yakin ingin menghapus pengguna ini? Tindakan ini tidak dapat dibatalkan."
+				onConfirm={handleDelete}
+				isDeleting={isDeleting}
+				deleteButtonText="Hapus"
+				cancelButtonText="Batal"
+			/>
 		</div>
 	);
 }

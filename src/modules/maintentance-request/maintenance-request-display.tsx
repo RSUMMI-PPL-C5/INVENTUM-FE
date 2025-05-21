@@ -70,17 +70,16 @@ export default function MaintenanceRequestDisplay() {
 	const [search, setSearch] = useState(searchParams.get("search") || "");
 	const [showFilterModal, setShowFilterModal] = useState(false);
 	const [loading, setLoading] = useState(true);
-    const [role, setRole] = useState("");
+	const [role, setRole] = useState("");
 
-    useEffect(() => {
-        const user = Cookies.get("user")
-            
-        if (user) {
-            const { role } = JSON.parse(user)
-            setRole(role);
-        }
-        
-    }, [])
+	useEffect(() => {
+		const user = Cookies.get("user");
+
+		if (user) {
+			const { role } = JSON.parse(user);
+			setRole(role);
+		}
+	}, []);
 
 	// Initialize filters from URL params
 	const [filters, setFilters] = useState<Filters>(() => {
@@ -426,7 +425,7 @@ export default function MaintenanceRequestDisplay() {
 			default:
 				return status;
 		}
-	}
+	};
 
 	const navigateToRequestDetail = (requestId: string) => {
 		router.push(
@@ -446,17 +445,17 @@ export default function MaintenanceRequestDisplay() {
 			</h1>
 
 			{/* Header Section */}
-			<div className="bg-primary-solid items-center p-2 flex gap-3 h-fit text-white rounded-lg overflow-hidden">
-				<div className="flex items-center justify-center w-[264px] h-[224px] border border-primary-super-light rounded-lg">
+			<div className="bg-primary-solid p-4 md:p-2 flex flex-col md:flex-row items-center gap-3 h-fit text-white rounded-lg overflow-hidden">
+				<div className="hidden md:flex items-center justify-center w-[200px] md:w-[264px] h-[150px] md:h-[224px] border border-primary-super-light rounded-lg shrink-0">
 					illustration
 				</div>
 
-				<div className="flex flex-col gap-6 py-6 px-6">
+				<div className="flex flex-col gap-4 md:gap-6 py-3 md:py-6 px-2 md:px-6 text-left">
 					<div className="space-y-2">
-						<h2 className="text-header-h6 font-bold font-poppins">
+						<h2 className="text-xl md:text-header-h6 font-bold font-poppins">
 							Permintaan Pemeliharaan
 						</h2>
-						<p className="text-s-medium">
+						<p className="text-sm md:text-s-medium">
 							Kelola, pantau, dan atur semua permintaan
 							pemeliharaan alat medis dalam sistem, termasuk
 							penambahan, pembaruan, status, dan catatan.
@@ -464,7 +463,7 @@ export default function MaintenanceRequestDisplay() {
 					</div>
 					<Button
 						variant="ghost"
-						className="w-fit"
+						className="w-full md:w-fit"
 						onClick={() => navigateToRequestCreate()}
 					>
 						<Plus className="mr-2 h-4 w-4" /> Tambah Permintaan
@@ -508,7 +507,8 @@ export default function MaintenanceRequestDisplay() {
 			{/* Maintenance Request Table */}
 			{!loading && (
 				<>
-					<div className="border rounded-lg overflow-hidden">
+					{/* Desktop View */}
+					<div className="border rounded-lg overflow-hidden hidden md:block">
 						<Table data-testid="maintenance-requests-table">
 							<TableHeader>
 								<TableRow>
@@ -517,8 +517,8 @@ export default function MaintenanceRequestDisplay() {
 									<TableHead>Catatan</TableHead>
 									<TableHead>Status</TableHead>
 									{["Fasum", "Admin"].includes(role) && (
-									    <TableHead>Aksi</TableHead>
-                                    )}
+										<TableHead>Aksi</TableHead>
+									)}
 								</TableRow>
 							</TableHeader>
 							<TableBody>
@@ -551,29 +551,32 @@ export default function MaintenanceRequestDisplay() {
 													className={`px-4 py-1 rounded-full text-xs font-medium ${getStatusClass(
 														request.status
 													)}`}
-													
 													data-testid={`status-button-${request.id}`}
 												>
-													{getStatusText(request.status)}
+													{getStatusText(
+														request.status
+													)}
 												</Button>
 											</TableCell>
-                                            {["Fasum", "Admin"].includes(role) && (
-                                                <TableCell>
-                                                    <Button
-                                                        size="icon"
-                                                        variant="outline"
-                                                        onClick={(e) =>
-                                                            openStatusChangeModal(
-                                                                e,
-                                                                request
-                                                            )
-                                                        }
-                                                        data-testid={`edit-button-${request.id}`}
-                                                    >
-                                                        <Edit className="h-4 w-4" />
-                                                    </Button>
-                                                </TableCell>
-                                            )}
+											{["Fasum", "Admin"].includes(
+												role
+											) && (
+												<TableCell>
+													<Button
+														size="icon"
+														variant="outline"
+														onClick={(e) =>
+															openStatusChangeModal(
+																e,
+																request
+															)
+														}
+														data-testid={`edit-button-${request.id}`}
+													>
+														<Edit className="h-4 w-4" />
+													</Button>
+												</TableCell>
+											)}
 										</TableRow>
 									))
 								) : (
@@ -590,6 +593,88 @@ export default function MaintenanceRequestDisplay() {
 								)}
 							</TableBody>
 						</Table>
+					</div>
+
+					{/* Mobile Card View */}
+					<div className="md:hidden">
+						<div className="grid grid-cols-1 gap-4">
+							{maintenanceRequests.length > 0 ? (
+								maintenanceRequests.map((request) => (
+									<div
+										key={`card-${request.id}`}
+										className="border rounded-lg p-4 cursor-pointer shadow-sm hover:shadow-md transition-shadow"
+										onClick={() =>
+											navigateToRequestDetail(request.id)
+										}
+										data-testid={`request-card-${request.id}`}
+									>
+										<div className="flex justify-between items-start mb-3">
+											<div>
+												<h3 className="font-medium text-gray-900">
+													{request.medicalEquipment}
+												</h3>
+												<p className="text-sm text-gray-500">
+													Kode:{" "}
+													{request.medicalEquipment}
+												</p>
+											</div>
+											<div
+												onClick={(e) =>
+													e.stopPropagation()
+												}
+											>
+												<Button
+													variant="ghost"
+													size="sm"
+													className={`rounded-full text-xs font-medium ${getStatusClass(
+														request.status
+													)}`}
+													data-testid={`status-button-mobile-${request.id}`}
+												>
+													{getStatusText(
+														request.status
+													)}
+												</Button>
+											</div>
+										</div>
+
+										<div className="mt-3">
+											<p className="text-sm text-gray-500">
+												Catatan:
+											</p>
+											<p className="text-sm">
+												{request.complaint || "-"}
+											</p>
+										</div>
+
+										{["Fasum", "Admin"].includes(role) && (
+											<div className="mt-4 flex justify-end">
+												<Button
+													size="sm"
+													variant="outline"
+													onClick={(e) =>
+														openStatusChangeModal(
+															e,
+															request
+														)
+													}
+													data-testid={`edit-button-mobile-${request.id}`}
+												>
+													<Edit className="h-4 w-4 mr-1" />{" "}
+													Ubah Status
+												</Button>
+											</div>
+										)}
+									</div>
+								))
+							) : (
+								<div className="text-center p-4 border rounded-lg">
+									{search
+										? "Tidak ada permintaan pemeliharaan yang cocok dengan pencarian Anda"
+										: "Tidak ada permintaan pemeliharaan yang ditemukan"}
+								</div>
+							)}
+						</div>
 					</div>
 
 					<PaginationControls

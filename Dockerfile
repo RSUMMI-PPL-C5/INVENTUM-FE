@@ -1,5 +1,8 @@
-# Dockerfile.frontend
-FROM node:22-alpine AS builder
+# Stage 1: Build
+FROM node:22 AS builder
+
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 WORKDIR /app
 
 # Accept build args for environment variables

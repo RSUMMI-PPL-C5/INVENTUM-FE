@@ -75,17 +75,27 @@ export default function UserCreate() {
 				}
 			);
 
-            const result = await response.json();
+			const result = await response.json();
 
-            if (!response.ok) {
-                toast.error(<>Error fetching divisions:<br />{result.message}</>);                
-                return;
-            }
+			if (!response.ok) {
+				toast.error(
+					<>
+						Error fetching divisions:
+						<br />
+						{result.message}
+					</>
+				);
+				return;
+			}
 
 			setDivisions(result);
 		} catch (error) {
 			console.error("Error fetching divisions:", error);
-            toast.error(error instanceof Error ? error.message : 'Error fetching divisions');
+			toast.error(
+				error instanceof Error
+					? error.message
+					: "Error fetching divisions"
+			);
 		}
 	}
 
@@ -106,36 +116,41 @@ export default function UserCreate() {
 	async function createUser(data: z.infer<typeof formSchema>) {
 		const token = Cookies.get("accessToken");
 
-        const response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/user/`,
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: token ? `Bearer ${token}` : "",
-                },
-                body: JSON.stringify({
-                    username: data.username,
-                    email: data.email,
-                    password: data.password,
-                    role: data.role,
-                    fullname: data.fullname,
-                    nokar: data.nokar,
-                    divisiId: Number.parseInt(data.divisiId),
-                    waNumber: data.waNumber,
-                }),
-            }
-        );
+		const response = await fetch(
+			`${process.env.NEXT_PUBLIC_API_URL}/user/`,
+			{
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: token ? `Bearer ${token}` : "",
+				},
+				body: JSON.stringify({
+					username: data.username,
+					email: data.email,
+					password: data.password,
+					role: data.role,
+					fullname: data.fullname,
+					nokar: data.nokar,
+					divisiId: Number.parseInt(data.divisiId),
+					waNumber: data.waNumber,
+				}),
+			}
+		);
 
-        const result = await response.json();
+		const result = await response.json();
 
-        if (!response.ok) {
-            toast.error(<>Error creating user :<br />{result.message}</>);
-            return
-        }
+		if (!response.ok) {
+			toast.error(
+				<>
+					Error creating user :<br />
+					{result.message}
+				</>
+			);
+			return;
+		}
 
-        toast.info("Pengguna berhasil dibuat")
-        router.push("/dashboard/user");
+		toast.info("Pengguna berhasil dibuat");
+		router.push("/dashboard/user");
 	}
 
 	async function onSubmit(values: z.infer<typeof formSchema>) {
@@ -145,7 +160,17 @@ export default function UserCreate() {
 			await createUser(values);
 		} catch (error) {
 			console.error("Error creating user:", error);
-            toast.error(error instanceof Error ? <>Error creating user:<br />{error.message}</> : 'Error creating user');
+			toast.error(
+				error instanceof Error ? (
+					<>
+						Error creating user:
+						<br />
+						{error.message}
+					</>
+				) : (
+					"Error creating user"
+				)
+			);
 		} finally {
 			setLoading(false);
 		}
@@ -157,7 +182,7 @@ export default function UserCreate() {
 				<Button
 					variant="outline"
 					onClick={() => router.push("/dashboard/user")}
-					className="mr-4"
+					className="mr-4 w-full sm:w-auto"
 				>
 					<ArrowLeft className="mr-2 h-4 w-4" />
 					Kembali
@@ -170,7 +195,7 @@ export default function UserCreate() {
 			<Form {...form}>
 				<form
 					onSubmit={form.handleSubmit(onSubmit)}
-					className="space-y-6 mt-4"
+					className="space-y-4 md:space-y-6 mt-4"
 				>
 					<FormField
 						control={form.control}
@@ -331,15 +356,20 @@ export default function UserCreate() {
 							</FormItem>
 						)}
 					/>
-					<div className="flex justify-end space-x-4">
+					<div className="flex flex-col sm:flex-row gap-2 sm:gap-4 sm:justify-end mt-6">
 						<Button
 							type="button"
 							variant="destructive"
 							onClick={() => router.back()}
+							className="w-full sm:w-auto order-2 sm:order-1"
 						>
 							Batalkan
 						</Button>
-						<Button type="submit" disabled={loading}>
+						<Button
+							type="submit"
+							disabled={loading}
+							className="w-full sm:w-auto order-1 sm:order-2"
+						>
 							{loading ? "Menyimpan..." : "Simpan"}
 						</Button>
 					</div>

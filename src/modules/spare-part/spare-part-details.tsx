@@ -120,7 +120,7 @@ export default function SparePartDetails() {
 				<Button
 					variant="outline"
 					onClick={handleGoBack}
-					className="mr-4"
+					className="mr-4 w-full sm:w-auto"
 				>
 					<ArrowLeft className="mr-2 h-4 w-4" />
 					Kembali
@@ -139,7 +139,9 @@ export default function SparePartDetails() {
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 						<div className="space-y-4">
 							<div>
-								<h3 className="text-sm font-medium text-muted-foreground">Gambar</h3>
+								<h3 className="text-sm font-medium text-muted-foreground">
+									Gambar
+								</h3>
 								{sparepart.imageUrl ? (
 									<img
 										src={sparepart.imageUrl}
@@ -148,41 +150,60 @@ export default function SparePartDetails() {
 									/>
 								) : (
 									<div className="mt-2 w-full max-w-md h-48 bg-muted rounded-lg flex items-center justify-center">
-										<span className="text-sm text-muted-foreground">No image available</span>
+										<span className="text-sm text-muted-foreground">
+											No image available
+										</span>
 									</div>
 								)}
 							</div>
 							<div>
-								<h3 className="text-sm font-medium text-muted-foreground">Nama Spare Part</h3>
+								<h3 className="text-sm font-medium text-muted-foreground">
+									Nama Spare Part
+								</h3>
 								<p className="mt-1">{sparepart.partsName}</p>
 							</div>
 							<div>
-								<h3 className="text-sm font-medium text-muted-foreground">Tanggal Pembelian</h3>
-								<p className="mt-1">{formatDate(sparepart.purchaseDate)}</p>
+								<h3 className="text-sm font-medium text-muted-foreground">
+									Tanggal Pembelian
+								</h3>
+								<p className="mt-1">
+									{formatDate(sparepart.purchaseDate)}
+								</p>
 							</div>
 						</div>
 						<div className="space-y-4">
 							<div>
-								<h3 className="text-sm font-medium text-muted-foreground">Harga</h3>
-								<p className="mt-1">{formatCurrency(sparepart.price)}</p>
+								<h3 className="text-sm font-medium text-muted-foreground">
+									Harga
+								</h3>
+								<p className="mt-1">
+									{formatCurrency(sparepart.price)}
+								</p>
 							</div>
 							<div>
-								<h3 className="text-sm font-medium text-muted-foreground">Lokasi Alat</h3>
+								<h3 className="text-sm font-medium text-muted-foreground">
+									Lokasi Alat
+								</h3>
 								<p className="mt-1">{sparepart.toolLocation}</p>
 							</div>
 							{sparepart.description && (
 								<div>
-									<h3 className="text-sm font-medium text-muted-foreground">Deskripsi</h3>
-									<p className="mt-1">{sparepart.description}</p>
+									<h3 className="text-sm font-medium text-muted-foreground">
+										Deskripsi
+									</h3>
+									<p className="mt-1">
+										{sparepart.description}
+									</p>
 								</div>
 							)}
 						</div>
 					</div>
 
-					<div className="flex justify-end space-x-4">
+					<div className="flex flex-col sm:flex-row gap-2 sm:gap-4 sm:justify-end">
 						<Button
 							variant="outline"
 							onClick={handleEdit}
+							className="w-full sm:w-auto"
 						>
 							<Edit className="mr-2 h-4 w-4" />
 							Edit
@@ -190,6 +211,7 @@ export default function SparePartDetails() {
 						<Button
 							variant="destructive"
 							onClick={handleDelete}
+							className="w-full sm:w-auto"
 						>
 							<Trash2 className="mr-2 h-4 w-4" />
 							Hapus
