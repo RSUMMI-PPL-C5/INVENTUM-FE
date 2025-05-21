@@ -1,3 +1,10 @@
+# [1.0.0-staging.13](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/compare/v1.0.0-staging.12...v1.0.0-staging.13) (2025-05-21)
+
+
+### Bug Fixes
+
+* image path ([2e0acec](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/commit/2e0acec6b3c9eeade9b60aef2ebca88c1387c8d2))
+
 # [1.0.0-staging.12](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/compare/v1.0.0-staging.11...v1.0.0-staging.12) (2025-05-21)
 
 
