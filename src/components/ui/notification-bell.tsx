@@ -32,6 +32,9 @@ export function NotificationBell({
 }: NotificationBellProps) {
   const [open, setOpen] = useState(false);
 
+  // Filter to only show unread notifications in the dropdown
+  const unreadNotifications = notifications.filter(n => !n.read);
+  
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -64,26 +67,20 @@ export function NotificationBell({
           )}
         </div>
         <div className="max-h-80 overflow-y-auto">
-          {notifications.length === 0 ? (
+          {unreadNotifications.length === 0 ? (
             <div className="p-4 text-center text-muted-foreground">
-              Tidak ada notifikasi
+              Tidak ada notifikasi baru
             </div>
           ) : (
             <div className="divide-y">
-              {notifications.map((notification) => (
+              {unreadNotifications.map((notification) => (
                 <button
                   key={notification.id}
-                  className={cn(
-                    "w-full text-left p-4 hover:bg-gray-50 transition-colors",
-                    !notification.read && "bg-blue-50"
-                  )}
+                  className="w-full text-left p-4 hover:bg-gray-50 transition-colors bg-blue-50"
                   onClick={() => onNotificationClick?.(notification.id)}
                 >
                   <div className="flex justify-between mb-1">
-                    <span className={cn(
-                      "font-medium",
-                      !notification.read && "text-blue-800"
-                    )}>
+                    <span className="font-medium text-blue-800">
                       {notification.title}
                     </span>
                     <span className="text-xs text-muted-foreground">
@@ -109,4 +106,4 @@ export function NotificationBell({
       </PopoverContent>
     </Popover>
   );
-} 
+}

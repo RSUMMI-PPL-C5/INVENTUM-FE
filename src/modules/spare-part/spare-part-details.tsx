@@ -15,6 +15,7 @@ type Sparepart = {
 	price: number;
 	toolLocation: string;
 	description?: string | null;
+	imageUrl?: string;
 };
 
 export default function SparePartDetails() {
@@ -112,134 +113,90 @@ export default function SparePartDetails() {
 			return "Tanggal tidak valid";
 		}
 	};
-	// Loading state
-	if (loading) {
-		return (
-			<div className="space-y-6" data-testid="loading-state">
-				<Button
-					variant="outline"
-					onClick={handleGoBack}
-					className="mb-6"
-				>
-					<ArrowLeft className="mr-2 h-4 w-4" /> Kembali
-				</Button>
 
-				<div className="border rounded-lg p-6 shadow-sm">
-					<div className="h-8 w-1/3 bg-muted animate-pulse rounded mb-6"></div>
-
-					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-						{Array.from({ length: 4 }).map((_, index) => (
-							<div key={index} className="space-y-2">
-								<div className="h-4 w-20 bg-muted animate-pulse rounded"></div>
-								<div className="h-5 w-40 bg-muted animate-pulse rounded"></div>
-							</div>
-						))}
-					</div>
-				</div>
-
-				<div className="flex justify-center">
-					<p>Memuat...</p>
-				</div>
-			</div>
-		);
-	}
-
-	// Error state
-	if (error || !sparepart) {
-		return (
-			<div className="p-6 space-y-4" data-testid="error-state">
-				<Button
-					variant="outline"
-					onClick={handleGoBack}
-					data-testid="back-button"
-				>
-					<ArrowLeft className="mr-2 h-4 w-4" /> Kembali
-				</Button>
-				<div className="p-4 rounded-md bg-red-50 text-red-800 mt-4">
-					<p>{error || "Suku cadang tidak ditemukan"}</p>
-				</div>
-			</div>
-		);
-	}
-
-	// Success state with spare part details
 	return (
-		<div className="space-y-6" data-testid="spare-part-detail">
-			{/* Back button */}
-			<Button
-				variant="outline"
-				onClick={handleGoBack}
-				data-testid="back-button"
-			>
-				<ArrowLeft className="mr-2 h-4 w-4" /> Kembali
-			</Button>
-
-			{/* Spare part details */}
-			<div className="border rounded-lg p-6 shadow-sm">
-				<h1
-					className="text-2xl font-bold mb-6"
-					data-testid="spare-part-name"
+		<div className="space-y-6">
+			<div className="flex flex-col items-start gap-4">
+				<Button
+					variant="outline"
+					onClick={handleGoBack}
+					className="mr-4"
 				>
-					{sparepart.partsName}
-				</h1>
-
-				<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-					<div className="space-y-1">
-						<h3 className="text-sm font-medium text-muted-foreground">
-							Tanggal Pembelian
-						</h3>
-						<p className="text-sm" data-testid="spare-part-date">
-							{formatDate(sparepart.purchaseDate)}
-						</p>
-					</div>
-
-					<div className="space-y-1">
-						<h3 className="text-sm font-medium text-muted-foreground">
-							Harga
-						</h3>
-						<p className="text-sm" data-testid="spare-part-price">
-							{formatCurrency(sparepart.price)}
-						</p>
-					</div>
-
-					<div className="space-y-1">
-						<h3 className="text-sm font-medium text-muted-foreground">
-							Lokasi
-						</h3>
-						<p
-							className="text-sm"
-							data-testid="spare-part-location"
-						>
-							{sparepart.toolLocation}
-						</p>
-					</div>
-
-					<div className="space-y-1">
-						<h3 className="text-sm font-medium text-muted-foreground">
-							Deskripsi
-						</h3>
-						<p
-							className="text-sm"
-							data-testid="spare-part-description"
-						>
-							{sparepart.description || "Tidak ada deskripsi"}
-						</p>
-					</div>
-				</div>
-
-				<div className="flex justify-end gap-4 pt-6 mt-6">
-					<Button onClick={handleEdit} data-testid="edit-button">
-						<Edit className="mr-2 h-4 w-4" /> Edit
-					</Button>
-					<Button
-						variant="destructive"
-						onClick={handleDelete}
-						data-testid="delete-button"
-					>
-						<Trash2 className="mr-2 h-4 w-4" /> Hapus
-					</Button>
-				</div>
+					<ArrowLeft className="mr-2 h-4 w-4" />
+					Kembali
+				</Button>
+				<span className="text-header-h5 font-bold font-poppins">
+					Detail Spare Part
+				</span>
 			</div>
+
+			{loading ? (
+				<div>Loading...</div>
+			) : error ? (
+				<div className="text-destructive">{error}</div>
+			) : sparepart ? (
+				<div className="space-y-6">
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+						<div className="space-y-4">
+							<div>
+								<h3 className="text-sm font-medium text-muted-foreground">Gambar</h3>
+								{sparepart.imageUrl ? (
+									<img
+										src={sparepart.imageUrl}
+										alt={sparepart.partsName}
+										className="mt-2 w-full max-w-md rounded-lg object-cover"
+									/>
+								) : (
+									<div className="mt-2 w-full max-w-md h-48 bg-muted rounded-lg flex items-center justify-center">
+										<span className="text-sm text-muted-foreground">No image available</span>
+									</div>
+								)}
+							</div>
+							<div>
+								<h3 className="text-sm font-medium text-muted-foreground">Nama Spare Part</h3>
+								<p className="mt-1">{sparepart.partsName}</p>
+							</div>
+							<div>
+								<h3 className="text-sm font-medium text-muted-foreground">Tanggal Pembelian</h3>
+								<p className="mt-1">{formatDate(sparepart.purchaseDate)}</p>
+							</div>
+						</div>
+						<div className="space-y-4">
+							<div>
+								<h3 className="text-sm font-medium text-muted-foreground">Harga</h3>
+								<p className="mt-1">{formatCurrency(sparepart.price)}</p>
+							</div>
+							<div>
+								<h3 className="text-sm font-medium text-muted-foreground">Lokasi Alat</h3>
+								<p className="mt-1">{sparepart.toolLocation}</p>
+							</div>
+							{sparepart.description && (
+								<div>
+									<h3 className="text-sm font-medium text-muted-foreground">Deskripsi</h3>
+									<p className="mt-1">{sparepart.description}</p>
+								</div>
+							)}
+						</div>
+					</div>
+
+					<div className="flex justify-end space-x-4">
+						<Button
+							variant="outline"
+							onClick={handleEdit}
+						>
+							<Edit className="mr-2 h-4 w-4" />
+							Edit
+						</Button>
+						<Button
+							variant="destructive"
+							onClick={handleDelete}
+						>
+							<Trash2 className="mr-2 h-4 w-4" />
+							Hapus
+						</Button>
+					</div>
+				</div>
+			) : null}
 		</div>
 	);
 }

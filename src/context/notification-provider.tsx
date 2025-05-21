@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Cookies from 'js-cookie';
 
 interface Notification {
   id: string;
@@ -11,6 +12,10 @@ interface Notification {
   read: boolean;
   type?: 'info' | 'success' | 'warning' | 'error';
   requestId?: string;
+  user?: {
+    id: string;
+    name: string;
+  };
 }
 
 interface NotificationContextType {
@@ -25,11 +30,33 @@ const NotificationContext = createContext<NotificationContextType | undefined>(u
 
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const router = useRouter();
+  
+  useEffect(() => {
+    const getUserRole = () => {
+      try {
+        const userCookie = Cookies.get('user');
+        if (userCookie) {
+          const userData = JSON.parse(userCookie);
+          setUserRole(userData.role);
+        }
+      } catch (error) {
+        console.error('Error parsing user data from cookies:', error);
+      }
+    };
+    
+    getUserRole();
+  }, []);
+  
+  // Cek jika user adalah Admin atau Fasum berdasarkan role dari cookie
+  const isAdminOrFasum = () => {
+    return userRole === 'Admin' || userRole === 'Fasum';
+  };
 
   const fetchNotifications = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = Cookies.get('accessToken');
       if (!token) {
         setNotifications([]);
         return;
@@ -41,7 +68,9 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         return;
       }
 
-      const response = await fetch(`${apiUrl}/notification`, {
+      // Gunakan endpoint yang sesuai berdasarkan peran pengguna
+      const endpoint = isAdminOrFasum() ? '/notification' : '/notification/my';
+      const response = await fetch(`${apiUrl}${endpoint}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -50,45 +79,54 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
       if (!response.ok) {
         if (response.status === 404) {
-          // Backend not available
           setNotifications([]);
           return;
         }
-        throw new Error('Failed to fetch notifications');
+        throw new Error(`Failed to fetch notifications: ${response.status}`);
       }
 
       const data = await response.json();
       const formattedNotifications = data.data.map((n: any) => ({
         id: n.id,
-        title: n.request?.requestType === 'MAINTENANCE' ? 'Maintenance Request' : 'Calibration Request',
+        title: n.request?.requestType === 'MAINTENANCE' ? 'Permintaan Pemeliharaan' : 'Permintaan Kalibrasi',
         message: n.message,
         timestamp: new Date(n.createdOn).toLocaleString(),
         read: n.isRead,
         type: 'info',
-        requestId: n.requestId
+        requestId: n.requestId,
+        // Tambahkan informasi pengguna jika available (untuk Admin/Fasum)
+        user: n.user ? {
+          id: n.user.id,
+          name: n.user.name,
+        } : undefined
       }));
+      
       setNotifications(formattedNotifications);
     } catch (error) {
-      // Silently handle errors and set empty notifications
+      console.error('Error fetching notifications:', error);
       setNotifications([]);
     }
   };
 
   const markAsRead = async (id: string) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = Cookies.get('accessToken');
       if (!token) return;
 
       const notification = notifications.find(n => n.id === id);
+      
       if (notification?.requestId) {
-        router.push(`/dashboard/request/${notification.requestId}`);
+        const requestType = notification.title?.toLowerCase().includes('kalibrasi') ? 
+          'calibration' : 'maintenance';
+          
+        router.push(`/dashboard/detail-request?type=${requestType}&id=${notification.requestId}`);
       }
       
       const apiUrl = process.env.NEXT_PUBLIC_API_URL;
       if (!apiUrl) return;
 
       const response = await fetch(`${apiUrl}/notification/${id}/read`, {
-        method: 'PUT',
+        method: 'PATCH', // Sesuai dengan backend
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -109,7 +147,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
   const markAllAsRead = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = Cookies.get('accessToken');
       if (!token) return;
 
       const apiUrl = process.env.NEXT_PUBLIC_API_URL;
@@ -119,13 +157,14 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         notifications
           .filter(n => !n.read)
           .map(n => fetch(`${apiUrl}/notification/${n.id}/read`, {
-            method: 'PUT',
+            method: 'PATCH', // Sesuai dengan backend
             headers: {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json',
             },
           }))
       );
+      
       setNotifications(prev => 
         prev.map(n => ({ ...n, read: true }))
       );
@@ -135,11 +174,13 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   };
 
   useEffect(() => {
-    fetchNotifications();
-    // Set up polling every 30 seconds
-    const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
-  }, []);
+    if (userRole) { // Hanya fetch jika role user sudah tersedia
+      fetchNotifications();
+      // Set up polling every 10 seconds
+      const interval = setInterval(fetchNotifications, 10000);
+      return () => clearInterval(interval);
+    }
+  }, [userRole]); // Tambahkan userRole sebagai dependency
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
@@ -164,4 +205,4 @@ export function useNotifications() {
     throw new Error('useNotifications must be used within a NotificationProvider');
   }
   return context;
-} 
+}
