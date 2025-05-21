@@ -1,3 +1,10 @@
+# [1.0.0-staging.10](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/compare/v1.0.0-staging.9...v1.0.0-staging.10) (2025-05-21)
+
+
+### Bug Fixes
+
+* imgUrl ([955f7f7](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/commit/955f7f7e671a20c9aab0e66316239e54fb8a402e))
+
 # [1.0.0-staging.9](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/compare/v1.0.0-staging.8...v1.0.0-staging.9) (2025-05-21)
 
 
