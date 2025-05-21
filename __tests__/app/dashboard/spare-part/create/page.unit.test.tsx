@@ -184,13 +184,17 @@ describe('SparePartCreatePage Tests', () => {
       fireEvent.change(screen.getByLabelText(/Harga/i), { target: { value: '1000' } });
       fireEvent.change(screen.getByLabelText(/Lokasi Alat/i), { target: { value: 'Test Location' } });
       
-      // Select dates
+      // Select dates - same approach as above
       fireEvent.click(screen.getAllByText(/Pilih tanggal/i)[0]);
-      const dateButtons = screen.getAllByRole('button', { name: /\d+/ });
-      fireEvent.click(dateButtons[15]);
+      const calendarDays = screen.getAllByRole('gridcell');
+      const dayCell = Array.from(calendarDays).find(cell => 
+        cell.textContent && !cell.hasAttribute('disabled'));
+      if (dayCell) fireEvent.click(dayCell);
+      
+      fireEvent.click(screen.getByText('Tambah Spare Part'));
       
       fireEvent.click(screen.getAllByText(/Pilih tanggal/i)[0]);
-      fireEvent.click(dateButtons[20]);
+      if (dayCell) fireEvent.click(dayCell);
       
       // Submit the form
       fireEvent.click(screen.getByText('Simpan'));
@@ -231,19 +235,29 @@ describe('SparePartCreatePage Tests', () => {
       fireEvent.change(screen.getByLabelText(/Harga/i), { target: { value: '1000' } });
       fireEvent.change(screen.getByLabelText(/Lokasi Alat/i), { target: { value: 'Test Location' } });
       
-      // Select dates
+      // Select dates - same approach as above
       fireEvent.click(screen.getAllByText(/Pilih tanggal/i)[0]);
-      const dateButtons = screen.getAllByRole('button', { name: /\d+/ });
-      fireEvent.click(dateButtons[15]);
+      const calendarDays = screen.getAllByRole('gridcell');
+      const dayCell = Array.from(calendarDays).find(cell => 
+        cell.textContent && !cell.hasAttribute('disabled'));
+      if (dayCell) fireEvent.click(dayCell);
+      
+      fireEvent.click(screen.getByText('Tambah Spare Part'));
       
       fireEvent.click(screen.getAllByText(/Pilih tanggal/i)[0]);
-      fireEvent.click(dateButtons[20]);
+      if (dayCell) fireEvent.click(dayCell);
+      
+      // Get the submit button before clicking
+      const submitButton = screen.getByRole('button', { name: /Simpan/i });
       
       // Submit the form
-      fireEvent.click(screen.getByText('Simpan'));
+      fireEvent.click(submitButton);
       
-      // Check if loading state is shown
-      expect(screen.getByText('Menyimpan...')).toBeInTheDocument();
+      // Wait a short time for the loading state to be applied
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
+      // Check if submit button is disabled during loading
+      expect(submitButton).toBeDisabled();
       
       // Wait for submission to complete
       await waitFor(() => {

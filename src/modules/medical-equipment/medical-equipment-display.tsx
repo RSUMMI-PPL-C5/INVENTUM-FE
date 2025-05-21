@@ -499,7 +499,7 @@ export default function MedicalEquipmentPage() {
 											</TableCell>
 											<TableCell>
 												{formatDate(
-													equipment.purchaseDate!
+													equipment.purchaseDate || ""
 												)}
 											</TableCell>
 											<TableCell
