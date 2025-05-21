@@ -182,7 +182,7 @@ export default function UserCreate() {
 				<Button
 					variant="outline"
 					onClick={() => router.push("/dashboard/user")}
-					className="mr-4 w-full sm:w-auto"
+					className="mr-4 w-fit"
 				>
 					<ArrowLeft className="mr-2 h-4 w-4" />
 					Kembali
