@@ -51,7 +51,7 @@ const formSchema = z.object({
 	toolDate: z.date({
 		required_error: "Tanggal alat wajib diisi",
 	}),
-	imageUrl: z.string().optional(),
+	imgUrl: z.string().optional(),
 });
 
 export default function SparePartCreate() {
@@ -65,7 +65,7 @@ export default function SparePartCreate() {
 			partsName: "",
 			price: "",
 			toolLocation: "",
-			imageUrl: "",
+			imgUrl: "",
 		},
 	});
 
@@ -130,7 +130,7 @@ export default function SparePartCreate() {
 					price: Number.parseFloat(data.price.replace(/\./g, "")),
 					toolLocation: data.toolLocation,
 					toolDate: data.toolDate.toISOString(),
-					imageUrl: data.imageUrl || null,
+					imgUrl: data.imgUrl || null,
 				}),
 			}
 		);
@@ -198,7 +198,7 @@ export default function SparePartCreate() {
 				>
 					<FormField
 						control={form.control}
-						name="imageUrl"
+						name="imgUrl"
 						render={({ field }) => (
 							<FormItem>
 								<FormLabel>Gambar Spare Part</FormLabel>
@@ -266,47 +266,6 @@ export default function SparePartCreate() {
 											selected={field.value}
 											onSelect={field.onChange}
 											initialFocus
-										/>
-									</PopoverContent>
-								</Popover>
-								<FormMessage />
-								<FormLabel>Tanggal Pembelian</FormLabel>
-								<Popover>
-									<PopoverTrigger asChild>
-										<FormControl>
-											<Button
-												variant={"outline"}
-												className={cn(
-													"w-full pl-3 text-left font-normal",
-													!field.value &&
-														"text-muted-foreground"
-												)}
-											>
-												{field.value ? (
-													format(
-														field.value,
-														"dd MMM yyyy",
-														{ locale: id }
-													)
-												) : (
-													<span>Pilih tanggal</span>
-												)}
-												<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-											</Button>
-										</FormControl>
-									</PopoverTrigger>
-									<PopoverContent
-										className="w-auto p-0"
-										align="start"
-									>
-										<Calendar
-											mode="single"
-											selected={field.value}
-											onSelect={field.onChange}
-											initialFocus
-											locale={id}
-											weekStartsOn={1}
-											className="rounded-md border"
 										/>
 									</PopoverContent>
 								</Popover>
@@ -413,48 +372,6 @@ export default function SparePartCreate() {
 											selected={field.value}
 											onSelect={field.onChange}
 											initialFocus
-										/>
-									</PopoverContent>
-								</Popover>
-								<FormMessage />
-								<FormLabel>Tanggal Alat</FormLabel>
-								<Popover>
-									<PopoverTrigger asChild>
-										<FormControl>
-											<Button
-												variant={"outline"}
-												className={cn(
-													"w-full pl-3 text-left font-normal",
-													!field.value &&
-														"text-muted-foreground"
-												)}
-											>
-												{field.value ? (
-													// Format dengan locale Indonesia
-													format(
-														field.value,
-														"dd MMM yyyy",
-														{ locale: id }
-													)
-												) : (
-													<span>Pilih tanggal</span>
-												)}
-												<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-											</Button>
-										</FormControl>
-									</PopoverTrigger>
-									<PopoverContent
-										className="w-auto p-0"
-										align="start"
-									>
-										<Calendar
-											mode="single"
-											selected={field.value}
-											onSelect={field.onChange}
-											initialFocus
-											locale={id}
-											weekStartsOn={1}
-											className="rounded-md border"
 										/>
 									</PopoverContent>
 								</Popover>

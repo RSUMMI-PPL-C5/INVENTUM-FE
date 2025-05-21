@@ -27,7 +27,7 @@ interface Sparepart {
 	purchaseDate: string;
 	price: number;
 	toolLocation: string;
-	imageUrl?: string;
+	imgUrl?: string;
 }
 
 interface PaginationMeta {
@@ -379,9 +379,9 @@ export default function SparepartDisplay() {
 											data-testid={`sparepart-row-${sparepart.id}`}
 										>
 											<TableCell>
-												{sparepart.imageUrl ? (
+												{sparepart.imgUrl ? (
 													<img
-														src={sparepart.imageUrl}
+														src={sparepart.imgUrl}
 														alt={
 															sparepart.partsName
 														}
@@ -494,9 +494,9 @@ export default function SparepartDisplay() {
 										data-testid={`sparepart-card-${sparepart.id}`}
 									>
 										<div className="flex gap-3">
-											{sparepart.imageUrl ? (
+											{sparepart.imgUrl ? (
 												<img
-													src={sparepart.imageUrl}
+													src={sparepart.imgUrl}
 													alt={sparepart.partsName}
 													className="w-16 h-16 object-cover rounded-lg"
 												/>

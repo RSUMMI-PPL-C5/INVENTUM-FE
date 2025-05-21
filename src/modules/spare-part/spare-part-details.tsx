@@ -19,7 +19,7 @@ type Sparepart = {
   price: number
   toolLocation: string
   description?: string | null
-  imageUrl?: string
+  imgUrl?: string
 }
 
 export default function SparePartDetails() {
@@ -267,12 +267,11 @@ export default function SparePartDetails() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-6">
-              {sparepart.imageUrl ? (
-                <div className="overflow-hidden rounded-lg border">
+              {sparepart.imgUrl ? (
+                <div className="flex w-full justify-center overflow-hidden rounded-lg border">
                   <img
-                    src={sparepart.imageUrl || "/placeholder.svg"}
+                    src={sparepart.imgUrl || "/placeholder.svg"}
                     alt={sparepart.partsName}
-                    className="w-full h-64 object-cover object-center"
                   />
                 </div>
               ) : (

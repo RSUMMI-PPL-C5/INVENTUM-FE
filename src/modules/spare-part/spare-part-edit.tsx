@@ -52,7 +52,7 @@ const formSchema = z.object({
 		required_error: "Tanggal alat wajib diisi",
 	}),
 	createdOn: z.string().optional(),
-	imageUrl: z.string().optional(),
+	imgUrl: z.string().optional(),
 });
 
 export default function SparePartEdit() {
@@ -69,7 +69,7 @@ export default function SparePartEdit() {
 			price: "",
 			toolLocation: "",
 			createdOn: "",
-			imageUrl: "",
+			imgUrl: "",
 		},
 	});
 
@@ -164,7 +164,7 @@ export default function SparePartEdit() {
 					toolLocation: sparePartData.toolLocation || "",
 					toolDate: isValid(toolDate) ? toolDate : new Date(),
 					createdOn: formattedCreatedDate,
-					imageUrl: sparePartData.imageUrl || "",
+					imgUrl: sparePartData.imgUrl || "",
 				});
 
 				console.log("Form values after reset:", form.getValues());
@@ -208,7 +208,7 @@ export default function SparePartEdit() {
 					price: Number.parseFloat(cleanPrice),
 					toolLocation: data.toolLocation,
 					toolDate: data.toolDate.toISOString(),
-					imageUrl: data.imageUrl || null,
+					imgUrl: data.imgUrl || null,
 				}),
 			}
 		);
@@ -280,7 +280,7 @@ export default function SparePartEdit() {
 				>
 					<FormField
 						control={form.control}
-						name="imageUrl"
+						name="imgUrl"
 						render={({ field }) => (
 							<FormItem>
 								<FormLabel>Gambar Spare Part</FormLabel>
