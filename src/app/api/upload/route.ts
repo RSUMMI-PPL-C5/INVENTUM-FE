@@ -9,29 +9,20 @@ export async function POST(request: NextRequest) {
         const filename = formData.get('filename') as string
 
         if (!file || !filename) {
-            return NextResponse.json(
-                { error: 'File or filename is missing' },
-                { status: 400 }
-            )
+            return NextResponse.json({ error: 'File or filename is missing' }, { status: 400 })
         }
 
-        // Convert File to Buffer
         const buffer = Buffer.from(await file.arrayBuffer())
-
-        // Ensure directory exists
-        const uploadDir = join(process.cwd(), 'public', 'assets', 'spareparts')
+        const uploadDir = join('/app/uploads/spareparts')
         await mkdir(uploadDir, { recursive: true })
 
-        // Write file
         const filepath = join(uploadDir, filename)
         await writeFile(filepath, buffer)
 
-        return NextResponse.json({ success: true })
+        // Return URL that points to nginx path
+        return NextResponse.json({ success: true, url: `/uploads/spareparts/${filename}` })
     } catch (error) {
         console.error('Error in upload handler:', error)
-        return NextResponse.json(
-            { error: 'Failed to upload file' },
-            { status: 500 }
-        )
+        return NextResponse.json({ error: 'Failed to upload file' }, { status: 500 })
     }
-} 
+}
