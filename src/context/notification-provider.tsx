@@ -176,8 +176,8 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   useEffect(() => {
     if (userRole) { // Hanya fetch jika role user sudah tersedia
       fetchNotifications();
-      // Set up polling every 30 seconds
-      const interval = setInterval(fetchNotifications, 30000);
+      // Set up polling every 10 seconds
+      const interval = setInterval(fetchNotifications, 10000);
       return () => clearInterval(interval);
     }
   }, [userRole]); // Tambahkan userRole sebagai dependency
