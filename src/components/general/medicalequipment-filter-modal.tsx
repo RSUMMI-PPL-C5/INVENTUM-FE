@@ -117,7 +117,7 @@ export default function MedicalEquipmentFilterModal({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={(open) => !open && onCancel()}>
-			<DialogContent className="max-w-[90vw]">
+			<DialogContent className="w-full max-w-[90vw] max-h-[90vh] overflow-auto">
 				<DialogHeader>
 					<DialogTitle>Filter Alat Medis</DialogTitle>
 					<DialogDescription>

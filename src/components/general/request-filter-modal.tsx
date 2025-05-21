@@ -117,7 +117,7 @@ export default function RequestFilterModal({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={(open) => !open && onCancel()}>
-			<DialogContent className="w-full max-w-[90vw]">
+			<DialogContent className="w-full max-w-[90vw] max-h-[90vh] overflow-auto">
 				<DialogHeader>
 					<DialogTitle>Filter Request</DialogTitle>
 					<DialogDescription>

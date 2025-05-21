@@ -88,7 +88,7 @@ export default function CalibrationHistoryFilterModal({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={onCancel}>
-			<DialogContent className="max-w-[90vw] sm:max-w-[625px]">
+			<DialogContent className="w-full max-w-[90vw] max-h-[90vh] overflow-auto">
 				<DialogHeader>
 					<DialogTitle>Filter Riwayat Kalibrasi</DialogTitle>
 				</DialogHeader>

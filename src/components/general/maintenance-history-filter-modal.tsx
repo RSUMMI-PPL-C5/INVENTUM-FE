@@ -84,7 +84,7 @@ export default function MaintenanceHistoryFilterModal({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={onCancel}>
-			<DialogContent className="max-w-[90vw]">
+			<DialogContent className="w-full max-w-[90vw] max-h-[90vh] overflow-auto">
 				<DialogHeader>
 					<DialogTitle>Filter Riwayat Maintenance</DialogTitle>
 				</DialogHeader>
