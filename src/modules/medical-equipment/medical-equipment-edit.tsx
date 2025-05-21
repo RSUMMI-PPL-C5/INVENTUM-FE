@@ -277,7 +277,7 @@ export default function MedicalEquipmentEdit() {
 			<Form {...form}>
 				<form
 					onSubmit={form.handleSubmit(onSubmit)}
-					className="space-y-6 mt-4 max-w-3xl"
+					className="space-y-6 mt-4"
 				>
 					<FormField
 						control={form.control}

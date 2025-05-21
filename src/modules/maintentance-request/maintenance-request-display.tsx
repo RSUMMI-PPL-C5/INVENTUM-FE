@@ -446,13 +446,13 @@ export default function MaintenanceRequestDisplay() {
 
 			{/* Header Section */}
 			<div className="bg-primary-solid p-4 md:p-2 flex flex-col md:flex-row items-center gap-3 h-fit text-white rounded-lg overflow-hidden">
-				<div className="hidden md:flex items-center justify-center w-[200px] md:w-[264px] h-[150px] md:h-[224px] border border-primary-super-light rounded-lg shrink-0">
+				{/* <div className="hidden md:flex items-center justify-center w-[200px] md:w-[264px] h-[150px] md:h-[224px] border border-primary-super-light rounded-lg shrink-0">
 					illustration
-				</div>
+				</div> */}
 
 				<div className="flex flex-col gap-4 md:gap-6 py-3 md:py-6 px-2 md:px-6 text-left">
 					<div className="space-y-2">
-						<h2 className="text-xl md:text-header-h6 font-bold font-poppins">
+						<h2 className="text-xl font-bold font-poppins">
 							Permintaan Pemeliharaan
 						</h2>
 						<p className="text-sm md:text-s-medium">

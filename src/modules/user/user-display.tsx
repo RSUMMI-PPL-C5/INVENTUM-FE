@@ -334,13 +334,13 @@ export default function UsersPage() {
 
 			{/* Header Section - Responsive Design */}
 			<div className="bg-primary-solid p-4 md:p-2 flex flex-col md:flex-row md:items-center gap-3 h-fit text-white rounded-lg overflow-hidden">
-				<div className="hidden md:flex items-center justify-center w-full md:w-[264px] h-[160px] md:h-[224px] border border-primary-super-light rounded-lg">
+				{/* <div className="hidden md:flex items-center justify-center w-full md:w-[264px] h-[160px] md:h-[224px] border border-primary-super-light rounded-lg">
 					illustration
-				</div>
+				</div> */}
 
 				<div className="flex flex-col gap-4 md:gap-6 py-2 md:py-6 px-2 md:px-6">
 					<div className="space-y-2">
-						<h2 className="text-xl md:text-header-h6 font-bold font-poppins">
+						<h2 className="text-xl font-bold font-poppins">
 							Pengguna
 						</h2>
 						<p className="text-sm md:text-s-medium">
