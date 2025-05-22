@@ -1,3 +1,10 @@
+# [1.0.0-staging.15](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/compare/v1.0.0-staging.14...v1.0.0-staging.15) (2025-05-22)
+
+
+### Bug Fixes
+
+* spareparts location to use fields ([3a4eebb](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/commit/3a4eebb7d8f65807d2273fe64fb468f3b267945c))
+
 # [1.0.0-staging.14](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/compare/v1.0.0-staging.13...v1.0.0-staging.14) (2025-05-22)
 
 
