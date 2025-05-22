@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -28,11 +28,6 @@ import Cookies from "js-cookie";
 import { toast } from "sonner";
 import { ImageUpload } from "@/components/spare-part/image-upload";
 
-interface Location {
-	id: number;
-	divisi: string;
-}
-
 const formSchema = z.object({
 	partsName: z.string().min(1, { message: "Nama spare part wajib diisi" }),
 	purchaseDate: z.date({
@@ -49,7 +44,6 @@ const formSchema = z.object({
 export default function SparePartCreate() {
 	const router = useRouter();
 	const [loading, setLoading] = useState(false);
-	const [locations, setLocations] = useState<Location[]>([]);
 
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
@@ -60,50 +54,6 @@ export default function SparePartCreate() {
 			imgUrl: "",
 		},
 	});
-
-	useEffect(() => {
-		fetchAllLocations();
-	}, []);
-
-	// Function to fetch all locations
-	async function fetchAllLocations() {
-		try {
-			const token = Cookies.get("accessToken");
-
-			const response = await fetch(
-				`${process.env.NEXT_PUBLIC_API_URL}/divisi/all`,
-				{
-					method: "GET",
-					headers: {
-						"Content-Type": "application/json",
-						Authorization: token ? `Bearer ${token}` : "",
-					},
-				}
-			);
-
-			const result = await response.json();
-
-			if (!response.ok) {
-				toast.error(
-					<>
-						Error fetching locations:
-						<br />
-						{result.message}
-					</>
-				);
-				return;
-			}
-
-			setLocations(result);
-		} catch (error) {
-			console.error("Error fetching locations:", error);
-			toast.error(
-				error instanceof Error
-					? error.message
-					: "Error fetching locations"
-			);
-		}
-	}
 
 	async function createSparePart(data: z.infer<typeof formSchema>) {
 		const token = Cookies.get("accessToken");
@@ -122,7 +72,7 @@ export default function SparePartCreate() {
 					price: Number.parseFloat(data.price.replace(/\./g, "")),
 					toolLocation: data.toolLocation,
 					toolDate: data.toolDate.toISOString(),
-					imgUrl: data.imgUrl || null,
+					imgUrl: data.imgUrl ?? null,
 				}),
 			}
 		);
