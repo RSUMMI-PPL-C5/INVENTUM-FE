@@ -115,7 +115,10 @@ export default function SideBar() {
 				}
 
 				const user = decodeToken(token);
-
+				
+				if (user?.role) {
+					setRole(user.role);
+				}
 
 				Cookies.set("user", JSON.stringify(user));
 
@@ -133,16 +136,23 @@ export default function SideBar() {
 			}
 		};
 
+		// Prioritaskan pengambilan data dari token terlebih dahulu
+		fetchUserData();
+		
+		// Kemudian cek cookie sebagai fallback
 		if (typeof document !== "undefined") {
-
-            const user = Cookies.get("user")
-            
-            if (user) {
-                const { role } = JSON.parse(user)
-                setRole(role);
-            }
-
-			fetchUserData();
+			const user = Cookies.get("user");
+			
+			if (user) {
+				try {
+					const userData = JSON.parse(user);
+					if (userData.role) {
+						setRole(userData.role);
+					}
+				} catch (e) {
+					console.error("Error parsing user cookie:", e);
+				}
+			}
 		}
 	}, []);
 
@@ -154,7 +164,10 @@ export default function SideBar() {
 	}, [pathname, isMobile]);
 
 	const handleLogout = () => {
+		setRole("");
+		setUserData(null);
 		Cookies.remove("accessToken");
+		Cookies.remove("user");
 		router.push("/");
 	};
 

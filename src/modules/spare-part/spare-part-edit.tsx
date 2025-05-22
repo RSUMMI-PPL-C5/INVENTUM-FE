@@ -26,20 +26,8 @@ import {
 import { cn, formatNumberWithDots } from "@/lib/utils";
 import Cookies from "js-cookie";
 import { toast } from "sonner";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import { id } from "date-fns/locale";
 import { ImageUpload } from "@/components/spare-part/image-upload";
-
-interface Location {
-	id: number;
-	divisi: string;
-}
 
 const formSchema = z.object({
 	partsName: z.string().min(1, { message: "Nama spare part wajib diisi" }),

@@ -26,13 +26,6 @@ import {
 import { cn, formatNumberWithDots } from "@/lib/utils";
 import Cookies from "js-cookie";
 import { toast } from "sonner";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import { ImageUpload } from "@/components/spare-part/image-upload";
 
 interface Location {
