@@ -311,26 +311,12 @@ export default function SparePartCreate() {
 						render={({ field }) => (
 							<FormItem>
 								<FormLabel>Lokasi Alat</FormLabel>
-								<Select
-									onValueChange={field.onChange}
-									defaultValue={field.value}
-								>
-									<FormControl>
-										<SelectTrigger>
-											<SelectValue placeholder="Pilih Lokasi Alat" />
-										</SelectTrigger>
-									</FormControl>
-									<SelectContent>
-										{locations.map((location) => (
-											<SelectItem
-												key={location.id}
-												value={location.divisi}
-											>
-												{location.divisi}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
+								<FormControl>
+									<Input 
+										{...field}
+										placeholder="Masukkan lokasi alat" 
+									/>
+								</FormControl>
 								<FormMessage />
 							</FormItem>
 						)}

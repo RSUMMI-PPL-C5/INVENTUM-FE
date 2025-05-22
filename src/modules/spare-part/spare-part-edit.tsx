@@ -60,7 +60,6 @@ export default function SparePartEdit() {
 	const { id: sparePartId } = useParams();
 	const [loading, setLoading] = useState(true);
 	const [submitting, setSubmitting] = useState(false);
-	const [locations, setLocations] = useState<Location[]>([]);
 
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
@@ -74,45 +73,6 @@ export default function SparePartEdit() {
 	});
 
 	useEffect(() => {
-		async function fetchAllLocations() {
-			try {
-				const token = Cookies.get("accessToken");
-
-				const response = await fetch(
-					`${process.env.NEXT_PUBLIC_API_URL}/divisi/all`,
-					{
-						method: "GET",
-						headers: {
-							"Content-Type": "application/json",
-							Authorization: token ? `Bearer ${token}` : "",
-						},
-					}
-				);
-
-				const result = await response.json();
-
-				if (!response.ok) {
-					toast.error(
-						<>
-							Error fetching locations:
-							<br />
-							{result.message}
-						</>
-					);
-					return;
-				}
-
-				setLocations(result);
-			} catch (error) {
-				console.error("Error fetching locations:", error);
-				toast.error(
-					error instanceof Error
-						? error.message
-						: "Error fetching locations"
-				);
-			}
-		}
-
 		async function fetchSparePart() {
 			try {
 				const token = Cookies.get("accessToken");
@@ -186,7 +146,6 @@ export default function SparePartEdit() {
 			}
 		}
 
-		fetchAllLocations();
 		fetchSparePart();
 	}, [sparePartId, form]);
 
@@ -406,27 +365,12 @@ export default function SparePartEdit() {
 						render={({ field }) => (
 							<FormItem>
 								<FormLabel>Lokasi Alat</FormLabel>
-								<Select
-									onValueChange={field.onChange}
-									value={field.value || ""}
-									defaultValue={field.value}
-								>
-									<FormControl>
-										<SelectTrigger>
-											<SelectValue placeholder="Pilih Lokasi Alat" />
-										</SelectTrigger>
-									</FormControl>
-									<SelectContent>
-										{locations.map((location) => (
-											<SelectItem
-												key={location.id}
-												value={location.divisi}
-											>
-												{location.divisi}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
+								<FormControl>
+									<Input 
+										{...field}
+										placeholder="Masukkan lokasi alat" 
+									/>
+								</FormControl>
 								<FormMessage />
 							</FormItem>
 						)}
