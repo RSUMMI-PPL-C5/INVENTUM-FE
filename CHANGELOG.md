@@ -1,3 +1,10 @@
+# [1.0.0-staging.14](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/compare/v1.0.0-staging.13...v1.0.0-staging.14) (2025-05-22)
+
+
+### Bug Fixes
+
+* update result text to match the actual data in bahasa ([052bc77](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/commit/052bc77dd2d8b2d025d057a7d1aa227df090c54c))
+
 # [1.0.0-staging.13](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/compare/v1.0.0-staging.12...v1.0.0-staging.13) (2025-05-21)
 
 
