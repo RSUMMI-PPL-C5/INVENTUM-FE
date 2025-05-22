@@ -1,3 +1,10 @@
+# [1.0.0-staging.17](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/compare/v1.0.0-staging.16...v1.0.0-staging.17) (2025-05-22)
+
+
+### Bug Fixes
+
+* build error ([e9778df](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/commit/e9778df72a822841814ca37e36fb03a62808450f))
+
 # [1.0.0-staging.16](https://github.com/RSUMMI-PPL-C5/INVENTUM-FE/compare/v1.0.0-staging.15...v1.0.0-staging.16) (2025-05-22)
 
 
